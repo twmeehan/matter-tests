@@ -13,6 +13,7 @@
 
 typedef Eigen::Vector2d TV2;
 typedef Eigen::Matrix2d TM2;
+
 ///////////////////// TOOLS ////////////////////////
 
 // quadratic spline
@@ -28,15 +29,27 @@ inline double N(double x){
         return 0;
 		}
 }
-inline double wip(TV2 xp, double xi, double yi, double h){
-    return N( (xp(0) - xi) / h ) * N( (xp(1) - yi) / h );
+inline double dNdu(double u){
+    double uabs = std::abs(u);
+    if (uabs < 0.5){
+        return (-2*u);
+    }
+		else if (uabs < 1.5){
+        return (-u);
+    }
+		else {
+        return 0;
+		}
+}
+inline double wip(double xp, double yp, double xi, double yi, double h){
+    return N( (xp - xi) / h ) * N( (yp - yi) / h );
 }
 
-TV2 grad_wip(double xp, double yp, double xi, double yi, double h){
-    TV2 out;
-    out(0) = 0;
-    out(1) = 0;
-    return out;
+inline double gradx_wip(double xp, double yp, double xi, double yi, double h){
+    return ( dNdu((xp - xi) / h) *  N((yp - yi) / h) ) / h;
+}
+inline double grady_wip(double xp, double yp, double xi, double yi, double h){
+    return ( dNdu((yp - yi) / h) *  N((xp - xi) / h) ) / h;
 }
 
 //  in : x, y column vectors, can be of type
@@ -65,8 +78,47 @@ public:
 
 class Simulation{
 public:
+  Simulation(){};
+
+  void setDx(double h){
+      dx = h;
+  }
+
+  void setElasticParams(double E, double nu, double density){
+      mu = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
+      lambda = E / (2.0*(1.0+nu));
+      rho = density;
+  }
+
+  void advanceStep(){
+      remesh();
+      P2G();
+      explicitEulerUpdate();
+      G2P();
+  };
+
+  void simulate(){
+      double t = 0;
+      while (t < T){
+          advanceStep();
+          t += dt;
+      }
+      saveSim();
+  };
+
+  void saveSim(){
+
+  };
+
+private:
+
+  double T;
   double dt;
   double dx;
+
+  double rho;
+  double mu;
+  double lambda;
 
   unsigned int Np;
   double particle_mass;
@@ -77,24 +129,6 @@ public:
   Eigen::VectorXd particles_y;
   Eigen::VectorXd particles_vx;
   Eigen::VectorXd particles_vy;
-
-  double rho;
-  double mu;
-  double lambda;
-
-  void setElasticParams(double E, double nu){
-      mu = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
-      lambda = E / (2.0*(1.0+nu));
-  }
-
-  void advanceStep(){
-      remesh();
-      P2G();
-      explicitEulerUpdate();
-      G2P();
-  };
-
-private:
 
   unsigned int Nx, Ny;
   Eigen::MatrixXd grid_X;
@@ -110,12 +144,54 @@ private:
 
 }; // END mpm class
 
-void Simulation::P2G(){
 
+
+
+void Simulation::P2G(){
+    for(int i=0; i<Nx; i++){
+        for(int j=0; j<Ny; j++){
+            double xi = grid_X(i,j);
+            double yi = grid_Y(i,j);
+            double vxi = 0;
+            double vyi = 0;
+            double mass = 0;
+            for(int p=0; p<Np; p++){
+                double xp = particles_x(p);
+                double yp = particles_y(p);
+                if ( std::abs(xp-xi) < 1.5*dx && std::abs(xp-yi) < 1.5*dx){
+                    double weight = wip(xp, yp, xi, yi, dx);
+                    mass += weight;
+                    vxi  += particles_vx(p) * weight;
+                    vyi  += particles_vy(p) * weight;
+                }
+            }
+            grid_mass(i,j) = mass * particle_mass;
+            grid_VX(i,j)   = vxi  * particle_mass;
+            grid_VY(i,j)   = vyi  * particle_mass;
+        }
+    }
 }
 
 void Simulation::G2P(){
-
+    for(int p=0; p<Np; p++){
+        double xp = particles_x(p);
+        double yp = particles_y(p);
+        double vxp = 0;
+        double vyp = 0;
+        for(int i=0; i<Nx; i++){
+            for(int j=0; j<Ny; j++){
+                double xi = grid_X(i,j);
+                double yi = grid_Y(i,j);
+                if ( std::abs(xp-xi) < 1.5*dx && std::abs(xp-yi) < 1.5*dx){
+                    double weight = wip(xp, yp, xi, yi, dx);
+                    vxp += grid_VX(i,j) * weight;
+                    vyp += grid_VY(i,j) * weight;
+                }
+            }
+        }
+        particles_vx(p) = vxp;
+        particles_vy(p) = vyp;
+    }
 }
 
 void Simulation::remesh(){
@@ -148,6 +224,8 @@ void Simulation::remesh(){
 }
 
 void Simulation::explicitEulerUpdate(){
+    TV2 grad_wip, sigma;
+    TM2 Fe, logSigma, invSigma, dPsidF;
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
             double xi = grid_X(i,j);
@@ -156,14 +234,16 @@ void Simulation::explicitEulerUpdate(){
             for(int p=0; p<Np; p++){
                 double xp = particles_x(p);
                 double yp = particles_y(p);
-                if ( std::abs(xp-xi) < 1.5*dx || std::abs(xp-yi) < 1.5*dx){
-                    TM2 Fe = particles[p].F;
+                if ( std::abs(xp-xi) < 1.5*dx && std::abs(xp-yi) < 1.5*dx){
+                    Fe = particles[p].F;
                     Eigen::JacobiSVD<TM2> svd((Fe*Fe.transpose()).array().log(), Eigen::ComputeThinU | Eigen::ComputeThinV);
-                    TV2 sigma = svd.singularValues().array().exp().sqrt();
-                    TM2 logSigma = sigma.array().log().matrix().asDiagonal();
-                    TM2 invSigma = sigma.asDiagonal().inverse();
-                    TM2 dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
-                    force -= particle_volume * dPsidF * Fe.transpose() * grad_wip(xp, yp, xi, yi, dx);
+                    sigma = svd.singularValues().array().exp().sqrt();
+                    logSigma = sigma.array().log().matrix().asDiagonal();
+                    invSigma = sigma.asDiagonal().inverse();
+                    dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
+                    grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
+                    grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
+                    force -= particle_volume * dPsidF * Fe.transpose() * grad_wip;
                 }
             }
             TV2 velocity_increment = dt * force / grid_mass(i,j);
