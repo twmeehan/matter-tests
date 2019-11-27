@@ -10,7 +10,7 @@
 //  * 3D
 //  * Cubic spline
 //  * adaptive timestepping
-//  * make Nx and Ny for grid
+//  * complete doxygen
 
 typedef Eigen::Vector2d TV2;
 typedef Eigen::Matrix2d TM2;
@@ -30,7 +30,12 @@ void debug(std::string in1, int in2){
   std::cout << in1 << in2 << std::endl;
 }
 
-// quadratic spline
+/*!
+ \param x x
+ \return weight
+
+ Quadratic spline basis function
+*/
 inline double N(double x){
     double xabs = std::abs(x);
     if (xabs < 0.5){
@@ -43,6 +48,12 @@ inline double N(double x){
         return 0;
 		}
 }
+/*!
+ \param u u
+ \return derivative of function evaluated at u
+
+ Derivative of quadratic spline basis function
+*/
 inline double dNdu(double u){
     double uabs = std::abs(u);
     if (uabs < 0.5){
