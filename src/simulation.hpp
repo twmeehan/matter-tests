@@ -23,7 +23,9 @@ public:
 private:
 
   unsigned int Nt;
+  unsigned int current_step;
   double dt;
+  double dt_max;
   double dx;
 
   double rho;

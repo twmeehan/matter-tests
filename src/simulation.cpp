@@ -5,7 +5,7 @@ void Simulation::setElasticParams(double E, double nu, double density){
     mu = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
     lambda = E / (2.0*(1.0+nu));
     rho = density;
-    dt = 0.1 * dx * std::sqrt(rho/E);
+    dt_max = 0.5 * dx * std::sqrt(rho/E);
 }
 
 void Simulation::simulate(){
@@ -13,9 +13,10 @@ void Simulation::simulate(){
     for (int i = 0; i < Nt; i++){
         advanceStep();
         t += dt;
-        std::cout << "Step: " << i << "\t Time: " << t << std::endl;
+        current_step++;
+        std::cout << "Step: " << current_step << "\t Time: " << t << std::endl;
+        saveSim();
     }
-    saveSim();
 }
 
 void Simulation::advanceStep(){
@@ -136,9 +137,9 @@ void Simulation::explicitEulerUpdate(){
                     logSigma = sigma.log().matrix().asDiagonal();
                     invSigma = sigma.inverse().matrix().asDiagonal();
 
-                    debug("sigma = \n", sigma);
-                    debug("logSigma = \n", logSigma);
-                    debug("invSigma = \n", invSigma);
+                    // debug("sigma = \n", sigma);
+                    // debug("logSigma = \n", logSigma);
+                    // debug("invSigma = \n", invSigma);
 
                     dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
 
@@ -238,7 +239,7 @@ void Simulation::positionUpdate(){
 
 
 void Simulation::saveSim(){
-  std::ofstream outFile("out.csv");
+  std::ofstream outFile("out_" + std::to_string(current_step) + ".csv");
   for(int p = 0; p < Np; p++){
       outFile << p << "," << particles_x[p] << "\t" << particles_y[p] << "\t" << particles_vx[p] << "\t" << particles_vy[p] << "\n";
   }
@@ -248,12 +249,14 @@ void Simulation::saveSim(){
 
 
 
-Simulation::Simulation(){
+Simulation::Simulation() : current_step(0) {
   // default case: unit box with 10 times dx = 0.1
-    Nt = 1;
+    Nt = 2;
     dx = 0.1;
-    rho = 250;
-    setElasticParams(1e6, 0.3, rho);
+    rho = 700;
+    setElasticParams(1e5, 0.3, rho);
+    debug("dt_max = ", dt_max);
+    dt = 0.002;
 
     Nx = 10;
     Ny = 10;
@@ -325,6 +328,4 @@ Simulation::Simulation(){
             particles_vy(p) = pvy;
         } // end for i
     } // end for j
-    debug("Final p = ", p);
-    debug("Finished constructor");
 }
