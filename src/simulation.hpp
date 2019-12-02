@@ -15,15 +15,11 @@ typedef Eigen::Matrix2d TM2;
 
 class Simulation{
 public:
-  Simulation();
+  Simulation() : current_step(0), exit(0) {};
   void setElasticParams(double E, double nu, double density);
   void simulate();
   void saveSim();
   void saveGridVelocities();
-
-private:
-
-  int exit;
 
   unsigned int Nt;
   unsigned int current_step;
@@ -32,8 +28,6 @@ private:
   double dx;
 
   double rho;
-  double mu;
-  double lambda;
 
   unsigned int Np;
   double particle_mass;
@@ -51,6 +45,13 @@ private:
   Eigen::MatrixXd grid_VX;
   Eigen::MatrixXd grid_VY;
   Eigen::MatrixXd grid_mass;
+
+private:
+
+  int exit;
+
+  double mu;
+  double lambda;
 
   void advanceStep();
 
