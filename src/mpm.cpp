@@ -13,5 +13,5 @@ int main(){
     std::cout << "This is Larsie" << std::endl;
     Simulation sim;
     sim.simulate();
-		return 0;
+	return 0;
 }

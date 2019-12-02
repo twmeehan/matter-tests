@@ -9,13 +9,18 @@ void Simulation::setElasticParams(double E, double nu, double density){
 }
 
 void Simulation::simulate(){
+    saveSim();
+    saveGridVelocities();
     double t = 0;
     for (int i = 0; i < Nt; i++){
         advanceStep();
+        if (exit == 1)
+            return;
         t += dt;
         current_step++;
         std::cout << "Step: " << current_step << "\t Time: " << t << std::endl;
         saveSim();
+        saveGridVelocities();
     }
 }
 
@@ -32,6 +37,21 @@ void Simulation::advanceStep(){
 
 
 void Simulation::remesh(){
+
+    double max_speed = std::sqrt((particles_vx.array().square() + particles_vy.array().square()).maxCoeff());
+    double dt_cfl = 0.5 * dx / max_speed;
+
+    debug("               dt_cfl = ", dt_cfl);
+    if (dt > dt_cfl){
+        debug("TIME STEP IS TOO BIG COMPARED TO CFL!!!");
+        exit = 1;
+        return;
+    }
+    if (dt > dt_max){
+        debug("TIME STEP IS TOO BIG COMPARED TO ELASTIC WAVE SPEED!!!");
+        exit = 1;
+        return;
+    }
 
     double min_x = particles_x.minCoeff();
     double min_y = particles_y.minCoeff();
@@ -70,8 +90,9 @@ void Simulation::remesh(){
       grid_Y.col(j) = lin_y;
     }
 
-    //std::cout << grid_X.rows() << std::endl;
-    //std::cout << grid_X.cols() << std::endl;
+    // if (current_step==0)
+    //     debug(grid_Y);
+
     grid_VX   = Eigen::MatrixXd::Zero(grid_X.rows(), grid_X.cols());
     grid_VY   = Eigen::MatrixXd::Zero(grid_X.rows(), grid_X.cols());
     grid_mass = Eigen::MatrixXd::Zero(grid_X.rows(), grid_X.cols());
@@ -95,7 +116,7 @@ void Simulation::P2G(){
                 //debug(p);
                 double xp = particles_x(p);
                 double yp = particles_y(p);
-                if ( std::abs(xp-xi) < 1.5*dx && std::abs(xp-yi) < 1.5*dx){
+                if ( std::abs(xp-xi) < 2*dx || std::abs(xp-yi) < 2*dx){
                     double weight = wip(xp, yp, xi, yi, dx);
                     mass += weight;
                     vxi  += particles_vx(p) * weight;
@@ -106,9 +127,16 @@ void Simulation::P2G(){
             grid_mass(i,j) = mass * particle_mass;
             grid_VX(i,j)   = vxi  * particle_mass / mass;
             grid_VY(i,j)   = vyi  * particle_mass / mass;
-        }
-    }
-}
+        } // end for j
+    } // end for i
+
+    // if (current_step==0)
+    //     debug(grid_mass);
+    debug("               total grid mass = ", grid_mass.sum());
+    debug("               total part mass = ", particle_mass*Np);
+
+
+} // end P2G
 
 
 
@@ -126,7 +154,7 @@ void Simulation::explicitEulerUpdate(){
             for(int p=0; p<Np; p++){
                 double xp = particles_x(p);
                 double yp = particles_y(p);
-                if ( std::abs(xp-xi) < 1.5*dx && std::abs(xp-yi) < 1.5*dx){
+                if ( std::abs(xp-xi) < 2*dx || std::abs(xp-yi) < 2*dx){
                     Fe = particles[p].F; // must update F!!
 
                     Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
@@ -170,7 +198,7 @@ void Simulation::G2P(){
             for(int j=0; j<Ny; j++){
                 double xi = grid_X(i,j);
                 double yi = grid_Y(i,j);
-                if ( std::abs(xp-xi) < 1.5*dx && std::abs(xp-yi) < 1.5*dx){
+                if ( std::abs(xp-xi) < 1.5*dx || std::abs(xp-yi) < 1.5*dx){
                     double weight = wip(xp, yp, xi, yi, dx);
                     vxp += grid_VX(i,j) * weight;
                     vyp += grid_VY(i,j) * weight;
@@ -239,29 +267,41 @@ void Simulation::positionUpdate(){
 
 
 void Simulation::saveSim(){
-  std::ofstream outFile("out_" + std::to_string(current_step) + ".csv");
-  for(int p = 0; p < Np; p++){
-      outFile << p << "," << particles_x[p] << "\t" << particles_y[p] << "\t" << particles_vx[p] << "\t" << particles_vy[p] << "\n";
-  }
+    std::ofstream outFile("out_" + std::to_string(current_step) + ".csv");
+    for(int p = 0; p < Np; p++){
+        outFile << p << "," << particles_x[p] << "," << particles_y[p] << "," << particles_vx[p] << "," << particles_vy[p] << "\n";
+    }
+}
+
+void Simulation::saveGridVelocities(){
+    std::ofstream outFile("out_gridvel_" + std::to_string(current_step) + ".csv");
+    for(int i=0; i<Nx; i++){
+        for(int j=0; j<Ny; j++){
+            int k = i*Ny+j;
+            outFile << k << "," << grid_X(i,j) << "," << grid_Y(i,j) << "," << grid_VX(i,j) << "," << grid_VY(i,j) << "\n";
+        }
+    }
 }
 
 
 
 
 
-Simulation::Simulation() : current_step(0) {
+Simulation::Simulation() : current_step(0), exit(0) {
   // default case: unit box with 10 times dx = 0.1
-    Nt = 2;
+    Nt = 200;
     dx = 0.1;
     rho = 700;
     setElasticParams(1e5, 0.3, rho);
     debug("dt_max = ", dt_max);
-    dt = 0.002;
+
+    dt = 1e-6;
+    debug("dt     = ", dt);
 
     Nx = 10;
     Ny = 10;
     Np = Nx*Ny*4;
-    debug("Np = ", Np);
+    //debug("Np = ", Np);
 
     particle_volume = 1.0 / Np;
     particle_mass = rho * 1.0 / Np;
@@ -281,7 +321,7 @@ Simulation::Simulation() : current_step(0) {
     particles_vx = Eigen::VectorXd::Zero(Np);
     particles_vy = Eigen::VectorXd::Zero(Np);
 
-    double amplitude = 0.01;
+    double amplitude = 0.001;
 
     int p = -1;
     for(int i = 0; i < Nx; i++){

@@ -19,8 +19,11 @@ public:
   void setElasticParams(double E, double nu, double density);
   void simulate();
   void saveSim();
+  void saveGridVelocities();
 
 private:
+
+  int exit;
 
   unsigned int Nt;
   unsigned int current_step;
@@ -36,7 +39,7 @@ private:
   double particle_mass;
   double particle_volume; // initial particle volume V0
 
-	std::vector<Particle> particles;
+  std::vector<Particle> particles;
   Eigen::VectorXd particles_x;
   Eigen::VectorXd particles_y;
   Eigen::VectorXd particles_vx;
@@ -53,9 +56,9 @@ private:
 
   // advanceStep relies on (in order):
   void remesh();
-	void P2G();
+  void P2G();
   void explicitEulerUpdate();
-	void G2P();
+  void G2P();
   void deformationUpdate();
   void positionUpdate();
 
