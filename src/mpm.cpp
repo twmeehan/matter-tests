@@ -1,4 +1,5 @@
 #include "simulation.hpp"
+#include "csv2abc.hpp"
 
 // TODO:
 // 	* Fix type template for double/float
@@ -11,6 +12,10 @@
 
 int main(){
     std::cout << "This is Larsie" << std::endl;
+
+    csv2abc("test.abc");
+    return 0;
+
     Simulation sim;
 
     //////////////////////////////////////////////////////////////
