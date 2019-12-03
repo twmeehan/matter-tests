@@ -12,19 +12,26 @@ void Simulation::simulate(){
     saveSim();
     saveGridVelocities();
     double t = 0;
-    for (int i = 0; i < Nt; i++){
+    for (int i = 0; i < max_time_steps; i++){
         advanceStep();
         if (exit == 1)
             return;
         t += dt;
-        current_step++;
-        std::cout << "Step: " << current_step << "\t Time: " << t << std::endl;
-        saveSim();
-        saveGridVelocities();
+        current_time_step++;
+        std::cout << "Step: " << current_time_step << "    Time: " << t << std::endl;
+        //saveSim();
+        //saveGridVelocities();
+        if (t >= T){
+            std::cout << "The simulation ended successfully at time t = " << t << std::endl;
+            break;
+        }
     }
+    saveSim();
+    saveGridVelocities();
 }
 
 void Simulation::advanceStep(){
+    updateDt();
     remesh();
     P2G();
     explicitEulerUpdate();
@@ -36,12 +43,15 @@ void Simulation::advanceStep(){
 
 
 
-void Simulation::remesh(){
+void Simulation::updateDt(){
 
     double max_speed = std::sqrt((particles_vx.array().square() + particles_vy.array().square()).maxCoeff());
-    double dt_cfl = 0.5 * dx / max_speed;
-
+    double dt_cfl = cfl * dx / max_speed;
+    dt = std::min(dt_cfl, dt_max);
     debug("               dt_cfl = ", dt_cfl);
+    debug("               dt_max = ", dt_max);
+    debug("               dt     = ", dt    );
+
     if (dt > dt_cfl){
         debug("TIME STEP IS TOO BIG COMPARED TO CFL!!!");
         exit = 1;
@@ -52,6 +62,12 @@ void Simulation::remesh(){
         exit = 1;
         return;
     }
+} // end updateDt
+
+
+
+
+void Simulation::remesh(){
 
     double min_x = particles_x.minCoeff();
     double min_y = particles_y.minCoeff();
@@ -76,6 +92,8 @@ void Simulation::remesh(){
     Nx++;
     Ny++;
 
+    debug("               grid   = (", Nx, ", ", Ny, ")");
+
     // Linspace x and y
     Eigen::VectorXd lin_x = Eigen::VectorXd::LinSpaced(Nx, low_x, high_x);
     Eigen::VectorXd lin_y = Eigen::VectorXd::LinSpaced(Ny, low_y, high_y);
@@ -89,13 +107,17 @@ void Simulation::remesh(){
     for (int j = 0; j < Nx; ++j) {
       grid_Y.col(j) = lin_y;
     }
+    grid_X.transposeInPlace();
+    grid_Y.transposeInPlace();
 
-    // if (current_step==0)
+    // if (current_time_step==0)
     //     debug(grid_Y);
 
     grid_VX   = Eigen::MatrixXd::Zero(grid_X.rows(), grid_X.cols());
     grid_VY   = Eigen::MatrixXd::Zero(grid_X.rows(), grid_X.cols());
     grid_mass = Eigen::MatrixXd::Zero(grid_X.rows(), grid_X.cols());
+
+    // debug("hello");
 
 }
 
@@ -130,7 +152,7 @@ void Simulation::P2G(){
         } // end for j
     } // end for i
 
-    // if (current_step==0)
+    // if (current_time_step==0)
     //     debug(grid_mass);
     debug("               total grid mass = ", grid_mass.sum());
     debug("               total part mass = ", particle_mass*Np);
@@ -267,14 +289,14 @@ void Simulation::positionUpdate(){
 
 
 void Simulation::saveSim(){
-    std::ofstream outFile("out_" + std::to_string(current_step) + ".csv");
+    std::ofstream outFile("out_" + std::to_string(current_time_step) + ".csv");
     for(int p = 0; p < Np; p++){
         outFile << p << "," << particles_x[p] << "," << particles_y[p] << "," << particles_vx[p] << "," << particles_vy[p] << "\n";
     }
 }
 
 void Simulation::saveGridVelocities(){
-    std::ofstream outFile("out_gridvel_" + std::to_string(current_step) + ".csv");
+    std::ofstream outFile("out_gridvel_" + std::to_string(current_time_step) + ".csv");
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
             int k = i*Ny+j;

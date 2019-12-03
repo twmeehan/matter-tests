@@ -15,16 +15,18 @@ typedef Eigen::Matrix2d TM2;
 
 class Simulation{
 public:
-  Simulation() : current_step(0), exit(0) {};
+  Simulation() : current_time_step(0), exit(0) {};
   void setElasticParams(double E, double nu, double density);
   void simulate();
   void saveSim();
   void saveGridVelocities();
 
-  unsigned int Nt;
-  unsigned int current_step;
+  unsigned int max_time_steps;
+  unsigned int current_time_step;
+  double T;
   double dt;
   double dt_max;
+  double cfl;
   double dx;
 
   double rho;
@@ -56,6 +58,7 @@ private:
   void advanceStep();
 
   // advanceStep relies on (in order):
+  void updateDt();
   void remesh();
   void P2G();
   void explicitEulerUpdate();

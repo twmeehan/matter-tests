@@ -1,5 +1,5 @@
 #include "simulation.hpp"
-#include "csv2abc.hpp"
+//#include "csv2abc.hpp"
 
 // TODO:
 // 	* Fix type template for double/float
@@ -13,8 +13,8 @@
 int main(){
     std::cout << "This is Larsie" << std::endl;
 
-    csv2abc("test.abc");
-    return 0;
+    //csv2abc("test.abc");
+    //return 0;
 
     Simulation sim;
 
@@ -22,13 +22,15 @@ int main(){
     ////////////// Unit box with 10 times dx = 0.1 ///////////////
     //////////////////////////////////////////////////////////////
 
-      sim.Nt = 200;
+      sim.T = 1;
+      sim.max_time_steps = 10000;
       sim.dx = 0.1;
       sim.rho = 700;
       sim.setElasticParams(1e5, 0.3, sim.rho);
       debug("dt_max = ", sim.dt_max);
 
-      sim.dt = 1e-6;
+      sim.cfl = 0.5;
+      sim.dt = 1e-3;
       debug("dt     = ", sim.dt);
 
       sim.Nx = 10;
