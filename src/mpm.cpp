@@ -22,8 +22,8 @@ int main(){
     ////////////// Unit box with 10 times dx = 0.1 ///////////////
     //////////////////////////////////////////////////////////////
 
-      sim.T = 1;
-      sim.max_time_steps = 10000;
+      sim.T = 0.0382773;
+      sim.max_time_steps = 200;
       sim.dx = 0.1;
       sim.rho = 700;
       sim.setElasticParams(1e5, 0.3, sim.rho);
@@ -33,19 +33,42 @@ int main(){
       sim.dt = 1e-3;
       debug("dt     = ", sim.dt);
 
-      sim.Nx = 10;
-      sim.Ny = 10;
-      sim.Np = sim.Nx * sim.Ny * 4;
+      // N = (L / dx + 1)
+      sim.Nx = 21;
+      sim.Ny = 21;
+
+      ////////////// If remesh every time step /////////////////
+      // sim.grid_X = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+      // sim.grid_Y = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+      // sim.grid_VX = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+      // sim.grid_VY = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+      // sim.grid_mass = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+
+      ///////////////// If constant mesh ////////////////////////
+      Eigen::VectorXd lin_x = Eigen::VectorXd::LinSpaced(sim.Nx, -0.5, 1.5);
+      Eigen::VectorXd lin_y = Eigen::VectorXd::LinSpaced(sim.Ny, -0.5, 1.5);
+
+      sim.grid_X.resize(sim.Ny, sim.Nx);
+      sim.grid_Y.resize(sim.Ny, sim.Nx);
+      for (int i = 0; i < sim.Ny; ++i) {
+        sim.grid_X.row(i) = lin_x.transpose();
+      }
+      for (int j = 0; j < sim.Nx; ++j) {
+        sim.grid_Y.col(j) = lin_y;
+      }
+      sim.grid_X.transposeInPlace();
+      sim.grid_Y.transposeInPlace();
+
+      sim.grid_VX   = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+      sim.grid_VY   = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+      sim.grid_mass = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+      ////////////////////////////////////////////////////////////////
+
+      sim.Np = 10 * 10 * 4;
       debug("Np = ", sim.Np);
 
       sim.particle_volume = 1.0 / sim.Np;
       sim.particle_mass = sim.rho * 1.0 / sim.Np;
-
-      sim.grid_X = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      sim.grid_Y = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      sim.grid_VX = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      sim.grid_VY = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      sim.grid_mass = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
 
       Particle part;
       sim.particles.resize(sim.Np);
@@ -59,8 +82,8 @@ int main(){
       double amplitude = 0.001;
 
       int p = -1;
-      for(int i = 0; i < sim.Nx; i++){
-          for(int j = 0; j < sim.Ny; j++){
+      for(int i = 0; i < 10; i++){
+          for(int j = 0; j < 10; j++){
 
               p++;
               double px = (i+0.25)*sim.dx;

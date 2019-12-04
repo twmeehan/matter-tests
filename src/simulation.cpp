@@ -19,8 +19,8 @@ void Simulation::simulate(){
         t += dt;
         current_time_step++;
         std::cout << "Step: " << current_time_step << "    Time: " << t << std::endl;
-        //saveSim();
-        //saveGridVelocities();
+        saveSim();
+        saveGridVelocities();
         if (t >= T){
             std::cout << "The simulation ended successfully at time t = " << t << std::endl;
             break;
@@ -32,7 +32,7 @@ void Simulation::simulate(){
 
 void Simulation::advanceStep(){
     updateDt();
-    remesh();
+    //remesh();
     P2G();
     explicitEulerUpdate();
     G2P();
@@ -144,16 +144,21 @@ void Simulation::P2G(){
                     vxi  += particles_vx(p) * weight;
                     vyi  += particles_vy(p) * weight;
                 }
-            }
-            //debug(vxi);
+            } // end for particles
             grid_mass(i,j) = mass * particle_mass;
-            grid_VX(i,j)   = vxi  * particle_mass / mass;
-            grid_VY(i,j)   = vyi  * particle_mass / mass;
+            if (mass < 1e-15){
+                grid_VX(i,j)   = 0.0;
+                grid_VY(i,j)   = 0.0;
+            } else {
+                grid_VX(i,j)   = vxi  * particle_mass / mass;
+                grid_VY(i,j)   = vyi  * particle_mass / mass;
+            }
         } // end for j
     } // end for i
 
-    // if (current_time_step==0)
-    //     debug(grid_mass);
+    // if (current_time_step == 0)
+    //     debug(grid_VX);
+
     debug("               total grid mass = ", grid_mass.sum());
     debug("               total part mass = ", particle_mass*Np);
 
@@ -170,41 +175,43 @@ void Simulation::explicitEulerUpdate(){
     TM2 Fe, logSigma, invSigma, dPsidF;
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
-            double xi = grid_X(i,j);
-            double yi = grid_Y(i,j);
-            TV2 force = TV2::Zero();
-            for(int p=0; p<Np; p++){
-                double xp = particles_x(p);
-                double yp = particles_y(p);
-                if ( std::abs(xp-xi) < 2*dx || std::abs(xp-yi) < 2*dx){
-                    Fe = particles[p].F; // must update F!!
+            if (grid_mass(i,j) > 1e-15){
+                double xi = grid_X(i,j);
+                double yi = grid_Y(i,j);
+                TV2 force = TV2::Zero();
+                for(int p=0; p<Np; p++){
+                    double xp = particles_x(p);
+                    double yp = particles_y(p);
+                    if ( std::abs(xp-xi) < 2*dx || std::abs(xp-yi) < 2*dx){
+                        Fe = particles[p].F;
 
-                    Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
-                    sigma = svd.singularValues().array().abs().max(1e-4);
+                        Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
+                        sigma = svd.singularValues().array().abs().max(1e-4);
 
-                    // should optimize code by working in principal space
+                        // should optimize code by working in principal space
 
-                    logSigma = sigma.log().matrix().asDiagonal();
-                    invSigma = sigma.inverse().matrix().asDiagonal();
+                        logSigma = sigma.log().matrix().asDiagonal();
+                        invSigma = sigma.inverse().matrix().asDiagonal();
 
-                    // debug("sigma = \n", sigma);
-                    // debug("logSigma = \n", logSigma);
-                    // debug("invSigma = \n", invSigma);
+                        // debug("sigma = \n", sigma);
+                        // debug("logSigma = \n", logSigma);
+                        // debug("invSigma = \n", invSigma);
 
-                    dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
+                        dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
 
-                    grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
-                    grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
+                        grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
+                        grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
 
-                    force -= particle_volume * dPsidF * Fe.transpose() * grad_wip; // pull out particle volume and add gravity
-                }
-            }
-            TV2 velocity_increment = dt * force / grid_mass(i,j);
-            grid_VX(i,j) += velocity_increment(0);
-            grid_VY(i,j) += velocity_increment(1);
-        }
-    }
-}
+                        force -= particle_volume * dPsidF * Fe.transpose() * grad_wip; // pull out particle volume and add gravity
+                    }
+                } // end for particles
+                TV2 velocity_increment = dt * force / grid_mass(i,j);
+                grid_VX(i,j) += velocity_increment(0);
+                grid_VY(i,j) += velocity_increment(1);
+            } // end if positive mass
+        } // end for j
+    } // end for i
+} // end explicitEulerUpdate
 
 
 
@@ -278,6 +285,10 @@ void Simulation::positionUpdate(){
     for(int p=0; p<Np; p++){
         particles_x(p) = particles_x(p) + dt * particles_vx(p);
         particles_y(p) = particles_y(p) + dt * particles_vy(p);
+
+        if (particles_x(p) > 1.5 || particles_x(p) < -0.5 || particles_y(p) > 1.5 || particles_y(p) < -0.5){
+            debug("Particle goes outside bounding box!!!");
+        }
     } // end loop over particles
 
 

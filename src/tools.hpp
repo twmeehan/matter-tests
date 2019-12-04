@@ -43,7 +43,7 @@ inline double N(double x){
     }
 		else {
         return 0;
-		}
+	}
 }
 /*!
  \param u u
