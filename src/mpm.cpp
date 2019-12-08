@@ -22,14 +22,14 @@ int main(){
     ////////////// Unit box with 10 times dx = 0.1 ///////////////
     //////////////////////////////////////////////////////////////
 
-      sim.T = 0.0382773;
-      sim.max_time_steps = 200;
+      sim.T = 0.02;
+      sim.max_time_steps = 500;
       sim.dx = 0.1;
-      sim.rho = 700;
-      sim.setElasticParams(1e5, 0.3, sim.rho);
+      sim.rho = 1000;
+      sim.setElasticParams(1e7, 0.3, sim.rho);
       debug("dt_max = ", sim.dt_max);
 
-      sim.cfl = 0.5;
+      sim.cfl = 0.6;
       sim.dt = 1e-3;
       debug("dt     = ", sim.dt);
 
@@ -67,8 +67,12 @@ int main(){
       sim.Np = 10 * 10 * 4;
       debug("Np = ", sim.Np);
 
-      sim.particle_volume = 1.0 / sim.Np;
-      sim.particle_mass = sim.rho * 1.0 / sim.Np;
+      sim.particle_volume = 1.0 / sim.Np; // INITIAL particle volume V^0
+      sim.particle_mass = sim.rho * sim.particle_volume;
+
+      debug("particle_volume = ", sim.particle_volume);
+      debug("particle_mass = ", sim.particle_mass);
+
 
       Particle part;
       sim.particles.resize(sim.Np);
@@ -79,7 +83,7 @@ int main(){
       sim.particles_vx = Eigen::VectorXd::Zero(sim.Np);
       sim.particles_vy = Eigen::VectorXd::Zero(sim.Np);
 
-      double amplitude = 0.001;
+      double amplitude = 50;
 
       int p = -1;
       for(int i = 0; i < 10; i++){
@@ -88,8 +92,8 @@ int main(){
               p++;
               double px = (i+0.25)*sim.dx;
               double py = (j+0.25)*sim.dx;
-              double pvx = amplitude*std::sin(M_PI*px);
-              double pvy = amplitude*std::sin(M_PI*py);
+              double pvx = amplitude*std::sin( M_PI*(px-0.5) );
+              double pvy = amplitude*std::sin( M_PI*(py-0.5) );
               sim.particles_x(p) = px;
               sim.particles_y(p) = py;
               sim.particles_vx(p) = pvx;
@@ -98,8 +102,8 @@ int main(){
               p++;
               px = (i+0.75)*sim.dx;
               py = (j+0.75)*sim.dx;
-              pvx = amplitude*std::sin(M_PI*px);
-              pvy = amplitude*std::sin(M_PI*py);
+              pvx = amplitude*std::sin( M_PI*(px-0.5) );
+              pvy = amplitude*std::sin( M_PI*(py-0.5) );
               sim.particles_x(p) = px;
               sim.particles_y(p) = py;
               sim.particles_vx(p) = pvx;
@@ -108,8 +112,8 @@ int main(){
               p++;
               px = (i+0.25)*sim.dx;
               py = (j+0.75)*sim.dx;
-              pvx = amplitude*std::sin(M_PI*px);
-              pvy = amplitude*std::sin(M_PI*py);
+              pvx = amplitude*std::sin( M_PI*(px-0.5) );
+              pvy = amplitude*std::sin( M_PI*(py-0.5) );
               sim.particles_x(p) = px;
               sim.particles_y(p) = py;
               sim.particles_vx(p) = pvx;
@@ -118,8 +122,8 @@ int main(){
               p++;
               px = (i+0.75)*sim.dx;
               py = (j+0.25)*sim.dx;
-              pvx = amplitude*std::sin(M_PI*px);
-              pvy = amplitude*std::sin(M_PI*py);
+              pvx = amplitude*std::sin( M_PI*(px-0.5) );
+              pvy = amplitude*std::sin( M_PI*(py-0.5) );
               sim.particles_x(p) = px;
               sim.particles_y(p) = py;
               sim.particles_vx(p) = pvx;

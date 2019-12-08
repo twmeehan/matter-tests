@@ -12,13 +12,13 @@ void Simulation::simulate(){
     saveSim();
     saveGridVelocities();
     double t = 0;
-    for (int i = 0; i < max_time_steps; i++){
+    for (int i = 0; i < max_time_steps+1; i++){
+        std::cout << "Step: " << current_time_step << "    Time: " << t << std::endl;
         advanceStep();
         if (exit == 1)
             return;
         t += dt;
         current_time_step++;
-        std::cout << "Step: " << current_time_step << "    Time: " << t << std::endl;
         saveSim();
         saveGridVelocities();
         if (t >= T){
@@ -150,8 +150,8 @@ void Simulation::P2G(){
                 grid_VX(i,j)   = 0.0;
                 grid_VY(i,j)   = 0.0;
             } else {
-                grid_VX(i,j)   = vxi  * particle_mass / mass;
-                grid_VY(i,j)   = vyi  * particle_mass / mass;
+                grid_VX(i,j)   = vxi / mass;
+                grid_VY(i,j)   = vyi / mass;
             }
         } // end for j
     } // end for i
