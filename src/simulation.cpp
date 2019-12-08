@@ -138,7 +138,7 @@ void Simulation::P2G(){
                 //debug(p);
                 double xp = particles_x(p);
                 double yp = particles_y(p);
-                if ( std::abs(xp-xi) < 2*dx || std::abs(xp-yi) < 2*dx){
+                if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
                     double weight = wip(xp, yp, xi, yi, dx);
                     mass += weight;
                     vxi  += particles_vx(p) * weight;
@@ -182,7 +182,7 @@ void Simulation::explicitEulerUpdate(){
                 for(int p=0; p<Np; p++){
                     double xp = particles_x(p);
                     double yp = particles_y(p);
-                    if ( std::abs(xp-xi) < 2*dx || std::abs(xp-yi) < 2*dx){
+                    if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
                         Fe = particles[p].F;
 
                         Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
