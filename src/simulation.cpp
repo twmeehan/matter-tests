@@ -300,14 +300,14 @@ void Simulation::positionUpdate(){
 
 
 void Simulation::saveSim(){
-    std::ofstream outFile("out_" + std::to_string(current_time_step) + ".csv");
+    std::ofstream outFile("dumps/out_" + std::to_string(current_time_step) + ".csv");
     for(int p = 0; p < Np; p++){
         outFile << p << "," << particles_x[p] << "," << particles_y[p] << "," << particles_vx[p] << "," << particles_vy[p] << "\n";
     }
 }
 
 void Simulation::saveGridVelocities(){
-    std::ofstream outFile("out_gridvel_" + std::to_string(current_time_step) + ".csv");
+    std::ofstream outFile("dumps/out_gridvel_" + std::to_string(current_time_step) + ".csv");
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
             int k = i*Ny+j;
