@@ -186,11 +186,11 @@ void Simulation::explicitEulerUpdate(){
                         Fe = particles[p].F;
 
                         Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
-                        sigma = svd.singularValues().array().abs().max(1e-4);
+                        sigma = svd.singularValues().array(); // abs() for inverse also??
 
                         // should optimize code by working in principal space
 
-                        logSigma = sigma.log().matrix().asDiagonal();
+                        logSigma = sigma.abs().log().matrix().asDiagonal();
                         invSigma = sigma.inverse().matrix().asDiagonal();
 
                         // debug("sigma = \n", sigma);
@@ -227,7 +227,7 @@ void Simulation::G2P(){
             for(int j=0; j<Ny; j++){
                 double xi = grid_X(i,j);
                 double yi = grid_Y(i,j);
-                if ( std::abs(xp-xi) < 1.5*dx || std::abs(xp-yi) < 1.5*dx){
+                if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
                     double weight = wip(xp, yp, xi, yi, dx);
                     vxp += grid_VX(i,j) * weight;
                     vyp += grid_VY(i,j) * weight;
