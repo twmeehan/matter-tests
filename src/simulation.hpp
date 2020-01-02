@@ -18,8 +18,8 @@ public:
   Simulation() : current_time_step(0), exit(0) {};
   void setElasticParams(double E, double nu, double density);
   void simulate();
-  void saveSim();
-  void saveGridVelocities();
+  void saveSim(std::string extra = "");
+  void saveGridVelocities(std::string extra = "");
 
   unsigned int max_time_steps;
   unsigned int current_time_step;
@@ -48,7 +48,7 @@ public:
   Eigen::MatrixXd grid_VY;
   Eigen::MatrixXd grid_mass;
 
-private:
+//private:
 
   int exit;
 

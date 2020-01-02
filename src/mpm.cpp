@@ -133,6 +133,43 @@ int main(){
 
     /////////////////////////////////////////////////////////////
 
-    sim.simulate();
+//    sim.simulate();
+
+
+/*
+    sim.P2G();
+    sim.saveSim();
+    sim.saveGridVelocities();
+    sim.current_time_step++;
+
+    for (int i=0; i<50; i++){
+        sim.G2P();
+        sim.P2G();
+        sim.saveSim();
+        sim.saveGridVelocities();
+        sim.current_time_step++;
+    }
+*/
+
+
+    for (int i=0; i<50; i++){
+        sim.updateDt();
+        sim.P2G();
+        sim.saveGridVelocities("before_");
+        sim.explicitEulerUpdate();
+        sim.saveGridVelocities("after_");
+        sim.G2P();
+        sim.saveSim("before_");
+        sim.deformationUpdate();
+        sim.positionUpdate();
+        sim.saveSim("after_");
+        sim.current_time_step++;
+    }
+
+/*
+NB!!!!!!!!
+THE MISTAKE IS EITHER IN explicitEulerUpdate() OR deformationUpdate()
+*/
+
 	return 0;
 }

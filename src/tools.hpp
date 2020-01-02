@@ -56,12 +56,12 @@ inline double dNdu(double u){
     if (uabs < 0.5){
         return (-2*u);
     }
-		else if (uabs < 1.5){
+	else if (uabs < 1.5){
         return (-u);
     }
-		else {
+	else {
         return 0;
-		}
+	}
 }
 inline double wip(double xp, double yp, double xi, double yi, double h){
     return N( (xp - xi) / h ) * N( (yp - yi) / h );

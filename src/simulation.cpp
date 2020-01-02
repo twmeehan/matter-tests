@@ -247,8 +247,7 @@ void Simulation::G2P(){
 void Simulation::deformationUpdate(){
     for(int p=0; p<Np; p++){
 
-        TM2 Fe = particles[p].F;
-        TM2 Fe_new = Fe;
+        TM2 sum = TM2::Zero();
 
         double xp = particles_x(p);
         double yp = particles_y(p);
@@ -267,11 +266,12 @@ void Simulation::deformationUpdate(){
                 grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
                 grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
 
-                Fe_new += dt * (vi * grad_wip.transpose()) * Fe;
+                sum += vi * grad_wip.transpose();
             } // end loop i
         } // end loop j
 
-        particles[p].F = Fe_new;
+        TM2 Fe = particles[p].F;
+        particles[p].F = Fe + dt * sum * Fe;
 
     } // end loop over particles
 
@@ -299,15 +299,15 @@ void Simulation::positionUpdate(){
 
 
 
-void Simulation::saveSim(){
-    std::ofstream outFile("dumps/out_" + std::to_string(current_time_step) + ".csv");
+void Simulation::saveSim(std::string extra){
+    std::ofstream outFile("dumps/out_" + extra + std::to_string(current_time_step) + ".csv");
     for(int p = 0; p < Np; p++){
         outFile << p << "," << particles_x[p] << "," << particles_y[p] << "," << particles_vx[p] << "," << particles_vy[p] << "\n";
     }
 }
 
-void Simulation::saveGridVelocities(){
-    std::ofstream outFile("dumps/out_gridvel_" + std::to_string(current_time_step) + ".csv");
+void Simulation::saveGridVelocities(std::string extra){
+    std::ofstream outFile("dumps/out_gridvel_" + extra + std::to_string(current_time_step) + ".csv");
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
             int k = i*Ny+j;
