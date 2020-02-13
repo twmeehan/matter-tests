@@ -23,7 +23,7 @@ int main(){
     //////////////////////////////////////////////////////////////
 
       sim.T = 0.02;
-      sim.max_time_steps = 500;
+      sim.max_time_steps = 50;
       sim.dx = 0.1;
       sim.rho = 1000;
       sim.setElasticParams(1e7, 0.3, sim.rho);
@@ -133,9 +133,10 @@ int main(){
 
     /////////////////////////////////////////////////////////////
 
-//    sim.simulate();
+    sim.simulate();
 
 
+///////////// DEBUG 1: ////////////////
 /*
     sim.P2G();
     sim.saveSim();
@@ -151,20 +152,20 @@ int main(){
     }
 */
 
-
-    for (int i=0; i<50; i++){
-        sim.updateDt();
-        sim.P2G();
-        sim.saveGridVelocities("before_");
-        sim.explicitEulerUpdate();
-        sim.saveGridVelocities("after_");
-        sim.G2P();
-        sim.saveSim("before_");
-        sim.deformationUpdate();
-        sim.positionUpdate();
-        sim.saveSim("after_");
-        sim.current_time_step++;
-    }
+///////////// DEBUG 2: ////////////////
+    // for (int i=0; i<50; i++){
+    //     sim.updateDt();
+    //     sim.P2G();
+    //     sim.saveGridVelocities("before_");
+    //     sim.explicitEulerUpdate();
+    //     sim.saveGridVelocities("after_");
+    //     sim.G2P();
+    //     sim.saveSim("before_");
+    //     sim.deformationUpdate();
+    //     sim.positionUpdate();
+    //     sim.saveSim("after_");
+    //     sim.current_time_step++;
+    // }
 
 /*
 NB!!!!!!!!
