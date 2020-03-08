@@ -7,6 +7,7 @@
 
 typedef Eigen::Vector2d TV2;
 typedef Eigen::Matrix2d TM2;
+typedef double T;
 
 ///////////////////// TOOLS ////////////////////////
 
@@ -33,8 +34,8 @@ void debug(T in1, U in2, V in3, W in4, X in5){
 
  Quadratic spline basis function
 */
-inline double N(double x){
-    double xabs = std::abs(x);
+inline T N(T x){
+    T xabs = std::abs(x);
     if (xabs < 0.5){
         return 0.75 - xabs * xabs;
     }
@@ -51,8 +52,8 @@ inline double N(double x){
 
  Derivative of quadratic spline basis function
 */
-inline double dNdu(double u){
-    double uabs = std::abs(u);
+inline T dNdu(T u){
+    T uabs = std::abs(u);
     if (uabs < 0.5){
         return (-2*u);
     }
@@ -63,14 +64,14 @@ inline double dNdu(double u){
         return 0;
 	}
 }
-inline double wip(double xp, double yp, double xi, double yi, double h){
+inline T wip(T xp, T yp, T xi, T yi, T h){
     return N( (xp - xi) / h ) * N( (yp - yi) / h );
 }
 
-inline double gradx_wip(double xp, double yp, double xi, double yi, double h){
+inline T gradx_wip(T xp, T yp, T xi, T yi, T h){
     return ( dNdu((xp - xi) / h) *  N((yp - yi) / h) ) / h;
 }
-inline double grady_wip(double xp, double yp, double xi, double yi, double h){
+inline T grady_wip(T xp, T yp, T xi, T yi, T h){
     return ( dNdu((yp - yi) / h) *  N((xp - xi) / h) ) / h;
 }
 

@@ -16,24 +16,26 @@ typedef Eigen::Matrix2d TM2;
 class Simulation{
 public:
   Simulation() : current_time_step(0), exit(0) {};
-  void setElasticParams(double E, double nu, double density);
+  void setElasticParams(T E, T nu, T density);
   void simulate();
   void saveSim(std::string extra = "");
   void saveGridVelocities(std::string extra = "");
 
   unsigned int max_time_steps;
   unsigned int current_time_step;
-  double T;
-  double dt;
-  double dt_max;
-  double cfl;
-  double dx;
+  T final_time;
+  T dt;
+  T dt_max;
+  T wave_speed;
+  T cfl;
+  T dx;
 
-  double rho;
+  T rho;
+  TV2 gravity;
 
   unsigned int Np;
-  double particle_mass;
-  double particle_volume; // initial particle volume V0
+  T particle_mass;
+  T particle_volume; // initial particle volume V0
 
   std::vector<Particle> particles;
   Eigen::VectorXd particles_x;
@@ -52,8 +54,8 @@ public:
 
   int exit;
 
-  double mu;
-  double lambda;
+  T mu;
+  T lambda;
 
   void advanceStep();
 

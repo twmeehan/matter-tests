@@ -2,11 +2,13 @@
 //#include "csv2abc.hpp"
 
 // TODO:
-// 	* Fix type template for double/float
 //  * 3D
 //  * Cubic spline
-//  * adaptive timestepping
-//  * complete doxygen
+//  * Complete doxygen
+//  * Alembic output
+//  * Plastic model
+//  * Stationary and moving levelsets with BC
+//  * Fix St Venant Kirchhoff with Hencky strain
 
 //////////////////////////////////////////////////////////////////
 
@@ -22,29 +24,32 @@ int main(){
     ////////////// Unit box with 10 times dx = 0.1 ///////////////
     //////////////////////////////////////////////////////////////
 
-      sim.T = 0.02;
-      sim.max_time_steps = 50;
+      sim.final_time = 0.002;
+      sim.max_time_steps = 500;
       sim.dx = 0.1;
-      sim.rho = 1000;
+      sim.rho = 100;
       sim.setElasticParams(1e7, 0.3, sim.rho);
-      debug("dt_max = ", sim.dt_max);
+      debug("Wave speed = ", sim.wave_speed);
+      debug("dt_max     = ", sim.dt_max);
 
       sim.cfl = 0.6;
       sim.dt = 1e-3;
-      debug("dt     = ", sim.dt);
+      debug("dt         = ", sim.dt);
+
+      sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
 
       // N = (L / dx + 1)
       sim.Nx = 21;
       sim.Ny = 21;
 
       ////////////// If remesh every time step /////////////////
-      // sim.grid_X = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      // sim.grid_Y = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      // sim.grid_VX = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      // sim.grid_VY = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      // sim.grid_mass = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-
+      sim.grid_X = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+      sim.grid_Y = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+      sim.grid_VX = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+      sim.grid_VY = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+      sim.grid_mass = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
       ///////////////// If constant mesh ////////////////////////
+      /*
       Eigen::VectorXd lin_x = Eigen::VectorXd::LinSpaced(sim.Nx, -0.5, 1.5);
       Eigen::VectorXd lin_y = Eigen::VectorXd::LinSpaced(sim.Ny, -0.5, 1.5);
 
@@ -62,6 +67,7 @@ int main(){
       sim.grid_VX   = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
       sim.grid_VY   = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
       sim.grid_mass = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
+      */
       ////////////////////////////////////////////////////////////////
 
       sim.Np = 10 * 10 * 4;
@@ -83,17 +89,17 @@ int main(){
       sim.particles_vx = Eigen::VectorXd::Zero(sim.Np);
       sim.particles_vy = Eigen::VectorXd::Zero(sim.Np);
 
-      double amplitude = 50;
+      T amplitude = 100.0;
 
       int p = -1;
       for(int i = 0; i < 10; i++){
           for(int j = 0; j < 10; j++){
 
               p++;
-              double px = (i+0.25)*sim.dx;
-              double py = (j+0.25)*sim.dx;
-              double pvx = amplitude*std::sin( M_PI*(px-0.5) );
-              double pvy = amplitude*std::sin( M_PI*(py-0.5) );
+              T px = (i+0.25)*sim.dx;
+              T py = (j+0.25)*sim.dx;
+              T pvx = amplitude*std::sin( M_PI*(px-0.5) );
+              T pvy = amplitude*std::sin( M_PI*(py-0.5) );
               sim.particles_x(p) = px;
               sim.particles_y(p) = py;
               sim.particles_vx(p) = pvx;
@@ -135,6 +141,10 @@ int main(){
 
     sim.simulate();
 
+/*
+NB!!!!!!!!
+THERE IS MISTAKE IN explicitEulerUpdate() for St Venant Kirchhoff with Hencky strain
+*/
 
 ///////////// DEBUG 1: ////////////////
 /*
@@ -167,10 +177,7 @@ int main(){
     //     sim.current_time_step++;
     // }
 
-/*
-NB!!!!!!!!
-THE MISTAKE IS EITHER IN explicitEulerUpdate() OR deformationUpdate()
-*/
+
 
 	return 0;
 }

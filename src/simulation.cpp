@@ -1,17 +1,18 @@
 #include "simulation.hpp"
 #include "tools.hpp"
 
-void Simulation::setElasticParams(double E, double nu, double density){
+void Simulation::setElasticParams(T E, T nu, T density){
     mu = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
     lambda = E / (2.0*(1.0+nu));
     rho = density;
-    dt_max = 0.5 * dx * std::sqrt(rho/E);
+    wave_speed = std::sqrt(E/rho);
+    dt_max = 0.1 * dx / wave_speed ;
 }
 
 void Simulation::simulate(){
     saveSim();
     saveGridVelocities();
-    double t = 0;
+    T t = 0;
     for (int i = 0; i < max_time_steps+1; i++){
         std::cout << "Step: " << current_time_step << "    Time: " << t << std::endl;
         advanceStep();
@@ -21,7 +22,7 @@ void Simulation::simulate(){
         current_time_step++;
         saveSim();
         saveGridVelocities();
-        if (t >= T){
+        if (t >= final_time){
             std::cout << "The simulation ended successfully at time t = " << t << std::endl;
             break;
         }
@@ -32,7 +33,7 @@ void Simulation::simulate(){
 
 void Simulation::advanceStep(){
     updateDt();
-    //remesh();
+    remesh();
     P2G();
     explicitEulerUpdate();
     G2P();
@@ -45,8 +46,8 @@ void Simulation::advanceStep(){
 
 void Simulation::updateDt(){
 
-    double max_speed = std::sqrt((particles_vx.array().square() + particles_vy.array().square()).maxCoeff());
-    double dt_cfl = cfl * dx / max_speed;
+    T max_speed = std::sqrt((particles_vx.array().square() + particles_vy.array().square()).maxCoeff());
+    T dt_cfl = cfl * dx / max_speed;
     dt = std::min(dt_cfl, dt_max);
     debug("               dt_cfl = ", dt_cfl);
     debug("               dt_max = ", dt_max);
@@ -62,6 +63,11 @@ void Simulation::updateDt(){
         exit = 1;
         return;
     }
+    if (max_speed >= wave_speed){
+        debug("DETECTED SPEED LARGER THAN ELASTIC WAVE SPEED!!!");
+        exit = 1;
+        return;
+    }
 } // end updateDt
 
 
@@ -69,26 +75,31 @@ void Simulation::updateDt(){
 
 void Simulation::remesh(){
 
-    double min_x = particles_x.minCoeff();
-    double min_y = particles_y.minCoeff();
-    double max_x = particles_x.maxCoeff();
-    double max_y = particles_y.maxCoeff();
+    // ACTUAL min and max position of particles
+    T min_x = particles_x.minCoeff();
+    T min_y = particles_y.minCoeff();
+    T max_x = particles_x.maxCoeff();
+    T max_y = particles_y.maxCoeff();
 
-    double Lx = max_x - min_x;
-    double Ly = max_y - min_y;
+    // ACTUAL (old) side lengths
+    T Lx = max_x - min_x;
+    T Ly = max_y - min_y;
 
-    Nx = std::ceil(Lx / dx);
-    Ny = std::ceil(Ly / dx);
+    // ACTUAL midpoints of particles
+    T mid_x = min_x + Lx / 2.0;
+    T mid_y = min_y + Ly / 2.0;
 
-    double mid_x = min_x + Lx / 2.0;
-    double mid_y = min_y + Ly / 2.0;
+    // NEW number of grid-dx's per side length
+    unsigned int safety_factor = 1;
+    Nx = std::ceil(Lx / dx) + safety_factor;
+    Ny = std::ceil(Ly / dx) + safety_factor;
 
-    double low_x  = mid_x - Nx*dx/2.0;
-    double low_y  = mid_y - Ny*dx/2.0;
-    double high_x = mid_x + Nx*dx/2.0;
-    double high_y = mid_y + Ny*dx/2.0;
+    T low_x  = mid_x - Nx*dx/2.0;
+    T low_y  = mid_y - Ny*dx/2.0;
+    T high_x = mid_x + Nx*dx/2.0;
+    T high_y = mid_y + Ny*dx/2.0;
 
-    // N = (L / dx + 1)
+    // NEW grid dimensions N = (L / dx + 1)
     Nx++;
     Ny++;
 
@@ -110,14 +121,9 @@ void Simulation::remesh(){
     grid_X.transposeInPlace();
     grid_Y.transposeInPlace();
 
-    // if (current_time_step==0)
-    //     debug(grid_Y);
-
     grid_VX   = Eigen::MatrixXd::Zero(grid_X.rows(), grid_X.cols());
     grid_VY   = Eigen::MatrixXd::Zero(grid_X.rows(), grid_X.cols());
     grid_mass = Eigen::MatrixXd::Zero(grid_X.rows(), grid_X.cols());
-
-    // debug("hello");
 
 }
 
@@ -129,17 +135,17 @@ void Simulation::P2G(){
         //debug("i = ", i);
         for(int j=0; j<Ny; j++){
             //debug("j = ", j);
-            double xi = grid_X(i,j);
-            double yi = grid_Y(i,j);
-            double vxi = 0;
-            double vyi = 0;
-            double mass = 0;
+            T xi = grid_X(i,j);
+            T yi = grid_Y(i,j);
+            T vxi = 0;
+            T vyi = 0;
+            T mass = 0;
             for(int p=0; p<Np; p++){
                 //debug(p);
-                double xp = particles_x(p);
-                double yp = particles_y(p);
+                T xp = particles_x(p);
+                T yp = particles_y(p);
                 if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
-                    double weight = wip(xp, yp, xi, yi, dx);
+                    T weight = wip(xp, yp, xi, yi, dx);
                     mass += weight;
                     vxi  += particles_vx(p) * weight;
                     vyi  += particles_vy(p) * weight;
@@ -171,41 +177,50 @@ void Simulation::P2G(){
 
 void Simulation::explicitEulerUpdate(){
     TV2 grad_wip;
-    Eigen::Array2d sigma;
-    TM2 Fe, logSigma, invSigma, dPsidF;
+    TM2 Fe, dPsidF;
+
+    // Only for St Venant Kirchhoff
+    //TM2 logSigma, invSigma; Eigen::Array2d sigma;
+
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
             if (grid_mass(i,j) > 1e-15){
-                double xi = grid_X(i,j);
-                double yi = grid_Y(i,j);
+                T xi = grid_X(i,j);
+                T yi = grid_Y(i,j);
                 TV2 force = TV2::Zero();
                 for(int p=0; p<Np; p++){
-                    double xp = particles_x(p);
-                    double yp = particles_y(p);
+                    T xp = particles_x(p);
+                    T yp = particles_y(p);
                     if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
                         Fe = particles[p].F;
 
-                        Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
-                        sigma = svd.singularValues().array(); // abs() for inverse also??
+                        // Remember:
+                        // P = dPsidF              (first Piola-Kirchhoff stress tensor)
+                        // tau = P * F.transpose() (Kirchhoff stress tensor)
 
-                        // should optimize code by working in principal space
+                        /////// St Venant Kirchhoff with Hencky strain ///////////////
+                        // Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
+                        // sigma = svd.singularValues().array(); // abs() for inverse also??
+                        // // should optimize code by working in principal space
+                        // logSigma = sigma.abs().log().matrix().asDiagonal();
+                        // invSigma = sigma.inverse().matrix().asDiagonal();
+                        // // debug("sigma = \n", sigma);
+                        // // debug("logSigma = \n", logSigma);
+                        // // debug("invSigma = \n", invSigma);
+                        // dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
+                        ///////////////////////////////////////////////////////////////
 
-                        logSigma = sigma.abs().log().matrix().asDiagonal();
-                        invSigma = sigma.inverse().matrix().asDiagonal();
-
-                        // debug("sigma = \n", sigma);
-                        // debug("logSigma = \n", logSigma);
-                        // debug("invSigma = \n", invSigma);
-
-                        dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
+                        ////////////// Neo-Hookean ////////////////////////////////////
+                        dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
+                        ///////////////////////////////////////////////////////////////
 
                         grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
                         grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
 
-                        force -= particle_volume * dPsidF * Fe.transpose() * grad_wip; // pull out particle volume and add gravity
+                        force += dPsidF * Fe.transpose() * grad_wip;
                     }
                 } // end for particles
-                TV2 velocity_increment = dt * force / grid_mass(i,j);
+                TV2 velocity_increment = -dt * particle_volume * force / grid_mass(i,j) + dt * gravity;
                 grid_VX(i,j) += velocity_increment(0);
                 grid_VY(i,j) += velocity_increment(1);
             } // end if positive mass
@@ -219,16 +234,16 @@ void Simulation::explicitEulerUpdate(){
 
 void Simulation::G2P(){
     for(int p=0; p<Np; p++){
-        double xp = particles_x(p);
-        double yp = particles_y(p);
-        double vxp = 0;
-        double vyp = 0;
+        T xp = particles_x(p);
+        T yp = particles_y(p);
+        T vxp = 0;
+        T vyp = 0;
         for(int i=0; i<Nx; i++){
             for(int j=0; j<Ny; j++){
-                double xi = grid_X(i,j);
-                double yi = grid_Y(i,j);
+                T xi = grid_X(i,j);
+                T yi = grid_Y(i,j);
                 if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
-                    double weight = wip(xp, yp, xi, yi, dx);
+                    T weight = wip(xp, yp, xi, yi, dx);
                     vxp += grid_VX(i,j) * weight;
                     vyp += grid_VY(i,j) * weight;
                 }
@@ -249,14 +264,14 @@ void Simulation::deformationUpdate(){
 
         TM2 sum = TM2::Zero();
 
-        double xp = particles_x(p);
-        double yp = particles_y(p);
+        T xp = particles_x(p);
+        T yp = particles_y(p);
 
         for(int i=0; i<Nx; i++){
             for(int j=0; j<Ny; j++){
 
-                double xi = grid_X(i,j);
-                double yi = grid_Y(i,j);
+                T xi = grid_X(i,j);
+                T yi = grid_Y(i,j);
 
                 TV2 vi;
                 vi(0) = grid_VX(i,j);
