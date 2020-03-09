@@ -1,29 +1,88 @@
 #include "simulation.hpp"
-#include "tools.hpp"
 
-void Simulation::setElasticParams(T E, T nu, T density){
+Simulation::Simulation(){
+    current_time_step = 0;
+    time = 0;
+    frame = 0;
+    dt = 1e-3; // just initial guess
+    exit = 0;
+
+    // N = (L / dx + 1)
+    Nx = 21;
+    Ny = 21;
+
+    ////////////// If remesh every time step /////////////////
+    grid_X    = TMX::Zero(Nx, Ny);
+    grid_Y    = TMX::Zero(Nx, Ny);
+    grid_VX   = TMX::Zero(Nx, Ny);
+    grid_VY   = TMX::Zero(Nx, Ny);
+    grid_mass = TMX::Zero(Nx, Ny);
+    ///////////////// If constant mesh ////////////////////////
+    /*
+    TVX lin_x = TVX::LinSpaced(sim.Nx, -0.5, 1.5);
+    TVX lin_y = TVX::LinSpaced(sim.Ny, -0.5, 1.5);
+
+    sim.grid_X.resize(sim.Ny, sim.Nx);
+    sim.grid_Y.resize(sim.Ny, sim.Nx);
+    for (int i = 0; i < sim.Ny; ++i) {
+      sim.grid_X.row(i) = lin_x.transpose();
+    }
+    for (int j = 0; j < sim.Nx; ++j) {
+      sim.grid_Y.col(j) = lin_y;
+    }
+    sim.grid_X.transposeInPlace();
+    sim.grid_Y.transposeInPlace();
+
+    sim.grid_VX   = TMX::Zero(sim.Nx, sim.Ny);
+    sim.grid_VY   = TMX::Zero(sim.Nx, sim.Ny);
+    sim.grid_mass = TMX::Zero(sim.Nx, sim.Ny);
+    */
+    ////////////////////////////////////////////////////////////////
+}
+
+void Simulation::initialize(T E, T nu, T density){
     mu = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
     lambda = E / (2.0*(1.0+nu));
     rho = density;
+
     wave_speed = std::sqrt(E/rho);
     dt_max = 0.1 * dx / wave_speed ;
+
+    particle_volume = 1.0 / Np; // INITIAL particle volume V^0
+    particle_mass = rho * particle_volume;
+
+    // Particle part;
+    // sim.particles.resize(sim.Np);
+    // std::fill(sim.particles.begin(), sim.particles.end(), part);
+    particles_F.resize(Np);
+    std::fill(particles_F.begin(), particles_F.end(), TM2::Identity());
+
+    particles_x  = TVX::Zero(Np);
+    particles_y  = TVX::Zero(Np);
+    particles_vx = TVX::Zero(Np);
+    particles_vy = TVX::Zero(Np);
 }
 
 void Simulation::simulate(){
+    time = 0;
+    frame = 0;
+    final_time = end_frame * frame_dt;
     saveSim();
     saveGridVelocities();
-    T t = 0;
-    for (int i = 0; i < max_time_steps+1; i++){
-        std::cout << "Step: " << current_time_step << "    Time: " << t << std::endl;
+    while (frame < end_frame){
+        std::cout << "Step: " << current_time_step << "    Time: " << time << std::endl;
         advanceStep();
         if (exit == 1)
             return;
-        t += dt;
+        time += dt;
         current_time_step++;
-        saveSim();
-        saveGridVelocities();
-        if (t >= final_time){
-            std::cout << "The simulation ended successfully at time t = " << t << std::endl;
+        if( std::abs(time - frame_dt*(frame+1)) < 1e-15 ){
+            frame++;
+            saveSim();
+            saveGridVelocities();
+        }
+        if (std::abs(final_time-time) < 1e-15 || final_time < time){
+            std::cout << "The simulation ended successfully at time = " << time << std::endl;
             break;
         }
     }
@@ -49,6 +108,8 @@ void Simulation::updateDt(){
     T max_speed = std::sqrt((particles_vx.array().square() + particles_vy.array().square()).maxCoeff());
     T dt_cfl = cfl * dx / max_speed;
     dt = std::min(dt_cfl, dt_max);
+    dt = std::min(dt, frame_dt*(frame+1) - time);
+    dt = std::min(dt, final_time         - time);
     debug("               dt_cfl = ", dt_cfl);
     debug("               dt_max = ", dt_max);
     debug("               dt     = ", dt    );
@@ -106,8 +167,8 @@ void Simulation::remesh(){
     debug("               grid   = (", Nx, ", ", Ny, ")");
 
     // Linspace x and y
-    Eigen::VectorXd lin_x = Eigen::VectorXd::LinSpaced(Nx, low_x, high_x);
-    Eigen::VectorXd lin_y = Eigen::VectorXd::LinSpaced(Ny, low_y, high_y);
+    TVX lin_x = TVX::LinSpaced(Nx, low_x, high_x);
+    TVX lin_y = TVX::LinSpaced(Ny, low_y, high_y);
 
     // Meshgrid
     grid_X.resize(Ny, Nx);
@@ -121,9 +182,9 @@ void Simulation::remesh(){
     grid_X.transposeInPlace();
     grid_Y.transposeInPlace();
 
-    grid_VX   = Eigen::MatrixXd::Zero(grid_X.rows(), grid_X.cols());
-    grid_VY   = Eigen::MatrixXd::Zero(grid_X.rows(), grid_X.cols());
-    grid_mass = Eigen::MatrixXd::Zero(grid_X.rows(), grid_X.cols());
+    grid_VX   = TMX::Zero(grid_X.rows(), grid_X.cols());
+    grid_VY   = TMX::Zero(grid_X.rows(), grid_X.cols());
+    grid_mass = TMX::Zero(grid_X.rows(), grid_X.cols());
 
 }
 
@@ -192,7 +253,8 @@ void Simulation::explicitEulerUpdate(){
                     T xp = particles_x(p);
                     T yp = particles_y(p);
                     if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
-                        Fe = particles[p].F;
+                        // Fe = particles[p].F;
+                        Fe = particles_F[p];
 
                         // Remember:
                         // P = dPsidF              (first Piola-Kirchhoff stress tensor)
@@ -285,8 +347,10 @@ void Simulation::deformationUpdate(){
             } // end loop i
         } // end loop j
 
-        TM2 Fe = particles[p].F;
-        particles[p].F = Fe + dt * sum * Fe;
+        // TM2 Fe = particles[p].F;
+        // particles[p].F = Fe + dt * sum * Fe;
+        TM2 Fe = particles_F[p];
+        particles_F[p] = Fe + dt * sum * Fe;
 
     } // end loop over particles
 
@@ -315,14 +379,14 @@ void Simulation::positionUpdate(){
 
 
 void Simulation::saveSim(std::string extra){
-    std::ofstream outFile("dumps/out_" + extra + std::to_string(current_time_step) + ".csv");
+    std::ofstream outFile("dumps/out_part_frame_" + extra + std::to_string(frame) + ".csv");
     for(int p = 0; p < Np; p++){
         outFile << p << "," << particles_x[p] << "," << particles_y[p] << "," << particles_vx[p] << "," << particles_vy[p] << "\n";
     }
 }
 
 void Simulation::saveGridVelocities(std::string extra){
-    std::ofstream outFile("dumps/out_gridvel_" + extra + std::to_string(current_time_step) + ".csv");
+    std::ofstream outFile("dumps/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
             int k = i*Ny+j;

@@ -5,9 +5,14 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
-typedef Eigen::Vector2d TV2;
-typedef Eigen::Matrix2d TM2;
-typedef double T;
+/// FLOAT OR DOUBLE ////
+typedef float T;
+////////////////////////
+typedef Eigen::Matrix<T, 2, 2> TM2;
+typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> TMX;
+typedef Eigen::Matrix<T, 2, 1> TV2;
+typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TVX;
+
 
 ///////////////////// TOOLS ////////////////////////
 

@@ -13,81 +13,28 @@
 //////////////////////////////////////////////////////////////////
 
 int main(){
-    std::cout << "This is Larsie" << std::endl;
+      std::cout << "This is Larsie" << std::endl;
 
-    //csv2abc("test.abc");
-    //return 0;
+      //csv2abc("test.abc");
+      //return 0;
 
-    Simulation sim;
+      Simulation sim;
 
-    //////////////////////////////////////////////////////////////
-    ////////////// Unit box with 10 times dx = 0.1 ///////////////
-    //////////////////////////////////////////////////////////////
-
-      sim.final_time = 0.002;
-      sim.max_time_steps = 500;
-      sim.dx = 0.1;
-      sim.rho = 100;
-      sim.setElasticParams(1e7, 0.3, sim.rho);
-      debug("Wave speed = ", sim.wave_speed);
-      debug("dt_max     = ", sim.dt_max);
-
-      sim.cfl = 0.6;
-      sim.dt = 1e-3;
-      debug("dt         = ", sim.dt);
+      sim.end_frame = 20;
+      sim.frame_dt = 0.0001;
 
       sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
+      sim.cfl = 0.6;
 
-      // N = (L / dx + 1)
-      sim.Nx = 21;
-      sim.Ny = 21;
-
-      ////////////// If remesh every time step /////////////////
-      sim.grid_X = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      sim.grid_Y = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      sim.grid_VX = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      sim.grid_VY = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      sim.grid_mass = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      ///////////////// If constant mesh ////////////////////////
-      /*
-      Eigen::VectorXd lin_x = Eigen::VectorXd::LinSpaced(sim.Nx, -0.5, 1.5);
-      Eigen::VectorXd lin_y = Eigen::VectorXd::LinSpaced(sim.Ny, -0.5, 1.5);
-
-      sim.grid_X.resize(sim.Ny, sim.Nx);
-      sim.grid_Y.resize(sim.Ny, sim.Nx);
-      for (int i = 0; i < sim.Ny; ++i) {
-        sim.grid_X.row(i) = lin_x.transpose();
-      }
-      for (int j = 0; j < sim.Nx; ++j) {
-        sim.grid_Y.col(j) = lin_y;
-      }
-      sim.grid_X.transposeInPlace();
-      sim.grid_Y.transposeInPlace();
-
-      sim.grid_VX   = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      sim.grid_VY   = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      sim.grid_mass = Eigen::MatrixXd::Zero(sim.Nx, sim.Ny);
-      */
-      ////////////////////////////////////////////////////////////////
-
+      sim.dx = 0.1;
       sim.Np = 10 * 10 * 4;
-      debug("Np = ", sim.Np);
 
-      sim.particle_volume = 1.0 / sim.Np; // INITIAL particle volume V^0
-      sim.particle_mass = sim.rho * sim.particle_volume;
-
+      sim.initialize(/* E */ 1e7, /* nu */ 0.3, /* rho */ 100);
+      debug("Wave speed      = ", sim.wave_speed);
+      debug("dt_max          = ", sim.dt_max);
       debug("particle_volume = ", sim.particle_volume);
-      debug("particle_mass = ", sim.particle_mass);
-
-
-      Particle part;
-      sim.particles.resize(sim.Np);
-      std::fill(sim.particles.begin(), sim.particles.end(), part);
-
-      sim.particles_x  = Eigen::VectorXd::Zero(sim.Np);
-      sim.particles_y  = Eigen::VectorXd::Zero(sim.Np);
-      sim.particles_vx = Eigen::VectorXd::Zero(sim.Np);
-      sim.particles_vy = Eigen::VectorXd::Zero(sim.Np);
+      debug("particle_mass   = ", sim.particle_mass);
+      debug("Np              = ", sim.Np);
 
       T amplitude = 100.0;
 
@@ -136,46 +83,50 @@ int main(){
               sim.particles_vy(p) = pvy;
           } // end for i
       } // end for j
-
+      debug("Added particles = ", p);
+      if ((p+1) != sim.Np){
+          debug("Particle number mismatch!!!");
+          return 0;
+      }
     /////////////////////////////////////////////////////////////
 
     sim.simulate();
 
-/*
-NB!!!!!!!!
-THERE IS MISTAKE IN explicitEulerUpdate() for St Venant Kirchhoff with Hencky strain
-*/
+    /*
+    NB!!!!!!!!
+    THERE IS MISTAKE IN explicitEulerUpdate() for St Venant Kirchhoff with Hencky strain
+    */
 
-///////////// DEBUG 1: ////////////////
-/*
-    sim.P2G();
-    sim.saveSim();
-    sim.saveGridVelocities();
-    sim.current_time_step++;
-
-    for (int i=0; i<50; i++){
-        sim.G2P();
+    ///////////// DEBUG 1: ////////////////
+    /*
         sim.P2G();
         sim.saveSim();
         sim.saveGridVelocities();
         sim.current_time_step++;
-    }
-*/
 
-///////////// DEBUG 2: ////////////////
-    // for (int i=0; i<50; i++){
-    //     sim.updateDt();
-    //     sim.P2G();
-    //     sim.saveGridVelocities("before_");
-    //     sim.explicitEulerUpdate();
-    //     sim.saveGridVelocities("after_");
-    //     sim.G2P();
-    //     sim.saveSim("before_");
-    //     sim.deformationUpdate();
-    //     sim.positionUpdate();
-    //     sim.saveSim("after_");
-    //     sim.current_time_step++;
-    // }
+        for (int i=0; i<50; i++){
+            sim.G2P();
+            sim.P2G();
+            sim.saveSim();
+            sim.saveGridVelocities();
+            sim.current_time_step++;
+        }
+    */
+
+    ///////////// DEBUG 2: ////////////////
+        // for (int i=0; i<50; i++){
+        //     sim.updateDt();
+        //     sim.P2G();
+        //     sim.saveGridVelocities("before_");
+        //     sim.explicitEulerUpdate();
+        //     sim.saveGridVelocities("after_");
+        //     sim.G2P();
+        //     sim.saveSim("before_");
+        //     sim.deformationUpdate();
+        //     sim.positionUpdate();
+        //     sim.saveSim("after_");
+        //     sim.current_time_step++;
+        // }
 
 
 

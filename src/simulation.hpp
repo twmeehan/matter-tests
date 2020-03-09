@@ -8,22 +8,23 @@
 #include <Eigen/Dense>
 #include <vector>
 #include "tools.hpp"
-#include "particle.hpp"
-
-typedef Eigen::Vector2d TV2;
-typedef Eigen::Matrix2d TM2;
+//#include "particle.hpp"
 
 class Simulation{
 public:
-  Simulation() : current_time_step(0), exit(0) {};
-  void setElasticParams(T E, T nu, T density);
+  //Simulation() : current_time_step(0), exit(0) {};
+  Simulation();
+  void initialize(T E, T nu, T density);
   void simulate();
   void saveSim(std::string extra = "");
   void saveGridVelocities(std::string extra = "");
 
-  unsigned int max_time_steps;
   unsigned int current_time_step;
+  unsigned int frame;
+  unsigned int end_frame;
+  T time;
   T final_time;
+  T frame_dt;
   T dt;
   T dt_max;
   T wave_speed;
@@ -37,18 +38,19 @@ public:
   T particle_mass;
   T particle_volume; // initial particle volume V0
 
-  std::vector<Particle> particles;
-  Eigen::VectorXd particles_x;
-  Eigen::VectorXd particles_y;
-  Eigen::VectorXd particles_vx;
-  Eigen::VectorXd particles_vy;
+  //std::vector<Particle> particles;
+  std::vector<TM2> particles_F;
+  TVX particles_x;
+  TVX particles_y;
+  TVX particles_vx;
+  TVX particles_vy;
 
   unsigned int Nx, Ny;
-  Eigen::MatrixXd grid_X;
-  Eigen::MatrixXd grid_Y;
-  Eigen::MatrixXd grid_VX;
-  Eigen::MatrixXd grid_VY;
-  Eigen::MatrixXd grid_mass;
+  TMX grid_X;
+  TMX grid_Y;
+  TMX grid_VX;
+  TMX grid_VY;
+  TMX grid_mass;
 
 //private:
 

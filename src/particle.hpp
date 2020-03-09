@@ -3,9 +3,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
-
-typedef Eigen::Vector2d TV2;
-typedef Eigen::Matrix2d TM2;
+#include "tools.hpp"
 
 class Particle{
 public:
