@@ -1,12 +1,17 @@
 #include "simulation.hpp"
 //#include "csv2abc.hpp"
 
+// Remember to cmake with Release!!!
+
 // TODO:
 //  * 3D
 //  * Cubic spline
 //  * Complete doxygen
 //  * Alembic output
+//  * FLIP
 //  * Stationary and moving levelsets with BC
+//  * External body force dep on Lagrangian coordinates
+//  * Laplace of splines and regularization
 
 //////////////////////////////////////////////////////////////////
 
