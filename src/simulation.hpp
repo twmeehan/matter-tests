@@ -52,12 +52,13 @@ public:
   TMX grid_VY;
   TMX grid_mass;
 
-//private:
-
   int exit;
 
   T mu;
   T lambda;
+
+  bool plasticity;
+  T yield_stress;
 
   void advanceStep();
 

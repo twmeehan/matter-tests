@@ -12,6 +12,7 @@ typedef Eigen::Matrix<T, 2, 2> TM2;
 typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> TMX;
 typedef Eigen::Matrix<T, 2, 1> TV2;
 typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TVX;
+typedef Eigen::Array<T,2,1> TA2;
 
 
 ///////////////////// TOOLS ////////////////////////
@@ -28,6 +29,11 @@ template <typename T, typename U, typename V>
 void debug(T in1, U in2, V in3){
   std::cout << in1 << in2 << in3 << std::endl;
 }
+template <typename T, typename U, typename V, typename W>
+void debug(T in1, U in2, V in3, W in4){
+  std::cout << in1 << in2 << in3 << in4 << std::endl;
+}
+
 template <typename T, typename U, typename V, typename W, typename X>
 void debug(T in1, U in2, V in3, W in4, X in5){
   std::cout << in1 << in2 << in3 << in4 << in5 << std::endl;

@@ -241,7 +241,7 @@ void Simulation::explicitEulerUpdate(){
     TM2 Fe, dPsidF;
 
     // Only for St Venant Kirchhoff
-    //TM2 logSigma, invSigma; Eigen::Array2d sigma;
+    TM2 logSigma, invSigma; TA2 sigma;
 
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
@@ -261,19 +261,15 @@ void Simulation::explicitEulerUpdate(){
                         // tau = P * F.transpose() (Kirchhoff stress tensor)
 
                         /////// St Venant Kirchhoff with Hencky strain ///////////////
-                        // Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
-                        // sigma = svd.singularValues().array(); // abs() for inverse also??
-                        // // should optimize code by working in principal space
-                        // logSigma = sigma.abs().log().matrix().asDiagonal();
-                        // invSigma = sigma.inverse().matrix().asDiagonal();
-                        // // debug("sigma = \n", sigma);
-                        // // debug("logSigma = \n", logSigma);
-                        // // debug("invSigma = \n", invSigma);
-                        // dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
+                        Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
+                        sigma = svd.singularValues().array(); // abs() for inverse also??
+                        logSigma = sigma.abs().log().matrix().asDiagonal();
+                        invSigma = sigma.inverse().matrix().asDiagonal();
+                        dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
                         ///////////////////////////////////////////////////////////////
 
                         ////////////// Neo-Hookean ////////////////////////////////////
-                        dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
+                        // dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
                         ///////////////////////////////////////////////////////////////
 
                         grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
@@ -322,6 +318,7 @@ void Simulation::G2P(){
 
 
 void Simulation::deformationUpdate(){
+    unsigned int plastic_count = 0;
     for(int p=0; p<Np; p++){
 
         TM2 sum = TM2::Zero();
@@ -349,10 +346,29 @@ void Simulation::deformationUpdate(){
 
         // TM2 Fe = particles[p].F;
         // particles[p].F = Fe + dt * sum * Fe;
-        TM2 Fe = particles_F[p];
-        particles_F[p] = Fe + dt * sum * Fe;
+        TM2 Fe_trial = particles_F[p];
+        Fe_trial = Fe_trial + dt * sum * Fe_trial;
+        particles_F[p] = Fe_trial;
+
+        if (plasticity){
+            Eigen::JacobiSVD<TM2> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
+            TV2 hencky_trial = svd.singularValues().array().log(); // Jixie does not use abs value, however Pradhana-thesis does.
+            T   hencky_trial_trace = hencky_trial.sum();
+            TV2 hencky_trial_deviatoric = hencky_trial - (hencky_trial_trace / 2.0) * TV2::Ones();
+            T   hencky_trial_deviatoric_norm = hencky_trial_deviatoric.norm();
+
+            // Von Mises:
+            T delta_gamma = hencky_trial_deviatoric_norm - yield_stress / (2 * mu);
+            if (delta_gamma > 0){ // project to yield surface
+                plastic_count++;
+                TV2 hencky_new = hencky_trial - delta_gamma * (hencky_trial_deviatoric / hencky_trial_deviatoric_norm);
+                particles_F[p] = svd.matrixU() * hencky_new.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+            }
+        }
 
     } // end loop over particles
+
+    debug("               projected particles = ", plastic_count, " / ", Np);
 
 } // end deformationUpdate
 
@@ -381,7 +397,7 @@ void Simulation::positionUpdate(){
 void Simulation::saveSim(std::string extra){
     std::ofstream outFile("dumps/out_part_frame_" + extra + std::to_string(frame) + ".csv");
     for(int p = 0; p < Np; p++){
-        outFile << p << "," << particles_x[p] << "," << particles_y[p] << "," << particles_vx[p] << "," << particles_vy[p] << "\n";
+        outFile << particles_x[p] << "," << particles_y[p] << "," << 0 << "," << particles_vx[p] << "," << particles_vy[p] << "," << 0 << "\n";
     }
 }
 
@@ -390,7 +406,7 @@ void Simulation::saveGridVelocities(std::string extra){
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
             int k = i*Ny+j;
-            outFile << k << "," << grid_X(i,j) << "," << grid_Y(i,j) << "," << grid_VX(i,j) << "," << grid_VY(i,j) << "\n";
+            outFile << grid_X(i,j) << "," << grid_Y(i,j) << "," << 0 << "," << grid_VX(i,j) << "," << grid_VY(i,j) << "," << 0 << "\n";
         }
     }
 }

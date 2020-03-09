@@ -6,9 +6,7 @@
 //  * Cubic spline
 //  * Complete doxygen
 //  * Alembic output
-//  * Plastic model
 //  * Stationary and moving levelsets with BC
-//  * Fix St Venant Kirchhoff with Hencky strain
 
 //////////////////////////////////////////////////////////////////
 
@@ -28,6 +26,9 @@ int main(){
 
       sim.dx = 0.1;
       sim.Np = 10 * 10 * 4;
+
+      sim.plasticity = true;
+      sim.yield_stress = std::sqrt(2.0/3.0) * /* q_max */ 50000.0;
 
       sim.initialize(/* E */ 1e7, /* nu */ 0.3, /* rho */ 100);
       debug("Wave speed      = ", sim.wave_speed);
@@ -93,9 +94,6 @@ int main(){
     sim.simulate();
 
     /*
-    NB!!!!!!!!
-    THERE IS MISTAKE IN explicitEulerUpdate() for St Venant Kirchhoff with Hencky strain
-    */
 
     ///////////// DEBUG 1: ////////////////
     /*
