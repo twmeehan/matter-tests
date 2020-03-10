@@ -24,7 +24,7 @@ int main(){
 
       Simulation sim;
 
-      sim.end_frame = 5;
+      sim.end_frame = 20;
       sim.frame_dt = 1.0 / 1000.0;
 
       sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
@@ -49,8 +49,8 @@ int main(){
       debug("particle_mass   = ", sim.particle_mass);
       debug("Np              = ", sim.Np);
 
-      std::vector<T> disp_i = {0.25, 0.75, 0.25, 0.75};
-      std::vector<T> disp_j = {0.25, 0.75, 0.75, 0.25};
+      std::vector<T> disp_i(4); disp_i[0] = 0.25; disp_i[1] = 0.75; disp_i[2] = 0.25; disp_i[3] = 0.75;
+      std::vector<T> disp_j(4); disp_j[0] = 0.25; disp_j[1] = 0.75; disp_j[2] = 0.75; disp_j[3] = 0.25;
       int p = -1;
       for(int i = 0; i < Nloop; i++){
           for(int j = 0; j < Nloop; j++){

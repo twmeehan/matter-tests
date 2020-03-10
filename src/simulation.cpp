@@ -33,7 +33,7 @@ void Simulation::initialize(T E, T nu, T density){
     rho = density;
 
     wave_speed = std::sqrt(E/rho);
-    dt_max = 0.1 * dx / wave_speed ;
+    dt_max = 0.1 * dx / wave_speed;
 
     particle_volume = 1.0 / Np; // INITIAL particle volume V^0
     particle_mass = rho * particle_volume;
@@ -85,7 +85,7 @@ void Simulation::advanceStep(){
     calculateMomentumOnParticles();
     P2G();
     calculateMomentumOnGrid();
-    // explicitEulerUpdate();
+    explicitEulerUpdate();
     calculateMomentumOnGrid();
     G2P();
     calculateMomentumOnParticles();
@@ -387,7 +387,7 @@ void Simulation::deformationUpdate(){
             }
         }
 
-        debug("               Fe_new = \n", particles_F[p]);
+        // debug("               Fe_new = \n", particles_F[p]);
 
     } // end loop over particles
 
