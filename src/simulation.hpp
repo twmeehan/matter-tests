@@ -38,16 +38,17 @@ public:
   T particle_mass;
   T particle_volume; // initial particle volume V0
 
-  //std::vector<Particle> particles;
   std::vector<TM2> particles_F;
   TVX particles_x;
   TVX particles_y;
+  TVX particles_x0;
+  TVX particles_y0;
   TVX particles_vx;
   TVX particles_vy;
 
   unsigned int Nx, Ny;
-  TMX grid_X;
-  TMX grid_Y;
+  TVX lin_X;
+  TVX lin_Y;
   TMX grid_VX;
   TMX grid_VY;
   TMX grid_mass;
@@ -57,6 +58,9 @@ public:
   T mu;
   T lambda;
 
+  T amplitude;
+
+  bool neoHookean;
   bool plasticity;
   T yield_stress;
 
@@ -70,6 +74,11 @@ public:
   void G2P();
   void deformationUpdate();
   void positionUpdate();
+
+  void calculateMomentumOnParticles();
+  void calculateMomentumOnGrid();
+  void addExternalGravity();
+
 
 }; // END Simulation class
 

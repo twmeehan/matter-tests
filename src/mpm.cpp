@@ -1,8 +1,6 @@
 #include "simulation.hpp"
 //#include "csv2abc.hpp"
 
-// Remember to cmake with Release!!!
-
 // TODO:
 //  * 3D
 //  * Cubic spline
@@ -12,7 +10,10 @@
 //  * Stationary and moving levelsets with BC
 //  * External body force dep on Lagrangian coordinates
 //  * Laplace of splines and regularization
-
+//  * Parallilize for loops over particles
+//  * Loop only over grid points within 2dx of the particle position
+//  * Make struct of std::vectors containging particle data, and the same for grid data
+//  * Fix bug in the update of deformation gradient. See simple translation test case
 //////////////////////////////////////////////////////////////////
 
 int main(){
@@ -23,16 +24,22 @@ int main(){
 
       Simulation sim;
 
-      sim.end_frame = 20;
-      sim.frame_dt = 0.0001;
+      sim.end_frame = 5;
+      sim.frame_dt = 1.0 / 1000.0;
 
       sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
 
       sim.dx = 0.1;
-      sim.Np = 10 * 10 * 4;
 
-      sim.plasticity = true;
+      unsigned int Nloop = std::round(1.0/sim.dx);
+      debug("Nloop           = ", Nloop);
+
+      sim.Np = Nloop * Nloop * 4;
+
+      sim.amplitude = 10.0;
+      sim.neoHookean = true;
+      sim.plasticity = false;
       sim.yield_stress = std::sqrt(2.0/3.0) * /* q_max */ 50000.0;
 
       sim.initialize(/* E */ 1e7, /* nu */ 0.3, /* rho */ 100);
@@ -42,53 +49,35 @@ int main(){
       debug("particle_mass   = ", sim.particle_mass);
       debug("Np              = ", sim.Np);
 
-      T amplitude = 100.0;
-
+      std::vector<T> disp_i = {0.25, 0.75, 0.25, 0.75};
+      std::vector<T> disp_j = {0.25, 0.75, 0.75, 0.25};
       int p = -1;
-      for(int i = 0; i < 10; i++){
-          for(int j = 0; j < 10; j++){
-
-              p++;
-              T px = (i+0.25)*sim.dx;
-              T py = (j+0.25)*sim.dx;
-              T pvx = amplitude*std::sin( M_PI*(px-0.5) );
-              T pvy = amplitude*std::sin( M_PI*(py-0.5) );
-              sim.particles_x(p) = px;
-              sim.particles_y(p) = py;
-              sim.particles_vx(p) = pvx;
-              sim.particles_vy(p) = pvy;
-
-              p++;
-              px = (i+0.75)*sim.dx;
-              py = (j+0.75)*sim.dx;
-              pvx = amplitude*std::sin( M_PI*(px-0.5) );
-              pvy = amplitude*std::sin( M_PI*(py-0.5) );
-              sim.particles_x(p) = px;
-              sim.particles_y(p) = py;
-              sim.particles_vx(p) = pvx;
-              sim.particles_vy(p) = pvy;
-
-              p++;
-              px = (i+0.25)*sim.dx;
-              py = (j+0.75)*sim.dx;
-              pvx = amplitude*std::sin( M_PI*(px-0.5) );
-              pvy = amplitude*std::sin( M_PI*(py-0.5) );
-              sim.particles_x(p) = px;
-              sim.particles_y(p) = py;
-              sim.particles_vx(p) = pvx;
-              sim.particles_vy(p) = pvy;
-
-              p++;
-              px = (i+0.75)*sim.dx;
-              py = (j+0.25)*sim.dx;
-              pvx = amplitude*std::sin( M_PI*(px-0.5) );
-              pvy = amplitude*std::sin( M_PI*(py-0.5) );
-              sim.particles_x(p) = px;
-              sim.particles_y(p) = py;
-              sim.particles_vx(p) = pvx;
-              sim.particles_vy(p) = pvy;
+      for(int i = 0; i < Nloop; i++){
+          for(int j = 0; j < Nloop; j++){
+              for(int d = 0; d < 4; d++){
+                  p++;
+                  T px = (i+disp_i[d])*sim.dx;
+                  T py = (j+disp_j[d])*sim.dx;
+                  // CASE 3:
+                  // T pvx = sim.amplitude*std::sin( M_PI*(px-0.5) );
+                  // T pvy = sim.amplitude*std::sin( M_PI*(py-0.5) );
+                  // CASE 2:
+                  // T pvx = sim.amplitude * sim.frame_dt * sim.end_frame * px;
+                  // T pvy = sim.amplitude * sim.frame_dt * sim.end_frame * py ;
+                  // CASE 1:
+                  // T pvx = sim.amplitude * sim.frame_dt * sim.end_frame;
+                  // T pvy = sim.amplitude * sim.frame_dt * sim.end_frame;
+                  // CASE 0:
+                  T pvx = sim.amplitude;
+                  T pvy = 0;
+                  sim.particles_x(p) = px;
+                  sim.particles_y(p) = py;
+                  sim.particles_vx(p) = pvx;
+                  sim.particles_vy(p) = pvy;
+              } // end for d
           } // end for i
       } // end for j
+
       debug("Added particles = ", p);
       if ((p+1) != sim.Np){
           debug("Particle number mismatch!!!");

@@ -2,40 +2,27 @@
 
 Simulation::Simulation(){
     current_time_step = 0;
-    time = 0;
+    time  = 0;
     frame = 0;
-    dt = 1e-3; // just initial guess
-    exit = 0;
+    exit  = 0;
 
     // N = (L / dx + 1)
-    Nx = 21;
-    Ny = 21;
+    Nx = 2;
+    Ny = 2;
 
     ////////////// If remesh every time step /////////////////
-    grid_X    = TMX::Zero(Nx, Ny);
-    grid_Y    = TMX::Zero(Nx, Ny);
+    lin_X     = TVX::Zero(Nx);
+    lin_Y     = TVX::Zero(Ny);
     grid_VX   = TMX::Zero(Nx, Ny);
     grid_VY   = TMX::Zero(Nx, Ny);
     grid_mass = TMX::Zero(Nx, Ny);
     ///////////////// If constant mesh ////////////////////////
     /*
-    TVX lin_x = TVX::LinSpaced(sim.Nx, -0.5, 1.5);
-    TVX lin_y = TVX::LinSpaced(sim.Ny, -0.5, 1.5);
-
-    sim.grid_X.resize(sim.Ny, sim.Nx);
-    sim.grid_Y.resize(sim.Ny, sim.Nx);
-    for (int i = 0; i < sim.Ny; ++i) {
-      sim.grid_X.row(i) = lin_x.transpose();
-    }
-    for (int j = 0; j < sim.Nx; ++j) {
-      sim.grid_Y.col(j) = lin_y;
-    }
-    sim.grid_X.transposeInPlace();
-    sim.grid_Y.transposeInPlace();
-
-    sim.grid_VX   = TMX::Zero(sim.Nx, sim.Ny);
-    sim.grid_VY   = TMX::Zero(sim.Nx, sim.Ny);
-    sim.grid_mass = TMX::Zero(sim.Nx, sim.Ny);
+    lin_X     = TVX::LinSpaced(Nx, -0.5, 1.5);
+    lin_Y     = TVX::LinSpaced(Ny, -0.5, 1.5);
+    grid_VX   = TMX::Zero(Nx, Ny);
+    grid_VY   = TMX::Zero(Nx, Ny);
+    grid_mass = TMX::Zero(Nx, Ny);
     */
     ////////////////////////////////////////////////////////////////
 }
@@ -51,9 +38,6 @@ void Simulation::initialize(T E, T nu, T density){
     particle_volume = 1.0 / Np; // INITIAL particle volume V^0
     particle_mass = rho * particle_volume;
 
-    // Particle part;
-    // sim.particles.resize(sim.Np);
-    // std::fill(sim.particles.begin(), sim.particles.end(), part);
     particles_F.resize(Np);
     std::fill(particles_F.begin(), particles_F.end(), TM2::Identity());
 
@@ -64,6 +48,11 @@ void Simulation::initialize(T E, T nu, T density){
 }
 
 void Simulation::simulate(){
+
+    // Lagrangian coordinates
+    particles_x0 = particles_x;
+    particles_y0 = particles_y;
+
     time = 0;
     frame = 0;
     final_time = end_frame * frame_dt;
@@ -93,13 +82,17 @@ void Simulation::simulate(){
 void Simulation::advanceStep(){
     updateDt();
     remesh();
+    calculateMomentumOnParticles();
     P2G();
-    explicitEulerUpdate();
+    calculateMomentumOnGrid();
+    // explicitEulerUpdate();
+    calculateMomentumOnGrid();
     G2P();
+    calculateMomentumOnParticles();
+    // addExternalGravity(); // Problematic!!
     deformationUpdate();
     positionUpdate();
 }
-
 
 
 
@@ -151,7 +144,7 @@ void Simulation::remesh(){
     T mid_y = min_y + Ly / 2.0;
 
     // NEW number of grid-dx's per side length
-    unsigned int safety_factor = 1;
+    unsigned int safety_factor = 3;
     Nx = std::ceil(Lx / dx) + safety_factor;
     Ny = std::ceil(Ly / dx) + safety_factor;
 
@@ -167,24 +160,13 @@ void Simulation::remesh(){
     debug("               grid   = (", Nx, ", ", Ny, ")");
 
     // Linspace x and y
-    TVX lin_x = TVX::LinSpaced(Nx, low_x, high_x);
-    TVX lin_y = TVX::LinSpaced(Ny, low_y, high_y);
+    // LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
+    lin_X = TVX::LinSpaced(Nx, low_x, high_x);
+    lin_Y = TVX::LinSpaced(Ny, low_y, high_y);
 
-    // Meshgrid
-    grid_X.resize(Ny, Nx);
-    grid_Y.resize(Ny, Nx);
-    for (int i = 0; i < Ny; ++i) {
-      grid_X.row(i) = lin_x.transpose();
-    }
-    for (int j = 0; j < Nx; ++j) {
-      grid_Y.col(j) = lin_y;
-    }
-    grid_X.transposeInPlace();
-    grid_Y.transposeInPlace();
-
-    grid_VX   = TMX::Zero(grid_X.rows(), grid_X.cols());
-    grid_VY   = TMX::Zero(grid_X.rows(), grid_X.cols());
-    grid_mass = TMX::Zero(grid_X.rows(), grid_X.cols());
+    grid_VX   = TMX::Zero(Nx, Ny);
+    grid_VY   = TMX::Zero(Nx, Ny);
+    grid_mass = TMX::Zero(Nx, Ny);
 
 }
 
@@ -196,8 +178,8 @@ void Simulation::P2G(){
         //debug("i = ", i);
         for(int j=0; j<Ny; j++){
             //debug("j = ", j);
-            T xi = grid_X(i,j);
-            T yi = grid_Y(i,j);
+            T xi = lin_X(i);
+            T yi = lin_Y(j);
             T vxi = 0;
             T vyi = 0;
             T mass = 0;
@@ -223,8 +205,6 @@ void Simulation::P2G(){
         } // end for j
     } // end for i
 
-    // if (current_time_step == 0)
-    //     debug(grid_VX);
 
     debug("               total grid mass = ", grid_mass.sum());
     debug("               total part mass = ", particle_mass*Np);
@@ -240,14 +220,11 @@ void Simulation::explicitEulerUpdate(){
     TV2 grad_wip;
     TM2 Fe, dPsidF;
 
-    // Only for St Venant Kirchhoff
-    TM2 logSigma, invSigma; TA2 sigma;
-
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
             if (grid_mass(i,j) > 1e-15){
-                T xi = grid_X(i,j);
-                T yi = grid_Y(i,j);
+                T xi = lin_X(i);
+                T yi = lin_Y(j);
                 TV2 force = TV2::Zero();
                 for(int p=0; p<Np; p++){
                     T xp = particles_x(p);
@@ -260,25 +237,30 @@ void Simulation::explicitEulerUpdate(){
                         // P = dPsidF              (first Piola-Kirchhoff stress tensor)
                         // tau = P * F.transpose() (Kirchhoff stress tensor)
 
-                        /////// St Venant Kirchhoff with Hencky strain ///////////////
-                        Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
-                        sigma = svd.singularValues().array(); // abs() for inverse also??
-                        logSigma = sigma.abs().log().matrix().asDiagonal();
-                        invSigma = sigma.inverse().matrix().asDiagonal();
-                        dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
-                        ///////////////////////////////////////////////////////////////
-
-                        ////////////// Neo-Hookean ////////////////////////////////////
-                        // dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
-                        ///////////////////////////////////////////////////////////////
+                        if (neoHookean){
+                            dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
+                        }
+                        else{ // St Venant Kirchhoff with Hencky strain
+                            Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
+                            TA2 sigma = svd.singularValues().array(); // abs() for inverse also??
+                            TM2 logSigma = sigma.abs().log().matrix().asDiagonal();
+                            TM2 invSigma = sigma.inverse().matrix().asDiagonal();
+                            dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
+                        }
 
                         grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
                         grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
 
                         force += dPsidF * Fe.transpose() * grad_wip;
+                        // debug("      dPsidF = \n", dPsidF);
+                        // debug("      grad_wip = \n", grad_wip);
+                        // debug("      Fe = \n", Fe);
+
                     }
                 } // end for particles
+                // debug("      force = \n", force);
                 TV2 velocity_increment = -dt * particle_volume * force / grid_mass(i,j) + dt * gravity;
+                // debug("      velocity_increment = \n", velocity_increment);
                 grid_VX(i,j) += velocity_increment(0);
                 grid_VY(i,j) += velocity_increment(1);
             } // end if positive mass
@@ -298,8 +280,8 @@ void Simulation::G2P(){
         T vyp = 0;
         for(int i=0; i<Nx; i++){
             for(int j=0; j<Ny; j++){
-                T xi = grid_X(i,j);
-                T yi = grid_Y(i,j);
+                T xi = lin_X(i);
+                T yi = lin_Y(j);
                 if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
                     T weight = wip(xp, yp, xi, yi, dx);
                     vxp += grid_VX(i,j) * weight;
@@ -313,6 +295,47 @@ void Simulation::G2P(){
 }
 
 
+// These two functions are only for validating that momentum is conserved
+void Simulation::calculateMomentumOnParticles(){
+    T momentum_x = 0;
+    T momentum_y = 0;
+    for(int p=0; p<Np; p++){
+        momentum_x += particle_mass * particles_vx(p);
+        momentum_y += particle_mass * particles_vy(p);
+    }
+    debug("               total part momentum x-comp = ", momentum_x);
+    debug("               total part momentum y-comp = ", momentum_y);
+}
+void Simulation::calculateMomentumOnGrid(){
+    T momentum_x = 0;
+    T momentum_y = 0;
+    for(int i=0; i<Nx; i++){
+        for(int j=0; j<Ny; j++){
+            momentum_x += grid_mass(i,j) * grid_VX(i,j);
+            momentum_y += grid_mass(i,j) * grid_VY(i,j);
+        }
+    }
+    debug("               total grid momentum x-comp = ", momentum_x);
+    debug("               total grid momentum y-comp = ", momentum_y);
+}
+
+
+
+// NB: Problematic as def grad is updated according to grid velocities!!!
+// This must be made on the grid and applied in velocity increment in euler update
+void Simulation::addExternalGravity(){
+
+    // loop can probably be avoided with matrix manipulations
+    // for(int p=0; p<Np; p++){
+    //     CASE 2:
+    //     particles_vx(p) += dt * ( -2*A*particles_x0(p) );
+    //     particles_vy(p) += dt * ( -2*A*particles_y0(p) );
+    //     CASE 1:
+    //     particles_vx(p) += dt * ( -2.0*amplitude );
+    //     particles_vy(p) += dt * ( -2.0*amplitude );
+    // }
+
+}
 
 
 
@@ -329,8 +352,8 @@ void Simulation::deformationUpdate(){
         for(int i=0; i<Nx; i++){
             for(int j=0; j<Ny; j++){
 
-                T xi = grid_X(i,j);
-                T yi = grid_Y(i,j);
+                T xi = lin_X(i);
+                T yi = lin_Y(j);
 
                 TV2 vi;
                 vi(0) = grid_VX(i,j);
@@ -344,8 +367,6 @@ void Simulation::deformationUpdate(){
             } // end loop i
         } // end loop j
 
-        // TM2 Fe = particles[p].F;
-        // particles[p].F = Fe + dt * sum * Fe;
         TM2 Fe_trial = particles_F[p];
         Fe_trial = Fe_trial + dt * sum * Fe_trial;
         particles_F[p] = Fe_trial;
@@ -366,6 +387,8 @@ void Simulation::deformationUpdate(){
             }
         }
 
+        debug("               Fe_new = \n", particles_F[p]);
+
     } // end loop over particles
 
     debug("               projected particles = ", plastic_count, " / ", Np);
@@ -380,15 +403,8 @@ void Simulation::positionUpdate(){
     for(int p=0; p<Np; p++){
         particles_x(p) = particles_x(p) + dt * particles_vx(p);
         particles_y(p) = particles_y(p) + dt * particles_vy(p);
-
-        if (particles_x(p) > 1.5 || particles_x(p) < -0.5 || particles_y(p) > 1.5 || particles_y(p) < -0.5){
-            debug("Particle goes outside bounding box!!!");
-        }
     } // end loop over particles
-
-
 }
-
 
 
 
@@ -405,8 +421,7 @@ void Simulation::saveGridVelocities(std::string extra){
     std::ofstream outFile("dumps/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
-            int k = i*Ny+j;
-            outFile << grid_X(i,j) << "," << grid_Y(i,j) << "," << 0 << "," << grid_VX(i,j) << "," << grid_VY(i,j) << "," << 0 << "\n";
+            outFile << lin_X(i) << "," << lin_Y(j) << "," << 0 << "," << grid_VX(i,j) << "," << grid_VY(i,j) << "," << 0 << "\n";
         }
     }
 }
