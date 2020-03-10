@@ -39,6 +39,10 @@ void debug(T in1, U in2, V in3, W in4, X in5){
   std::cout << in1 << in2 << in3 << in4 << in5 << std::endl;
 }
 
+inline int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
 /*!
  \param x x
  \return weight
@@ -69,7 +73,7 @@ inline T dNdu(T u){
         return (-2*u);
     }
 	else if (uabs < 1.5){
-        return (-u);
+        return (u - 1.5*sgn(u));
     }
 	else {
         return 0;
