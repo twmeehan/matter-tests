@@ -77,7 +77,7 @@ public:
 
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();
-  void addExternalGravity();
+  std::pair<TMX, TMX> createExternalGravity();
 
 
 }; // END Simulation class

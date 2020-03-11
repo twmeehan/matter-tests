@@ -6,25 +6,15 @@ Simulation::Simulation(){
     frame = 0;
     exit  = 0;
 
-    // N = (L / dx + 1)
-    Nx = 2;
-    Ny = 2;
-
-    ////////////// If remesh every time step /////////////////
-    lin_X     = TVX::Zero(Nx);
-    lin_Y     = TVX::Zero(Ny);
-    grid_VX   = TMX::Zero(Nx, Ny);
-    grid_VY   = TMX::Zero(Nx, Ny);
-    grid_mass = TMX::Zero(Nx, Ny);
-    ///////////////// If constant mesh ////////////////////////
-    /*
+    /////////// Default - will be overwritten by remesh if used ////////////
+    Nx = 21; // N = (L / dx + 1)
+    Ny = 21;
     lin_X     = TVX::LinSpaced(Nx, -0.5, 1.5);
     lin_Y     = TVX::LinSpaced(Ny, -0.5, 1.5);
     grid_VX   = TMX::Zero(Nx, Ny);
     grid_VY   = TMX::Zero(Nx, Ny);
     grid_mass = TMX::Zero(Nx, Ny);
-    */
-    ////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////
 }
 
 void Simulation::initialize(T E, T nu, T density){
@@ -82,14 +72,13 @@ void Simulation::simulate(){
 void Simulation::advanceStep(){
     updateDt();
     remesh();
-    calculateMomentumOnParticles();
+    // calculateMomentumOnParticles();
     P2G();
-    calculateMomentumOnGrid();
+    // calculateMomentumOnGrid();
     explicitEulerUpdate();
-    calculateMomentumOnGrid();
+    // calculateMomentumOnGrid();
     G2P();
-    calculateMomentumOnParticles();
-    // addExternalGravity(); // Problematic!!
+    // calculateMomentumOnParticles();
     deformationUpdate();
     positionUpdate();
 }
@@ -205,9 +194,15 @@ void Simulation::P2G(){
         } // end for j
     } // end for i
 
-
-    debug("               total grid mass = ", grid_mass.sum());
-    debug("               total part mass = ", particle_mass*Np);
+    T grid_mass_total     = grid_mass.sum();
+    T particle_mass_total = particle_mass*Np;
+    debug("               total grid mass = ", grid_mass_total    );
+    debug("               total part mass = ", particle_mass_total);
+    if ( std::abs(grid_mass_total-particle_mass_total) > 1e-5 * particle_mass_total ){
+        debug("MASS NOT CONSERVED!!!");
+        exit = 1;
+        return;
+    }
 
 
 } // end P2G
@@ -219,6 +214,11 @@ void Simulation::P2G(){
 void Simulation::explicitEulerUpdate(){
     TV2 grad_wip;
     TM2 Fe, dPsidF;
+
+    ////////////// if external gravity: ////////////////////
+    // std::pair<TMX, TMX> external_gravity_pair = createExternalGravity();
+    // TV2 external_gravity;
+    ////////////////////////////////////////////////////////
 
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
@@ -252,21 +252,45 @@ void Simulation::explicitEulerUpdate(){
                         grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
 
                         force += dPsidF * Fe.transpose() * grad_wip;
-                        // debug("      dPsidF = \n", dPsidF);
-                        // debug("      grad_wip = \n", grad_wip);
-                        // debug("      Fe = \n", Fe);
 
                     }
                 } // end for particles
-                // debug("      force = \n", force);
+
                 TV2 velocity_increment = -dt * particle_volume * force / grid_mass(i,j) + dt * gravity;
-                // debug("      velocity_increment = \n", velocity_increment);
+
+                ////////////// if external gravity: ////////////////////
+                // external_gravity(0) = external_gravity_pair.first(i,j);
+                // external_gravity(1) = external_gravity_pair.second(i,j);
+                // velocity_increment += dt * external_gravity;
+                ////////////////////////////////////////////////////////
+
                 grid_VX(i,j) += velocity_increment(0);
                 grid_VY(i,j) += velocity_increment(1);
             } // end if positive mass
         } // end for j
     } // end for i
 } // end explicitEulerUpdate
+
+
+
+
+// To be used with constant mesh only!!!
+std::pair<TMX, TMX> Simulation::createExternalGravity(){
+    TMX grid_X0 = TMX::Zero(Nx,Ny);
+    TMX grid_Y0 = TMX::Zero(Nx,Ny);
+    for(int i=0; i<Nx; i++){
+        for(int j=0; j<Ny; j++){
+            if (grid_mass(i,j) < 1e-15){ // if no mass at current grid point, no point adding a external force to it.
+                grid_X0(i,j) = 0.0;
+                grid_Y0(i,j) = 0.0;
+            } else {
+                grid_X0(i,j) = lin_X(i);
+                grid_Y0(i,j) = lin_Y(j);
+            } // end if grid mass nonzero
+        } // end for j
+    } // end for i
+    return std::make_pair(-2.0*amplitude*grid_X0, -2.0*amplitude*grid_Y0);
+} // end createExternalGravity
 
 
 
@@ -320,22 +344,6 @@ void Simulation::calculateMomentumOnGrid(){
 }
 
 
-
-// NB: Problematic as def grad is updated according to grid velocities!!!
-// This must be made on the grid and applied in velocity increment in euler update
-void Simulation::addExternalGravity(){
-
-    // loop can probably be avoided with matrix manipulations
-    // for(int p=0; p<Np; p++){
-    //     CASE 2:
-    //     particles_vx(p) += dt * ( -2*A*particles_x0(p) );
-    //     particles_vy(p) += dt * ( -2*A*particles_y0(p) );
-    //     CASE 1:
-    //     particles_vx(p) += dt * ( -2.0*amplitude );
-    //     particles_vy(p) += dt * ( -2.0*amplitude );
-    // }
-
-}
 
 
 

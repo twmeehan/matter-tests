@@ -13,7 +13,7 @@
 //  * Parallilize for loops over particles
 //  * Loop only over grid points within 2dx of the particle position
 //  * Make struct of std::vectors containging particle data, and the same for grid data
-//  * Fix bug in the update of deformation gradient. See simple translation test case
+//  * fix grad_wip to return vector
 //////////////////////////////////////////////////////////////////
 
 int main(){
@@ -25,7 +25,7 @@ int main(){
       Simulation sim;
 
       sim.end_frame = 20;
-      sim.frame_dt = 1.0 / 1000.0;
+      sim.frame_dt = 1.0 / 2000.0;
 
       sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
@@ -37,7 +37,7 @@ int main(){
 
       sim.Np = Nloop * Nloop * 4;
 
-      sim.amplitude = 10.0;
+      sim.amplitude = 10000.0;
       sim.neoHookean = true;
       sim.plasticity = false;
       sim.yield_stress = std::sqrt(2.0/3.0) * /* q_max */ 50000.0;
@@ -62,14 +62,14 @@ int main(){
                   // T pvx = sim.amplitude*std::sin( M_PI*(px-0.5) );
                   // T pvy = sim.amplitude*std::sin( M_PI*(py-0.5) );
                   // CASE 2:
-                  // T pvx = sim.amplitude * sim.frame_dt * sim.end_frame * px;
-                  // T pvy = sim.amplitude * sim.frame_dt * sim.end_frame * py ;
+                  T pvx = sim.amplitude * sim.frame_dt * sim.end_frame * px;
+                  T pvy = sim.amplitude * sim.frame_dt * sim.end_frame * py ;
                   // CASE 1:
                   // T pvx = sim.amplitude * sim.frame_dt * sim.end_frame;
                   // T pvy = sim.amplitude * sim.frame_dt * sim.end_frame;
                   // CASE 0:
-                  T pvx = sim.amplitude;
-                  T pvy = 0;
+                  // T pvx = sim.amplitude;
+                  // T pvy = 0;
                   sim.particles_x(p) = px;
                   sim.particles_y(p) = py;
                   sim.particles_vx(p) = pvx;
