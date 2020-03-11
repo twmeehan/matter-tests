@@ -38,14 +38,16 @@ public:
   T particle_mass;
   T particle_volume; // initial particle volume V0
 
+  // Particle data
   std::vector<TM2> particles_F;
   TVX particles_x;
   TVX particles_y;
-  TVX particles_x0;
-  TVX particles_y0;
   TVX particles_vx;
   TVX particles_vy;
+  TVX particles_x0; // Lagrangian coord
+  TVX particles_y0; // Lagrangian coord
 
+  // Grid data
   unsigned int Nx, Ny;
   TVX lin_X;
   TVX lin_Y;
@@ -77,7 +79,9 @@ public:
 
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();
-  std::pair<TMX, TMX> createExternalGravity();
+
+  void addExternalParticleGravity();
+  std::pair<TMX, TMX> createExternalGridGravity();
 
 
 }; // END Simulation class

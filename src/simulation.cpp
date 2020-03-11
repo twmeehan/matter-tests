@@ -17,6 +17,8 @@ Simulation::Simulation(){
     /////////////////////////////////////////////////////////////////////////
 }
 
+
+
 void Simulation::initialize(T E, T nu, T density){
     mu = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
     lambda = E / (2.0*(1.0+nu));
@@ -36,6 +38,9 @@ void Simulation::initialize(T E, T nu, T density){
     particles_vx = TVX::Zero(Np);
     particles_vy = TVX::Zero(Np);
 }
+
+
+
 
 void Simulation::simulate(){
 
@@ -69,19 +74,21 @@ void Simulation::simulate(){
     saveGridVelocities();
 }
 
+
+
+
+
 void Simulation::advanceStep(){
     updateDt();
     remesh();
-    // calculateMomentumOnParticles();
     P2G();
-    // calculateMomentumOnGrid();
     explicitEulerUpdate();
-    // calculateMomentumOnGrid();
+    //addExternalParticleGravity();
     G2P();
-    // calculateMomentumOnParticles();
     deformationUpdate();
     positionUpdate();
 }
+
 
 
 
@@ -215,8 +222,8 @@ void Simulation::explicitEulerUpdate(){
     TV2 grad_wip;
     TM2 Fe, dPsidF;
 
-    ////////////// if external gravity: ////////////////////
-    // std::pair<TMX, TMX> external_gravity_pair = createExternalGravity();
+    //////////// if external grid gravity: //////////////////
+    // std::pair<TMX, TMX> external_gravity_pair = createExternalGridGravity();
     // TV2 external_gravity;
     ////////////////////////////////////////////////////////
 
@@ -258,7 +265,7 @@ void Simulation::explicitEulerUpdate(){
 
                 TV2 velocity_increment = -dt * particle_volume * force / grid_mass(i,j) + dt * gravity;
 
-                ////////////// if external gravity: ////////////////////
+                //////////// if external grid gravity: //////////////////
                 // external_gravity(0) = external_gravity_pair.first(i,j);
                 // external_gravity(1) = external_gravity_pair.second(i,j);
                 // velocity_increment += dt * external_gravity;
@@ -272,25 +279,6 @@ void Simulation::explicitEulerUpdate(){
 } // end explicitEulerUpdate
 
 
-
-
-// To be used with constant mesh only!!!
-std::pair<TMX, TMX> Simulation::createExternalGravity(){
-    TMX grid_X0 = TMX::Zero(Nx,Ny);
-    TMX grid_Y0 = TMX::Zero(Nx,Ny);
-    for(int i=0; i<Nx; i++){
-        for(int j=0; j<Ny; j++){
-            if (grid_mass(i,j) < 1e-15){ // if no mass at current grid point, no point adding a external force to it.
-                grid_X0(i,j) = 0.0;
-                grid_Y0(i,j) = 0.0;
-            } else {
-                grid_X0(i,j) = lin_X(i);
-                grid_Y0(i,j) = lin_Y(j);
-            } // end if grid mass nonzero
-        } // end for j
-    } // end for i
-    return std::make_pair(-2.0*amplitude*grid_X0, -2.0*amplitude*grid_Y0);
-} // end createExternalGravity
 
 
 
@@ -318,30 +306,6 @@ void Simulation::G2P(){
     }
 }
 
-
-// These two functions are only for validating that momentum is conserved
-void Simulation::calculateMomentumOnParticles(){
-    T momentum_x = 0;
-    T momentum_y = 0;
-    for(int p=0; p<Np; p++){
-        momentum_x += particle_mass * particles_vx(p);
-        momentum_y += particle_mass * particles_vy(p);
-    }
-    debug("               total part momentum x-comp = ", momentum_x);
-    debug("               total part momentum y-comp = ", momentum_y);
-}
-void Simulation::calculateMomentumOnGrid(){
-    T momentum_x = 0;
-    T momentum_y = 0;
-    for(int i=0; i<Nx; i++){
-        for(int j=0; j<Ny; j++){
-            momentum_x += grid_mass(i,j) * grid_VX(i,j);
-            momentum_y += grid_mass(i,j) * grid_VY(i,j);
-        }
-    }
-    debug("               total grid momentum x-comp = ", momentum_x);
-    debug("               total grid momentum y-comp = ", momentum_y);
-}
 
 
 
@@ -432,4 +396,66 @@ void Simulation::saveGridVelocities(std::string extra){
             outFile << lin_X(i) << "," << lin_Y(j) << "," << 0 << "," << grid_VX(i,j) << "," << grid_VY(i,j) << "," << 0 << "\n";
         }
     }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// This function can only be used with fixed mesh
+std::pair<TMX, TMX> Simulation::createExternalGridGravity(){
+    TMX grid_X0 = TMX::Zero(Nx,Ny);
+    TMX grid_Y0 = TMX::Zero(Nx,Ny);
+    for(int i=0; i<Nx; i++){
+        for(int j=0; j<Ny; j++){
+            if (grid_mass(i,j) < 1e-15){ // if no mass at current grid point, no point adding a external force to it.
+                grid_X0(i,j) = 0.0;
+                grid_Y0(i,j) = 0.0;
+            } else {
+                grid_X0(i,j) = lin_X(i);
+                grid_Y0(i,j) = lin_Y(j);
+            } // end if grid mass nonzero
+        } // end for j
+    } // end for i
+    return std::make_pair(-2.0*amplitude*grid_X0, -2.0*amplitude*grid_Y0);
+} // end createExternalGridGravity
+
+
+// Much more computationally expensive than createExternalGridGravity,
+// but can be used with remeshing
+void Simulation::addExternalParticleGravity(){
+    // 1. Transfer grid velocity to particles
+    G2P();
+    // 2. Apply gravity on particle velocity
+    for(int p=0; p<Np; p++){
+        particles_vx(p) += dt * (-2.0*amplitude*particles_x0(p));
+        particles_vy(p) += dt * (-2.0*amplitude*particles_y0(p));
+    }
+    // 3. Transfer particle velocity back to grid
+    P2G();
+} // end addExternalParticleGravity
+
+
+// These two functions are only for validating that momentum is conserved
+void Simulation::calculateMomentumOnParticles(){
+    T momentum_x = 0;
+    T momentum_y = 0;
+    for(int p=0; p<Np; p++){
+        momentum_x += particle_mass * particles_vx(p);
+        momentum_y += particle_mass * particles_vy(p);
+    }
+    debug("               total part momentum x-comp = ", momentum_x);
+    debug("               total part momentum y-comp = ", momentum_y);
+}
+void Simulation::calculateMomentumOnGrid(){
+    T momentum_x = 0;
+    T momentum_y = 0;
+    for(int i=0; i<Nx; i++){
+        for(int j=0; j<Ny; j++){
+            momentum_x += grid_mass(i,j) * grid_VX(i,j);
+            momentum_y += grid_mass(i,j) * grid_VY(i,j);
+        }
+    }
+    debug("               total grid momentum x-comp = ", momentum_x);
+    debug("               total grid momentum y-comp = ", momentum_y);
 }

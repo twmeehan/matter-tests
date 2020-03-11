@@ -8,19 +8,15 @@
 //  * Alembic output
 //  * FLIP
 //  * Stationary and moving levelsets with BC
-//  * External body force dep on Lagrangian coordinates
 //  * Laplace of splines and regularization
 //  * Parallilize for loops over particles
 //  * Loop only over grid points within 2dx of the particle position
 //  * Make struct of std::vectors containging particle data, and the same for grid data
-//  * fix grad_wip to return vector
+//  * Fix grad_wip to return vector
 //////////////////////////////////////////////////////////////////
 
 int main(){
       std::cout << "This is Larsie" << std::endl;
-
-      //csv2abc("test.abc");
-      //return 0;
 
       Simulation sim;
 
@@ -38,7 +34,7 @@ int main(){
       sim.Np = Nloop * Nloop * 4;
 
       sim.amplitude = 10000.0;
-      sim.neoHookean = true;
+      sim.neoHookean = false;
       sim.plasticity = false;
       sim.yield_stress = std::sqrt(2.0/3.0) * /* q_max */ 50000.0;
 
@@ -83,11 +79,17 @@ int main(){
           debug("Particle number mismatch!!!");
           return 0;
       }
+
+
     /////////////////////////////////////////////////////////////
 
     sim.simulate();
 
     /*
+
+    ///////////// ALEMBIC TESTING: ////////////////
+    // csv2abc("test.abc");
+    // return 0;
 
     ///////////// DEBUG 1: ////////////////
     /*
