@@ -3,11 +3,9 @@
 
 #include <iostream>
 #include <fstream>
-#include <cmath>
-#include <Eigen/Core>
-#include <Eigen/Dense>
 #include <vector>
 #include "tools.hpp"
+#include "object.hpp"
 //#include "particle.hpp"
 
 class Simulation{
@@ -61,10 +59,13 @@ public:
   T lambda;
 
   T amplitude;
+  unsigned int bc_type;
 
   bool neoHookean;
   bool plasticity;
   T yield_stress;
+
+  GroundObject ground_object;
 
   void advanceStep();
 
@@ -76,6 +77,8 @@ public:
   void G2P();
   void deformationUpdate();
   void positionUpdate();
+
+  void boundaryCollision(T xi, T yi, T& vxi, T& vyi);
 
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();

@@ -271,13 +271,38 @@ void Simulation::explicitEulerUpdate(){
                 // velocity_increment += dt * external_gravity;
                 ////////////////////////////////////////////////////////
 
-                grid_VX(i,j) += velocity_increment(0);
-                grid_VY(i,j) += velocity_increment(1);
+                T new_vxi = grid_VX(i,j) + velocity_increment(0);
+                T new_vyi = grid_VY(i,j) + velocity_increment(1);
+                T new_xi = lin_X(i) + dt * new_vxi;
+                T new_yi = lin_Y(j) + dt * new_vyi;
+                boundaryCollision(new_xi, new_yi, new_vxi, new_vyi);
+
+                grid_VX(i,j) = new_vxi;
+                grid_VY(i,j) = new_vyi;
             } // end if positive mass
         } // end for j
     } // end for i
 } // end explicitEulerUpdate
 
+
+
+
+
+
+void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
+    // ground_object.move(dt);
+    bool colliding = ground_object.inside(xi, yi);
+    if (colliding) {
+        T vx_rel = vxi - ground_object.vx_object;
+        T vy_rel = vyi - ground_object.vy_object;
+        if (bc_type == 0) { // STICKY
+            vx_rel = 0;
+            vy_rel = 0;
+        } // end STICKY
+        vxi = vx_rel + ground_object.vx_object;
+        vyi = vy_rel + ground_object.vy_object;
+    } // end if colliding
+} // end boundaryCollision
 
 
 
@@ -311,7 +336,7 @@ void Simulation::G2P(){
 
 
 
-
+// Deformation gradient is updated based on the NEW GRID VELOCITIES and the OLD PARTICLE POSITIONS
 void Simulation::deformationUpdate(){
     unsigned int plastic_count = 0;
     for(int p=0; p<Np; p++){
