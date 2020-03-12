@@ -7,6 +7,9 @@ Simulation::Simulation(){
     exit  = 0;
 
     runtime_p2g = 0;
+    runtime_g2p = 0;
+    runtime_euler = 0;
+    runtime_defgrad = 0;
 
     /////////// Default - will be overwritten by remesh if used ////////////
     Nx = 21; // N = (L / dx + 1)
@@ -69,7 +72,10 @@ void Simulation::simulate(){
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "Simulation took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " milliseconds" << std::endl;
-    debug("Runtime P2G = ", runtime_p2g * 1000.0, " milliseconds");
+    debug("Runtime P2G     = ", runtime_p2g     * 1000.0, " milliseconds");
+    debug("Runtime G2P     = ", runtime_g2p     * 1000.0, " milliseconds");
+    debug("Runtime Euler   = ", runtime_euler   * 1000.0, " milliseconds");
+    debug("Runtime DefGrad = ", runtime_defgrad * 1000.0, " milliseconds");
 }
 
 
@@ -80,17 +86,10 @@ void Simulation::advanceStep(){
     updateDt();
     remesh();
     moveObjects();
-
-         timer t_p2g; t_p2g.start();
     P2G();
-         t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
-
     // calculateMassConservation();
-
     explicitEulerUpdate();
-
     // addExternalParticleGravity();
-
     G2P();
     deformationUpdate();
     positionUpdate();
@@ -176,8 +175,12 @@ void Simulation::remesh(){
 
 
 void Simulation::P2G(){
+    timer t_p2g; t_p2g.start();
+
     P2G_Optimized();
     // P2G_Baseline();
+
+    t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
 } // end P2G
 
 
@@ -254,6 +257,7 @@ void Simulation::P2G_Optimized(){
 
 
 void Simulation::explicitEulerUpdate(){
+    timer t_euler; t_euler.start();
     TV2 grad_wip;
     TM2 Fe, dPsidF;
 
@@ -317,6 +321,7 @@ void Simulation::explicitEulerUpdate(){
             } // end if positive mass
         } // end for j
     } // end for i
+    t_euler.stop(); runtime_euler += t_euler.get_timing();
 } // end explicitEulerUpdate
 
 
@@ -350,10 +355,17 @@ void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
 
 
 
-
-
-
 void Simulation::G2P(){
+    timer t_g2p; t_g2p.start();
+
+    // G2P_Baseline();
+    G2P_Optimized();
+
+    t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
+}
+
+
+void Simulation::G2P_Baseline(){
     // This loop over p can be easily paralellized
     // Need to create thread-local versions of particles.vx and vy
     for(int p=0; p<Np; p++){
@@ -375,7 +387,36 @@ void Simulation::G2P(){
         particles.vx(p) = vxp;
         particles.vy(p) = vyp;
     }
-}
+} // end G2P_Baseline
+
+void Simulation::G2P_Optimized(){
+
+    T x0 = grid.x(0);
+    T y0 = grid.y(0);
+
+    // This loop over p can be easily paralellized
+    // Need to create thread-local versions of particles.vx and vy
+    for(int p = 0; p < Np; p++){
+        T xp = particles.x(p);
+        T yp = particles.y(p);
+        T vxp = 0;
+        T vyp = 0;
+        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is only valid in quadratic spline case!!
+        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is only valid in quadratic spline case!!
+
+        for(int i = i_base; i < i_base+4; i++){
+            T xi = grid.x(i);
+            for(int j = j_base; j < j_base+4; j++){
+                T yi = grid.y(j);
+                T weight = wip(xp, yp, xi, yi, dx);
+                vxp += grid.vx(i,j) * weight;
+                vyp += grid.vy(i,j) * weight;
+            } // end loop j
+        } // end loop i
+        particles.vx(p) = vxp;
+        particles.vy(p) = vyp;
+    } // end loop p
+} // end G2P_Optimized
 
 
 
@@ -384,7 +425,13 @@ void Simulation::G2P(){
 
 // Deformation gradient is updated based on the NEW GRID VELOCITIES and the OLD PARTICLE POSITIONS
 void Simulation::deformationUpdate(){
+    timer t_defgrad; t_defgrad.start();
+
     unsigned int plastic_count = 0;
+
+    T x0 = grid.x(0);
+    T y0 = grid.y(0);
+
     for(int p=0; p<Np; p++){
 
         TM2 sum = TM2::Zero();
@@ -392,9 +439,12 @@ void Simulation::deformationUpdate(){
         T xp = particles.x(p);
         T yp = particles.y(p);
 
-        for(int i=0; i<Nx; i++){
+        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is only valid in quadratic spline case!!
+        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is only valid in quadratic spline case!!
+
+        for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);
-            for(int j=0; j<Ny; j++){
+            for(int j = j_base; j < j_base+4; j++){
                 T yi = grid.y(j);
 
                 TV2 vi;
@@ -435,6 +485,7 @@ void Simulation::deformationUpdate(){
     } // end loop over particles
 
     debug("               projected particles = ", plastic_count, " / ", Np);
+    t_defgrad.stop(); runtime_defgrad += t_defgrad.get_timing();
 
 } // end deformationUpdate
 

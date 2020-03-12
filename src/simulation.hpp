@@ -60,6 +60,9 @@ public:
   std::vector<InfinitePlate> objects;
 
   T runtime_p2g;
+  T runtime_g2p;
+  T runtime_euler;
+  T runtime_defgrad;
 
   void advanceStep();
   void updateDt();
@@ -69,6 +72,8 @@ public:
   void P2G_Baseline();
   void explicitEulerUpdate();
   void G2P();
+  void G2P_Optimized();
+  void G2P_Baseline();
   void deformationUpdate();
   void positionUpdate();
 
