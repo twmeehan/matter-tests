@@ -33,10 +33,17 @@ template <typename T, typename U, typename V, typename W>
 void debug(T in1, U in2, V in3, W in4){
   std::cout << in1 << in2 << in3 << in4 << std::endl;
 }
-
 template <typename T, typename U, typename V, typename W, typename X>
 void debug(T in1, U in2, V in3, W in4, X in5){
   std::cout << in1 << in2 << in3 << in4 << in5 << std::endl;
+}
+template <typename T, typename U, typename V, typename W, typename X, typename Y>
+void debug(T in1, U in2, V in3, W in4, X in5, Y in6){
+  std::cout << in1 << in2 << in3 << in4 << in5 << in6 << std::endl;
+}
+template <typename T, typename U, typename V, typename W, typename X, typename Y, typename Z>
+void debug(T in1, U in2, V in3, W in4, X in5, Y in6, Z in7){
+  std::cout << in1 << in2 << in3 << in4 << in5 << in6 << in7 << std::endl;
 }
 
 inline int sgn(T val) {

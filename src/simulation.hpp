@@ -37,13 +37,14 @@ public:
   T particle_volume; // initial particle volume V0
 
   // Particle data
-  std::vector<TM2> particles_F;
   TVX particles_x;
   TVX particles_y;
   TVX particles_vx;
   TVX particles_vy;
   TVX particles_x0; // Lagrangian coord
   TVX particles_y0; // Lagrangian coord
+  TVX particles_eps_pl_dev;
+  std::vector<TM2> particles_F;
 
   // Grid data
   unsigned int Nx, Ny;
@@ -65,7 +66,7 @@ public:
   bool plasticity;
   T yield_stress;
 
-  GroundObject ground_object;
+  std::vector<InfinitePlate> objects;
 
   void advanceStep();
 
@@ -78,6 +79,7 @@ public:
   void deformationUpdate();
   void positionUpdate();
 
+  void moveObjects();
   void boundaryCollision(T xi, T yi, T& vxi, T& vyi);
 
   void calculateMomentumOnParticles();

@@ -13,6 +13,7 @@
 //  * Loop only over grid points within 2dx of the particle position
 //  * Make struct of std::vectors containging particle data, and the same for grid data
 //  * Fix grad_wip to return vector
+//  * Export (volumetric/deviatoric) plastic strain
 //////////////////////////////////////////////////////////////////
 
 int main(){
@@ -23,21 +24,26 @@ int main(){
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 200.0;
 
-      sim.gravity = TV2::Zero(); sim.gravity[1] = -100;
+      sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
 
-      sim.dx = 0.1;
+      sim.dx = 0.05;
 
       unsigned int Nloop = std::round(1.0/sim.dx);
       debug("Nloop           = ", Nloop);
 
       sim.Np = Nloop * Nloop * 4;
 
-      sim.amplitude = 1.0;
+      sim.amplitude = 0.0;
+
+      std::string name;
+      name = "ground";     InfinitePlate ground     = InfinitePlate(0,  0, lower, name); sim.objects.push_back(ground);
+      name = "compressor"; InfinitePlate compressor = InfinitePlate(1, -1, upper, name); sim.objects.push_back(compressor);
+
       sim.bc_type = 0;
 
       sim.neoHookean = false;
-      sim.plasticity = false;
+      sim.plasticity = true;
       sim.yield_stress = std::sqrt(2.0/3.0) * /* q_max */ 50000.0;
 
       sim.initialize(/* E */ 1e7, /* nu */ 0.3, /* rho */ 100);

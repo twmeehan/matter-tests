@@ -30,13 +30,13 @@ void Simulation::initialize(T E, T nu, T density){
     particle_volume = 1.0 / Np; // INITIAL particle volume V^0
     particle_mass = rho * particle_volume;
 
-    particles_F.resize(Np);
-    std::fill(particles_F.begin(), particles_F.end(), TM2::Identity());
-
     particles_x  = TVX::Zero(Np);
     particles_y  = TVX::Zero(Np);
     particles_vx = TVX::Zero(Np);
     particles_vy = TVX::Zero(Np);
+    particles_eps_pl_dev = TVX::Zero(Np);
+    particles_F.resize(Np); std::fill(particles_F.begin(), particles_F.end(), TM2::Identity());
+
 }
 
 
@@ -81,6 +81,7 @@ void Simulation::simulate(){
 void Simulation::advanceStep(){
     updateDt();
     remesh();
+    moveObjects();
     P2G();
     explicitEulerUpdate();
     //addExternalParticleGravity();
@@ -119,6 +120,7 @@ void Simulation::updateDt(){
         return;
     }
 } // end updateDt
+
 
 
 
@@ -287,21 +289,34 @@ void Simulation::explicitEulerUpdate(){
 
 
 
-
+void Simulation::moveObjects(){
+    for (InfinitePlate &obj : objects) {
+        obj.move(dt);
+    }
+}
 
 void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
-    // ground_object.move(dt);
-    bool colliding = ground_object.inside(xi, yi);
-    if (colliding) {
-        T vx_rel = vxi - ground_object.vx_object;
-        T vy_rel = vyi - ground_object.vy_object;
-        if (bc_type == 0) { // STICKY
-            vx_rel = 0;
-            vy_rel = 0;
-        } // end STICKY
-        vxi = vx_rel + ground_object.vx_object;
-        vyi = vy_rel + ground_object.vy_object;
-    } // end if colliding
+
+    for (InfinitePlate &obj : objects) {
+        bool colliding = obj.inside(xi, yi);
+        if (colliding) {
+
+            // if (yi < 0.5)
+            //     debug("Grid position (", xi, ", ", yi, ") is collding with ", obj.name);
+
+            T vx_rel = vxi - obj.vx_object;
+            T vy_rel = vyi - obj.vy_object;
+            if (bc_type == 0) { // STICKY
+                vx_rel = 0;
+                vy_rel = 0;
+            } // end STICKY
+            vxi = vx_rel + obj.vx_object;
+            vyi = vy_rel + obj.vy_object;
+        } // end if colliding
+
+    } // end iterator over objects
+
+
 } // end boundaryCollision
 
 
@@ -379,6 +394,7 @@ void Simulation::deformationUpdate(){
             T delta_gamma = hencky_trial_deviatoric_norm - yield_stress / (2 * mu);
             if (delta_gamma > 0){ // project to yield surface
                 plastic_count++;
+                particles_eps_pl_dev[p] += delta_gamma;
                 TV2 hencky_new = hencky_trial - delta_gamma * (hencky_trial_deviatoric / hencky_trial_deviatoric_norm);
                 particles_F[p] = svd.matrixU() * hencky_new.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
             }
@@ -410,7 +426,7 @@ void Simulation::positionUpdate(){
 void Simulation::saveSim(std::string extra){
     std::ofstream outFile("dumps/out_part_frame_" + extra + std::to_string(frame) + ".csv");
     for(int p = 0; p < Np; p++){
-        outFile << particles_x[p] << "," << particles_y[p] << "," << 0 << "," << particles_vx[p] << "," << particles_vy[p] << "," << 0 << "\n";
+        outFile << particles_x[p] << "," << particles_y[p] << "," << 0 << "," << particles_vx[p] << "," << particles_vy[p] << "," << 0 << "," << particles_eps_pl_dev[p] << "\n";
     }
 }
 
