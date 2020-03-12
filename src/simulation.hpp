@@ -4,9 +4,11 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <chrono>
 #include "tools.hpp"
 #include "object.hpp"
-//#include "particle.hpp"
+#include "data_arrays.hpp"
+#include "timer.hpp"
 
 class Simulation{
 public:
@@ -37,22 +39,11 @@ public:
   T particle_volume; // initial particle volume V0
 
   // Particle data
-  TVX particles_x;
-  TVX particles_y;
-  TVX particles_vx;
-  TVX particles_vy;
-  TVX particles_x0; // Lagrangian coord
-  TVX particles_y0; // Lagrangian coord
-  TVX particles_eps_pl_dev;
-  std::vector<TM2> particles_F;
+  Particles particles;
 
   // Grid data
   unsigned int Nx, Ny;
-  TVX lin_X;
-  TVX lin_Y;
-  TMX grid_VX;
-  TMX grid_VY;
-  TMX grid_mass;
+  Grid grid;
 
   int exit;
 
@@ -68,12 +59,14 @@ public:
 
   std::vector<InfinitePlate> objects;
 
-  void advanceStep();
+  T runtime_p2g;
 
-  // advanceStep relies on (in order):
+  void advanceStep();
   void updateDt();
   void remesh();
   void P2G();
+  void P2G_Optimized();
+  void P2G_Baseline();
   void explicitEulerUpdate();
   void G2P();
   void deformationUpdate();
@@ -84,6 +77,7 @@ public:
 
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();
+  void calculateMassConservation();
 
   void addExternalParticleGravity();
   std::pair<TMX, TMX> createExternalGridGravity();

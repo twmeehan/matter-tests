@@ -6,17 +6,14 @@ Simulation::Simulation(){
     frame = 0;
     exit  = 0;
 
+    runtime_p2g = 0;
+
     /////////// Default - will be overwritten by remesh if used ////////////
     Nx = 21; // N = (L / dx + 1)
     Ny = 21;
-    lin_X     = TVX::LinSpaced(Nx, -0.5, 1.5);
-    lin_Y     = TVX::LinSpaced(Ny, -0.5, 1.5);
-    grid_VX   = TMX::Zero(Nx, Ny);
-    grid_VY   = TMX::Zero(Nx, Ny);
-    grid_mass = TMX::Zero(Nx, Ny);
+    grid = Grid(Nx, Ny);
     /////////////////////////////////////////////////////////////////////////
 }
-
 
 
 void Simulation::initialize(T E, T nu, T density){
@@ -30,12 +27,7 @@ void Simulation::initialize(T E, T nu, T density){
     particle_volume = 1.0 / Np; // INITIAL particle volume V^0
     particle_mass = rho * particle_volume;
 
-    particles_x  = TVX::Zero(Np);
-    particles_y  = TVX::Zero(Np);
-    particles_vx = TVX::Zero(Np);
-    particles_vy = TVX::Zero(Np);
-    particles_eps_pl_dev = TVX::Zero(Np);
-    particles_F.resize(Np); std::fill(particles_F.begin(), particles_F.end(), TM2::Identity());
+    particles = Particles(Np);
 
 }
 
@@ -44,9 +36,11 @@ void Simulation::initialize(T E, T nu, T density){
 
 void Simulation::simulate(){
 
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
     // Lagrangian coordinates
-    particles_x0 = particles_x;
-    particles_y0 = particles_y;
+    particles.x0 = particles.x;
+    particles.y0 = particles.y;
 
     time = 0;
     frame = 0;
@@ -72,6 +66,10 @@ void Simulation::simulate(){
     }
     saveSim();
     saveGridVelocities();
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Simulation took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " milliseconds" << std::endl;
+    debug("Runtime P2G = ", runtime_p2g * 1000.0, " milliseconds");
 }
 
 
@@ -82,9 +80,17 @@ void Simulation::advanceStep(){
     updateDt();
     remesh();
     moveObjects();
+
+         timer t_p2g; t_p2g.start();
     P2G();
+         t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
+
+    // calculateMassConservation();
+
     explicitEulerUpdate();
-    //addExternalParticleGravity();
+
+    // addExternalParticleGravity();
+
     G2P();
     deformationUpdate();
     positionUpdate();
@@ -95,7 +101,7 @@ void Simulation::advanceStep(){
 
 void Simulation::updateDt(){
 
-    T max_speed = std::sqrt((particles_vx.array().square() + particles_vy.array().square()).maxCoeff());
+    T max_speed = std::sqrt((particles.vx.array().square() + particles.vy.array().square()).maxCoeff());
     T dt_cfl = cfl * dx / max_speed;
     dt = std::min(dt_cfl, dt_max);
     dt = std::min(dt, frame_dt*(frame+1) - time);
@@ -128,10 +134,10 @@ void Simulation::updateDt(){
 void Simulation::remesh(){
 
     // ACTUAL min and max position of particles
-    T min_x = particles_x.minCoeff();
-    T min_y = particles_y.minCoeff();
-    T max_x = particles_x.maxCoeff();
-    T max_y = particles_y.maxCoeff();
+    T min_x = particles.x.minCoeff();
+    T min_y = particles.y.minCoeff();
+    T max_x = particles.x.maxCoeff();
+    T max_y = particles.y.maxCoeff();
 
     // ACTUAL (old) side lengths
     T Lx = max_x - min_x;
@@ -159,63 +165,90 @@ void Simulation::remesh(){
 
     // Linspace x and y
     // LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
-    lin_X = TVX::LinSpaced(Nx, low_x, high_x);
-    lin_Y = TVX::LinSpaced(Ny, low_y, high_y);
+    grid.x = TVX::LinSpaced(Nx, low_x, high_x);
+    grid.y = TVX::LinSpaced(Ny, low_y, high_y);
 
-    grid_VX   = TMX::Zero(Nx, Ny);
-    grid_VY   = TMX::Zero(Nx, Ny);
-    grid_mass = TMX::Zero(Nx, Ny);
+    grid.vx   = TMX::Zero(Nx, Ny);
+    grid.vy   = TMX::Zero(Nx, Ny);
+    grid.mass = TMX::Zero(Nx, Ny);
 
 }
 
 
-
-
 void Simulation::P2G(){
+    P2G_Optimized();
+    // P2G_Baseline();
+} // end P2G
+
+
+void Simulation::P2G_Baseline(){
+    // This (nested) loop over i (and j) can easily be paralellized
+    // Need to create thread-local grid.mass, grid.vx, grid.vy
     for(int i=0; i<Nx; i++){
-        //debug("i = ", i);
+        T xi = grid.x(i);
         for(int j=0; j<Ny; j++){
-            //debug("j = ", j);
-            T xi = lin_X(i);
-            T yi = lin_Y(j);
+            T yi = grid.y(j);
             T vxi = 0;
             T vyi = 0;
             T mass = 0;
             for(int p=0; p<Np; p++){
-                //debug(p);
-                T xp = particles_x(p);
-                T yp = particles_y(p);
+                T xp = particles.x(p);
+                T yp = particles.y(p);
                 if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
                     T weight = wip(xp, yp, xi, yi, dx);
                     mass += weight;
-                    vxi  += particles_vx(p) * weight;
-                    vyi  += particles_vy(p) * weight;
+                    vxi  += particles.vx(p) * weight;
+                    vyi  += particles.vy(p) * weight;
                 }
             } // end for particles
-            grid_mass(i,j) = mass * particle_mass;
-            if (mass < 1e-15){
-                grid_VX(i,j)   = 0.0;
-                grid_VY(i,j)   = 0.0;
+            grid.mass(i,j) = mass * particle_mass;
+            if (mass < 1e-25){
+                grid.vx(i,j)   = 0.0;
+                grid.vy(i,j)   = 0.0;
             } else {
-                grid_VX(i,j)   = vxi / mass;
-                grid_VY(i,j)   = vyi / mass;
+                grid.vx(i,j)   = vxi / mass;
+                grid.vy(i,j)   = vyi / mass;
             }
         } // end for j
     } // end for i
-
-    T grid_mass_total     = grid_mass.sum();
-    T particle_mass_total = particle_mass*Np;
-    debug("               total grid mass = ", grid_mass_total    );
-    debug("               total part mass = ", particle_mass_total);
-    if ( std::abs(grid_mass_total-particle_mass_total) > 1e-5 * particle_mass_total ){
-        debug("MASS NOT CONSERVED!!!");
-        exit = 1;
-        return;
-    }
+} // end P2G_Baseline
 
 
-} // end P2G
+void Simulation::P2G_Optimized(){
 
+    T x0 = grid.x(0);
+    T y0 = grid.y(0);
+
+    for(int p = 0; p < Np; p++){
+        T xp = particles.x(p);
+        T yp = particles.y(p);
+        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is only valid in quadratic spline case!!
+        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is only valid in quadratic spline case!!
+
+        for(int i = i_base; i < i_base+4; i++){
+            T xi = grid.x(i);
+            for(int j = j_base; j < j_base+4; j++){
+                T yi = grid.y(j);
+                T weight = wip(xp, yp, xi, yi, dx);
+
+                if (weight > 1e-25){
+                    grid.mass(i,j) += weight;
+                    grid.vx(i,j)   += particles.vx(p) * weight;
+                    grid.vy(i,j)   += particles.vy(p) * weight;
+                }
+
+            } // end for j
+        } // end for i
+    } // end for p
+
+    ///////////////////////////////////////////////////////////
+    // At this point in time grid.mass is equal to m_i / m_p //
+    ///////////////////////////////////////////////////////////
+    grid.vx = (grid.mass.array() > 0).select( (grid.vx.array() / grid.mass.array()).matrix(), TMX::Zero(Nx, Ny) );
+    grid.vy = (grid.mass.array() > 0).select( (grid.vy.array() / grid.mass.array()).matrix(), TMX::Zero(Nx, Ny) );
+    grid.mass *= particle_mass;
+
+} // end P2G_Optimized
 
 
 
@@ -231,16 +264,16 @@ void Simulation::explicitEulerUpdate(){
 
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
-            if (grid_mass(i,j) > 1e-15){
-                T xi = lin_X(i);
-                T yi = lin_Y(j);
+            if (grid.mass(i,j) > 1e-25){
+                T xi = grid.x(i);
+                T yi = grid.y(j);
                 TV2 force = TV2::Zero();
                 for(int p=0; p<Np; p++){
-                    T xp = particles_x(p);
-                    T yp = particles_y(p);
+                    T xp = particles.x(p);
+                    T yp = particles.y(p);
                     if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
                         // Fe = particles[p].F;
-                        Fe = particles_F[p];
+                        Fe = particles.F[p];
 
                         // Remember:
                         // P = dPsidF              (first Piola-Kirchhoff stress tensor)
@@ -265,7 +298,7 @@ void Simulation::explicitEulerUpdate(){
                     }
                 } // end for particles
 
-                TV2 velocity_increment = -dt * particle_volume * force / grid_mass(i,j) + dt * gravity;
+                TV2 velocity_increment = -dt * particle_volume * force / grid.mass(i,j) + dt * gravity;
 
                 //////////// if external grid gravity: //////////////////
                 // external_gravity(0) = external_gravity_pair.first(i,j);
@@ -273,14 +306,14 @@ void Simulation::explicitEulerUpdate(){
                 // velocity_increment += dt * external_gravity;
                 ////////////////////////////////////////////////////////
 
-                T new_vxi = grid_VX(i,j) + velocity_increment(0);
-                T new_vyi = grid_VY(i,j) + velocity_increment(1);
-                T new_xi = lin_X(i) + dt * new_vxi;
-                T new_yi = lin_Y(j) + dt * new_vyi;
+                T new_vxi = grid.vx(i,j) + velocity_increment(0);
+                T new_vyi = grid.vy(i,j) + velocity_increment(1);
+                T new_xi = grid.x(i) + dt * new_vxi;
+                T new_yi = grid.y(j) + dt * new_vyi;
                 boundaryCollision(new_xi, new_yi, new_vxi, new_vyi);
 
-                grid_VX(i,j) = new_vxi;
-                grid_VY(i,j) = new_vyi;
+                grid.vx(i,j) = new_vxi;
+                grid.vy(i,j) = new_vyi;
             } // end if positive mass
         } // end for j
     } // end for i
@@ -300,10 +333,6 @@ void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
     for (InfinitePlate &obj : objects) {
         bool colliding = obj.inside(xi, yi);
         if (colliding) {
-
-            // if (yi < 0.5)
-            //     debug("Grid position (", xi, ", ", yi, ") is collding with ", obj.name);
-
             T vx_rel = vxi - obj.vx_object;
             T vy_rel = vyi - obj.vy_object;
             if (bc_type == 0) { // STICKY
@@ -325,24 +354,26 @@ void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
 
 
 void Simulation::G2P(){
+    // This loop over p can be easily paralellized
+    // Need to create thread-local versions of particles.vx and vy
     for(int p=0; p<Np; p++){
-        T xp = particles_x(p);
-        T yp = particles_y(p);
+        T xp = particles.x(p);
+        T yp = particles.y(p);
         T vxp = 0;
         T vyp = 0;
         for(int i=0; i<Nx; i++){
+            T xi = grid.x(i);
             for(int j=0; j<Ny; j++){
-                T xi = lin_X(i);
-                T yi = lin_Y(j);
+                T yi = grid.y(j);
                 if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
                     T weight = wip(xp, yp, xi, yi, dx);
-                    vxp += grid_VX(i,j) * weight;
-                    vyp += grid_VY(i,j) * weight;
+                    vxp += grid.vx(i,j) * weight;
+                    vyp += grid.vy(i,j) * weight;
                 }
             }
         }
-        particles_vx(p) = vxp;
-        particles_vy(p) = vyp;
+        particles.vx(p) = vxp;
+        particles.vy(p) = vyp;
     }
 }
 
@@ -358,18 +389,17 @@ void Simulation::deformationUpdate(){
 
         TM2 sum = TM2::Zero();
 
-        T xp = particles_x(p);
-        T yp = particles_y(p);
+        T xp = particles.x(p);
+        T yp = particles.y(p);
 
         for(int i=0; i<Nx; i++){
+            T xi = grid.x(i);
             for(int j=0; j<Ny; j++){
-
-                T xi = lin_X(i);
-                T yi = lin_Y(j);
+                T yi = grid.y(j);
 
                 TV2 vi;
-                vi(0) = grid_VX(i,j);
-                vi(1) = grid_VY(i,j);
+                vi(0) = grid.vx(i,j);
+                vi(1) = grid.vy(i,j);
 
                 TV2 grad_wip;
                 grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
@@ -379,9 +409,9 @@ void Simulation::deformationUpdate(){
             } // end loop i
         } // end loop j
 
-        TM2 Fe_trial = particles_F[p];
+        TM2 Fe_trial = particles.F[p];
         Fe_trial = Fe_trial + dt * sum * Fe_trial;
-        particles_F[p] = Fe_trial;
+        particles.F[p] = Fe_trial;
 
         if (plasticity){
             Eigen::JacobiSVD<TM2> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
@@ -394,13 +424,13 @@ void Simulation::deformationUpdate(){
             T delta_gamma = hencky_trial_deviatoric_norm - yield_stress / (2 * mu);
             if (delta_gamma > 0){ // project to yield surface
                 plastic_count++;
-                particles_eps_pl_dev[p] += delta_gamma;
+                particles.eps_pl_dev[p] += delta_gamma;
                 TV2 hencky_new = hencky_trial - delta_gamma * (hencky_trial_deviatoric / hencky_trial_deviatoric_norm);
-                particles_F[p] = svd.matrixU() * hencky_new.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+                particles.F[p] = svd.matrixU() * hencky_new.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
             }
         }
 
-        // debug("               Fe_new = \n", particles_F[p]);
+        // debug("               Fe_new = \n", particles.F[p]);
 
     } // end loop over particles
 
@@ -414,8 +444,8 @@ void Simulation::deformationUpdate(){
 
 void Simulation::positionUpdate(){
     for(int p=0; p<Np; p++){
-        particles_x(p) = particles_x(p) + dt * particles_vx(p);
-        particles_y(p) = particles_y(p) + dt * particles_vy(p);
+        particles.x(p) = particles.x(p) + dt * particles.vx(p);
+        particles.y(p) = particles.y(p) + dt * particles.vy(p);
     } // end loop over particles
 }
 
@@ -426,7 +456,7 @@ void Simulation::positionUpdate(){
 void Simulation::saveSim(std::string extra){
     std::ofstream outFile("dumps/out_part_frame_" + extra + std::to_string(frame) + ".csv");
     for(int p = 0; p < Np; p++){
-        outFile << particles_x[p] << "," << particles_y[p] << "," << 0 << "," << particles_vx[p] << "," << particles_vy[p] << "," << 0 << "," << particles_eps_pl_dev[p] << "\n";
+        outFile << particles.x[p] << "," << particles.y[p] << "," << 0 << "," << particles.vx[p] << "," << particles.vy[p] << "," << 0 << "," << particles.eps_pl_dev[p] << "\n";
     }
 }
 
@@ -434,7 +464,7 @@ void Simulation::saveGridVelocities(std::string extra){
     std::ofstream outFile("dumps/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
-            outFile << lin_X(i) << "," << lin_Y(j) << "," << 0 << "," << grid_VX(i,j) << "," << grid_VY(i,j) << "," << 0 << "\n";
+            outFile << grid.x(i) << "," << grid.y(j) << "," << 0 << "," << grid.vx(i,j) << "," << grid.vy(i,j) << "," << 0 << "\n";
         }
     }
 }
@@ -449,12 +479,12 @@ std::pair<TMX, TMX> Simulation::createExternalGridGravity(){
     TMX grid_Y0 = TMX::Zero(Nx,Ny);
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
-            if (grid_mass(i,j) < 1e-15){ // if no mass at current grid point, no point adding a external force to it.
+            if (grid.mass(i,j) < 1e-25){ // if no mass at current grid point, no point adding a external force to it.
                 grid_X0(i,j) = 0.0;
                 grid_Y0(i,j) = 0.0;
             } else {
-                grid_X0(i,j) = lin_X(i);
-                grid_Y0(i,j) = lin_Y(j);
+                grid_X0(i,j) = grid.x(i);
+                grid_Y0(i,j) = grid.y(j);
             } // end if grid mass nonzero
         } // end for j
     } // end for i
@@ -469,21 +499,21 @@ void Simulation::addExternalParticleGravity(){
     G2P();
     // 2. Apply gravity on particle velocity
     for(int p=0; p<Np; p++){
-        particles_vx(p) += dt * (-2.0*amplitude*particles_x0(p));
-        particles_vy(p) += dt * (-2.0*amplitude*particles_y0(p));
+        particles.vx(p) += dt * (-2.0*amplitude*particles.x0(p));
+        particles.vy(p) += dt * (-2.0*amplitude*particles.y0(p));
     }
     // 3. Transfer particle velocity back to grid
     P2G();
 } // end addExternalParticleGravity
 
 
-// These two functions are only for validating that momentum is conserved
+// These functions are only for validating conservation laws
 void Simulation::calculateMomentumOnParticles(){
     T momentum_x = 0;
     T momentum_y = 0;
     for(int p=0; p<Np; p++){
-        momentum_x += particle_mass * particles_vx(p);
-        momentum_y += particle_mass * particles_vy(p);
+        momentum_x += particle_mass * particles.vx(p);
+        momentum_y += particle_mass * particles.vy(p);
     }
     debug("               total part momentum x-comp = ", momentum_x);
     debug("               total part momentum y-comp = ", momentum_y);
@@ -493,10 +523,22 @@ void Simulation::calculateMomentumOnGrid(){
     T momentum_y = 0;
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
-            momentum_x += grid_mass(i,j) * grid_VX(i,j);
-            momentum_y += grid_mass(i,j) * grid_VY(i,j);
+            momentum_x += grid.mass(i,j) * grid.vx(i,j);
+            momentum_y += grid.mass(i,j) * grid.vy(i,j);
         }
     }
     debug("               total grid momentum x-comp = ", momentum_x);
     debug("               total grid momentum y-comp = ", momentum_y);
+}
+
+void Simulation::calculateMassConservation(){
+    T grid_mass_total     = grid.mass.sum();
+    T particle_mass_total = particle_mass*Np;
+    debug("               total grid mass = ", grid_mass_total    );
+    debug("               total part mass = ", particle_mass_total);
+    if ( std::abs(grid_mass_total-particle_mass_total) > 1e-5 * particle_mass_total ){
+        debug("MASS NOT CONSERVED!!!");
+        exit = 1;
+        return;
+    }
 }

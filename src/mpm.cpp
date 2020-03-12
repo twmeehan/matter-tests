@@ -7,13 +7,10 @@
 //  * Complete doxygen
 //  * Alembic output
 //  * FLIP
-//  * Stationary and moving levelsets with BC
+//  * SLIP BC
 //  * Laplace of splines and regularization
 //  * Parallilize for loops over particles
 //  * Loop only over grid points within 2dx of the particle position
-//  * Make struct of std::vectors containging particle data, and the same for grid data
-//  * Fix grad_wip to return vector
-//  * Export (volumetric/deviatoric) plastic strain
 //////////////////////////////////////////////////////////////////
 
 int main(){
@@ -27,7 +24,7 @@ int main(){
       sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
 
-      sim.dx = 0.05;
+      sim.dx = 0.1;
 
       unsigned int Nloop = std::round(1.0/sim.dx);
       debug("Nloop           = ", Nloop);
@@ -74,10 +71,10 @@ int main(){
                   // CASE 0:
                   T pvx = 0;
                   T pvy = sim.amplitude;
-                  sim.particles_x(p) = px;
-                  sim.particles_y(p) = py;
-                  sim.particles_vx(p) = pvx;
-                  sim.particles_vy(p) = pvy;
+                  sim.particles.x(p) = px;
+                  sim.particles.y(p) = py;
+                  sim.particles.vx(p) = pvx;
+                  sim.particles.vy(p) = pvy;
               } // end for d
           } // end for i
       } // end for j
