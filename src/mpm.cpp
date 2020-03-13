@@ -9,8 +9,7 @@
 //  * FLIP
 //  * SLIP BC
 //  * Laplace of splines and regularization
-//  * Parallilize for loops over particles
-//  * Loop only over grid points within 2dx of the particle position
+//  * Parallilize for loops
 //////////////////////////////////////////////////////////////////
 
 int main(){
@@ -20,27 +19,22 @@ int main(){
 
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 200.0;
-
+      sim.dx = 0.1;
       sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
 
-      sim.dx = 0.1;
 
       unsigned int Nloop = std::round(1.0/sim.dx);
       debug("Nloop           = ", Nloop);
-
       sim.Np = Nloop * Nloop * 4;
-
-      sim.amplitude = 0.0;
 
       std::string name;
       name = "ground";     InfinitePlate ground     = InfinitePlate(0,  0, lower, name); sim.objects.push_back(ground);
       name = "compressor"; InfinitePlate compressor = InfinitePlate(1, -1, upper, name); sim.objects.push_back(compressor);
+      sim.boundary_condition = STICKY;
 
-      sim.bc_type = 0;
-
-      sim.neoHookean = false;
-      sim.plasticity = true;
+      sim.elastic_model = StvkWithHencky;
+      sim.plastic_model = VonMises;
       sim.yield_stress = std::sqrt(2.0/3.0) * /* q_max */ 50000.0;
 
       sim.initialize(/* E */ 1e7, /* nu */ 0.3, /* rho */ 100);
@@ -50,6 +44,7 @@ int main(){
       debug("particle_mass   = ", sim.particle_mass);
       debug("Np              = ", sim.Np);
 
+      sim.amplitude = 0.0;
       std::vector<T> disp_i(4); disp_i[0] = 0.25; disp_i[1] = 0.75; disp_i[2] = 0.25; disp_i[3] = 0.75;
       std::vector<T> disp_j(4); disp_j[0] = 0.25; disp_j[1] = 0.75; disp_j[2] = 0.75; disp_j[3] = 0.25;
       int p = -1;

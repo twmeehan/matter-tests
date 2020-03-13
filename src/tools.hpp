@@ -13,6 +13,12 @@ typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> TMX;
 typedef Eigen::Matrix<T, 2, 1> TV2;
 typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TVX;
 typedef Eigen::Array<T,2,1> TA2;
+////////////////////////
+
+enum PlateType { upper, lower};
+enum ElasticModel { StvkWithHencky, NeoHookean };
+enum PlasticModel { NoPlasticity, VonMises };
+enum BoundaryCondition { STICKY, SLIP };
 
 
 ///////////////////// TOOLS ////////////////////////
@@ -49,6 +55,16 @@ void debug(T in1, U in2, V in3, W in4, X in5, Y in6, Z in7){
 inline int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
+
+// T selfDoubleDot(TM2& A){
+//     T out = 0;
+//     for(int i=0; i<2; i++){
+//         for(int j=0; j<2; j++){
+//             out += A(i,j) * A(i,j);
+//         }
+//     }
+//     return out;
+// }
 
 /*!
  \param x x

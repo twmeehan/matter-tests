@@ -4,8 +4,6 @@
 #include "tools.hpp"
 #include <string>
 
-enum PlateType { upper, lower};
-
 class InfinitePlate{
 public:
   InfinitePlate() : y_object(0.0), vy_object(0.0), vx_object(0.0), plate_type(lower), name("noname") {}

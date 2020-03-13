@@ -15,7 +15,8 @@ public:
       vx = TVX::Zero(Np);
       vy = TVX::Zero(Np);
       eps_pl_dev = TVX::Zero(Np);
-      F.resize(Np); std::fill(F.begin(), F.end(), TM2::Identity());
+      tau.resize(Np); std::fill( tau.begin(), tau.end(), TM2::Zero()     );
+      F.resize(Np);   std::fill( F.begin(),   F.end(),   TM2::Identity() );
   }
   TVX x;
   TVX y;
@@ -24,6 +25,7 @@ public:
   TVX vx;
   TVX vy;
   TVX eps_pl_dev;
+  std::vector<TM2> tau;
   std::vector<TM2> F;
 };
 

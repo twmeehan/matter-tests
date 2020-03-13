@@ -22,6 +22,7 @@ public:
   unsigned int current_time_step;
   unsigned int frame;
   unsigned int end_frame;
+  int exit;
   T time;
   T final_time;
   T frame_dt;
@@ -30,50 +31,51 @@ public:
   T wave_speed;
   T cfl;
   T dx;
-
   T rho;
   TV2 gravity;
 
+  T amplitude;
+
+  // Particle data
   unsigned int Np;
   T particle_mass;
   T particle_volume; // initial particle volume V0
-
-  // Particle data
   Particles particles;
 
   // Grid data
   unsigned int Nx, Ny;
   Grid grid;
 
-  int exit;
-
+  // Elastoplasticity
   T mu;
   T lambda;
-
-  T amplitude;
-  unsigned int bc_type;
-
-  bool neoHookean;
-  bool plasticity;
+  ElasticModel elastic_model;
+  PlasticModel plastic_model;
   T yield_stress;
 
+  // Objects
+  BoundaryCondition boundary_condition;
   std::vector<InfinitePlate> objects;
 
+  // Runtime measurements
   T runtime_p2g;
   T runtime_g2p;
   T runtime_euler;
   T runtime_defgrad;
 
+  // Functions
   void advanceStep();
   void updateDt();
   void remesh();
   void P2G();
-  void P2G_Optimized();
   void P2G_Baseline();
+  void P2G_Optimized();
   void explicitEulerUpdate();
+  void explicitEulerUpdate_Baseline();
+  void explicitEulerUpdate_Optimized();
   void G2P();
-  void G2P_Optimized();
   void G2P_Baseline();
+  void G2P_Optimized();
   void deformationUpdate();
   void positionUpdate();
 

@@ -176,12 +176,24 @@ void Simulation::remesh(){
 
 void Simulation::P2G(){
     timer t_p2g; t_p2g.start();
-
-    P2G_Optimized();
     // P2G_Baseline();
-
+    P2G_Optimized();
     t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
 } // end P2G
+
+void Simulation::explicitEulerUpdate(){
+    timer t_euler; t_euler.start();
+    // explicitEulerUpdate_Baseline();
+    explicitEulerUpdate_Optimized();
+    t_euler.stop(); runtime_euler += t_euler.get_timing();
+}
+
+void Simulation::G2P(){
+    timer t_g2p; t_g2p.start();
+    // G2P_Baseline();
+    G2P_Optimized();
+    t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
+}
 
 
 void Simulation::P2G_Baseline(){
@@ -225,8 +237,8 @@ void Simulation::P2G_Optimized(){
     for(int p = 0; p < Np; p++){
         T xp = particles.x(p);
         T yp = particles.y(p);
-        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is only valid in quadratic spline case!!
-        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is only valid in quadratic spline case!!
+        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);
@@ -256,8 +268,9 @@ void Simulation::P2G_Optimized(){
 
 
 
-void Simulation::explicitEulerUpdate(){
-    timer t_euler; t_euler.start();
+
+
+void Simulation::explicitEulerUpdate_Baseline(){
     TV2 grad_wip;
     TM2 Fe, dPsidF;
 
@@ -271,7 +284,7 @@ void Simulation::explicitEulerUpdate(){
             if (grid.mass(i,j) > 1e-25){
                 T xi = grid.x(i);
                 T yi = grid.y(j);
-                TV2 force = TV2::Zero();
+                TV2 grid_force = TV2::Zero();
                 for(int p=0; p<Np; p++){
                     T xp = particles.x(p);
                     T yp = particles.y(p);
@@ -283,26 +296,29 @@ void Simulation::explicitEulerUpdate(){
                         // P = dPsidF              (first Piola-Kirchhoff stress tensor)
                         // tau = P * F.transpose() (Kirchhoff stress tensor)
 
-                        if (neoHookean){
+                        if (elastic_model == NeoHookean){
                             dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
                         }
-                        else{ // St Venant Kirchhoff with Hencky strain
+                        else if (elastic_model == StvkWithHencky){
                             Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
                             TA2 sigma = svd.singularValues().array(); // abs() for inverse also??
                             TM2 logSigma = sigma.abs().log().matrix().asDiagonal();
                             TM2 invSigma = sigma.inverse().matrix().asDiagonal();
                             dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
                         }
+                        else{
+                            debug("You specified an unvalid ELASTIC model!");
+                        }
 
                         grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
                         grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
 
-                        force += dPsidF * Fe.transpose() * grad_wip;
+                        grid_force += dPsidF * Fe.transpose() * grad_wip;
 
                     }
                 } // end for particles
 
-                TV2 velocity_increment = -dt * particle_volume * force / grid.mass(i,j) + dt * gravity;
+                TV2 velocity_increment = -dt * particle_volume * grid_force / grid.mass(i,j) + dt * gravity;
 
                 //////////// if external grid gravity: //////////////////
                 // external_gravity(0) = external_gravity_pair.first(i,j);
@@ -321,10 +337,103 @@ void Simulation::explicitEulerUpdate(){
             } // end if positive mass
         } // end for j
     } // end for i
-    t_euler.stop(); runtime_euler += t_euler.get_timing();
-} // end explicitEulerUpdate
+} // end explicitEulerUpdate_Baseline
 
+void Simulation::explicitEulerUpdate_Optimized(){
+    TV2 grad_wip;
+    TM2 Fe, dPsidF, tau;
 
+    // Remember:
+    // P = dPsidF              (first Piola-Kirchhoff stress tensor)
+    // tau = P * F.transpose() (Kirchhoff stress tensor)
+
+    T x0 = grid.x(0);
+    T y0 = grid.y(0);
+
+    TMX grid_force_x = TMX::Zero(Nx, Ny);
+    TMX grid_force_y = TMX::Zero(Nx, Ny);
+
+    for(int p = 0; p < Np; p++){
+
+        Fe = particles.F[p];
+
+        if (elastic_model == NeoHookean){
+            dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
+        }
+        else if (elastic_model == StvkWithHencky){ // St Venant Kirchhoff with Hencky strain
+            Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
+            TA2 sigma = svd.singularValues().array(); // abs() for inverse also??
+            TM2 logSigma = sigma.abs().log().matrix().asDiagonal();
+            TM2 invSigma = sigma.inverse().matrix().asDiagonal();
+            dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
+        }
+        else{
+            debug("You specified an unvalid ELASTIC model!");
+        }
+
+        tau = dPsidF * Fe.transpose();
+        particles.tau[p] = tau;
+
+        T xp = particles.x(p);
+        T yp = particles.y(p);
+        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+
+        for(int i = i_base; i < i_base+4; i++){
+            T xi = grid.x(i);
+            for(int j = j_base; j < j_base+4; j++){
+                T yi = grid.y(j);
+
+                if (grid.mass(i,j) > 1e-25){
+                    grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
+                    grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
+                    TV2 grid_force_increment = tau * grad_wip;
+                    grid_force_x(i,j) += grid_force_increment(0);
+                    grid_force_y(i,j) += grid_force_increment(1);
+                } // end if non-zero grid mass
+
+             } // end for j
+         } // end for i
+
+    } // end for particles
+
+    //////////// if external grid gravity: //////////////////
+    // std::pair<TMX, TMX> external_gravity_pair = createExternalGridGravity();
+    ////////////////////////////////////////////////////////
+
+    T dt_particle_volume = dt * particle_volume;
+    T dt_gravity_x = dt * gravity(0);
+    T dt_gravity_y = dt * gravity(1);
+
+    for(int i = 0; i < Nx; i++){
+        for(int j = 0; j < Ny; j++){
+            T mi = grid.mass(i,j);
+            if (mi > 1e-25){
+
+                T velocity_increment_x = -dt_particle_volume * grid_force_x(i,j) / mi + dt_gravity_x;
+                T velocity_increment_y = -dt_particle_volume * grid_force_y(i,j) / mi + dt_gravity_y;
+
+                //////////// if external grid gravity: //////////////////
+                // T external_gravity = external_gravity_pair.first(i,j);
+                // T external_gravity = external_gravity_pair.second(i,j);
+                // velocity_increment_x += dt * external_gravity(0);
+                // velocity_increment_y += dt * external_gravity(1);
+                ////////////////////////////////////////////////////////
+
+                T new_vxi = grid.vx(i,j) + velocity_increment_x;
+                T new_vyi = grid.vy(i,j) + velocity_increment_y;
+                T new_xi = grid.x(i) + dt * new_vxi;
+                T new_yi = grid.y(j) + dt * new_vyi;
+                boundaryCollision(new_xi, new_yi, new_vxi, new_vyi);
+                grid.vx(i,j) = new_vxi;
+                grid.vy(i,j) = new_vyi;
+
+            } // end if non-zero grid mass
+
+        } // end for j
+    } // end for i
+
+} // end explicitEulerUpdate_Optimized
 
 
 void Simulation::moveObjects(){
@@ -340,7 +449,7 @@ void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
         if (colliding) {
             T vx_rel = vxi - obj.vx_object;
             T vy_rel = vyi - obj.vy_object;
-            if (bc_type == 0) { // STICKY
+            if (boundary_condition == STICKY) { // STICKY
                 vx_rel = 0;
                 vy_rel = 0;
             } // end STICKY
@@ -355,14 +464,6 @@ void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
 
 
 
-void Simulation::G2P(){
-    timer t_g2p; t_g2p.start();
-
-    // G2P_Baseline();
-    G2P_Optimized();
-
-    t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
-}
 
 
 void Simulation::G2P_Baseline(){
@@ -401,8 +502,8 @@ void Simulation::G2P_Optimized(){
         T yp = particles.y(p);
         T vxp = 0;
         T vyp = 0;
-        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is only valid in quadratic spline case!!
-        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is only valid in quadratic spline case!!
+        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);
@@ -439,8 +540,8 @@ void Simulation::deformationUpdate(){
         T xp = particles.x(p);
         T yp = particles.y(p);
 
-        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is only valid in quadratic spline case!!
-        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is only valid in quadratic spline case!!
+        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);
@@ -463,25 +564,27 @@ void Simulation::deformationUpdate(){
         Fe_trial = Fe_trial + dt * sum * Fe_trial;
         particles.F[p] = Fe_trial;
 
-        if (plasticity){
+        if (plastic_model == VonMises){
             Eigen::JacobiSVD<TM2> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
-            TV2 hencky_trial = svd.singularValues().array().log(); // Jixie does not use abs value, however Pradhana-thesis does.
-            T   hencky_trial_trace = hencky_trial.sum();
-            TV2 hencky_trial_deviatoric = hencky_trial - (hencky_trial_trace / 2.0) * TV2::Ones();
-            T   hencky_trial_deviatoric_norm = hencky_trial_deviatoric.norm();
+            TV2 hencky = svd.singularValues().array().log(); // Jixie does not use abs value, however Pradhana-thesis does.
+            T   hencky_trace = hencky.sum();
+            TV2 hencky_deviatoric = hencky - (hencky_trace / 2.0) * TV2::Ones();
+            T   hencky_deviatoric_norm = hencky_deviatoric.norm();
 
-            // Von Mises:
-            T delta_gamma = hencky_trial_deviatoric_norm - yield_stress / (2 * mu);
+            T delta_gamma = hencky_deviatoric_norm - yield_stress / (2 * mu);
             if (delta_gamma > 0){ // project to yield surface
                 plastic_count++;
                 particles.eps_pl_dev[p] += delta_gamma;
-                TV2 hencky_new = hencky_trial - delta_gamma * (hencky_trial_deviatoric / hencky_trial_deviatoric_norm);
-                particles.F[p] = svd.matrixU() * hencky_new.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+                hencky -= delta_gamma * (hencky_deviatoric / hencky_deviatoric_norm);
+                particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
             }
+        } // end VonMises Plasticity
+        else if (plastic_model == NoPlasticity){
+            // Do nothing
         }
-
-        // debug("               Fe_new = \n", particles.F[p]);
-
+        else{
+            debug("You specified an unvalid PLASTIC model!");
+        }
     } // end loop over particles
 
     debug("               projected particles = ", plastic_count, " / ", Np);
@@ -507,7 +610,20 @@ void Simulation::positionUpdate(){
 void Simulation::saveSim(std::string extra){
     std::ofstream outFile("dumps/out_part_frame_" + extra + std::to_string(frame) + ".csv");
     for(int p = 0; p < Np; p++){
-        outFile << particles.x[p] << "," << particles.y[p] << "," << 0 << "," << particles.vx[p] << "," << particles.vy[p] << "," << 0 << "," << particles.eps_pl_dev[p] << "\n";
+
+        // double pressure  = -tau.sum() / 2.0;
+        // TM2 tau_dev = tau + pressure * TM2::Identity();
+        // double devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
+
+        outFile << particles.x[p]          << ","
+                << particles.y[p]          << ","
+                << 0                       << ","
+                << particles.vx[p]         << ","
+                << particles.vy[p]         << ","
+                << 0                       << ","
+                << particles.eps_pl_dev[p] << "\n";
+                // << pressure                << ","
+                // << devstress               << "\n";
     }
 }
 
@@ -522,6 +638,7 @@ void Simulation::saveGridVelocities(std::string extra){
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////??????/ EXTRA FUNCTIONS //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // This function can only be used with fixed mesh
