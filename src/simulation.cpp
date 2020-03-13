@@ -20,6 +20,11 @@ Simulation::Simulation(){
 
 
 void Simulation::initialize(T E, T nu, T density){
+
+    std::cout << "------------------------------------------------ " << std::endl;
+    std::cout << "---------------- This is Larsie ---------------- " << std::endl;
+    std::cout << "------------------------------------------------ " << std::endl;
+
     mu = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
     lambda = E / (2.0*(1.0+nu));
     rho = density;
@@ -611,9 +616,10 @@ void Simulation::saveSim(std::string extra){
     std::ofstream outFile("dumps/out_part_frame_" + extra + std::to_string(frame) + ".csv");
     for(int p = 0; p < Np; p++){
 
-        // double pressure  = -tau.sum() / 2.0;
-        // TM2 tau_dev = tau + pressure * TM2::Identity();
-        // double devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
+        TM2 tau = particles.tau[p];
+        T pressure  = -tau.sum() / 2.0;
+        TM2 tau_dev = tau + pressure * TM2::Identity();
+        T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
 
         outFile << particles.x[p]          << ","
                 << particles.y[p]          << ","
@@ -621,9 +627,9 @@ void Simulation::saveSim(std::string extra){
                 << particles.vx[p]         << ","
                 << particles.vy[p]         << ","
                 << 0                       << ","
-                << particles.eps_pl_dev[p] << "\n";
-                // << pressure                << ","
-                // << devstress               << "\n";
+                << particles.eps_pl_dev[p] << ","
+                << pressure                << ","
+                << devstress               << "\n";
     }
 }
 

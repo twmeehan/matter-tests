@@ -56,15 +56,10 @@ inline int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
-// T selfDoubleDot(TM2& A){
-//     T out = 0;
-//     for(int i=0; i<2; i++){
-//         for(int j=0; j<2; j++){
-//             out += A(i,j) * A(i,j);
-//         }
-//     }
-//     return out;
-// }
+inline T selfDoubleDot(TM2& A){
+    T out = A(0,0)*A(0,0) + A(1,1)*A(1,1) + A(0,1)*A(0,1) + A(1,0)*A(1,0);
+    return out;
+}
 
 /*!
  \param x x
