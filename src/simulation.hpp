@@ -10,6 +10,8 @@
 #include "data_arrays.hpp"
 #include "timer.hpp"
 
+#include <omp.h>
+
 class Simulation{
 public:
   //Simulation() : current_time_step(0), exit(0) {};
@@ -19,6 +21,7 @@ public:
   void saveSim(std::string extra = "");
   void saveGridVelocities(std::string extra = "");
 
+  unsigned int n_threads;
   unsigned int current_time_step;
   unsigned int frame;
   unsigned int end_frame;
@@ -67,18 +70,25 @@ public:
   void advanceStep();
   void updateDt();
   void remesh();
+
   void P2G();
   void P2G_Baseline();
   void P2G_Optimized();
   void P2G_Optimized_Parallel();
+
   void explicitEulerUpdate();
   void explicitEulerUpdate_Baseline();
   void explicitEulerUpdate_Optimized();
+
   void G2P();
   void G2P_Baseline();
   void G2P_Optimized();
   void G2P_Optimized_Parallel();
+
   void deformationUpdate();
+  void deformationUpdate_Baseline();
+  void deformationUpdate_Parallel();
+
   void positionUpdate();
 
   void moveObjects();

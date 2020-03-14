@@ -22,6 +22,8 @@ int main(){
       sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
 
+      sim.n_threads = 4;
+
 
       unsigned int Nloop = std::round(1.0/sim.dx);
       debug("Nloop           = ", Nloop);

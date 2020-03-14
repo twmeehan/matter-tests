@@ -1,4 +1,4 @@
-add_executable(mpm mpm.cpp simulation.cpp)
+add_executable(mpm mpm.cpp simulation.cpp deformation_update.cpp p2g.cpp g2p.cpp explicit_euler_update.cpp)
 
 if (USE_ABC)
 	set(ALEMBIC_INCLUDES "/home/blatny/alembic/lib/")
