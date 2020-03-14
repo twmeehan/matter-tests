@@ -7,8 +7,11 @@ if (USE_ABC)
 	include_directories("${OPENEXR_INCLUDES}")
 	set(ALEMBIC_LIBRARIES "/home/blatny/alembic/build/lib/Alembic/libAlembic.so")
 endif (USE_ABC)
+
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
-target_link_libraries (mpm Eigen3::Eigen ${ALEMBIC_LIBRARIES})
+find_package(OpenMP REQUIRED)
+
+target_link_libraries (mpm OpenMP::OpenMP_CXX Eigen3::Eigen ${ALEMBIC_LIBRARIES})
 
 
 # -lAlembic -L/home/blatny/alembic/build/lib/Alembic -I/home/blatny/alembic/lib/ -I/usr/include/OpenEXR

@@ -4,11 +4,13 @@ An implementation of the Material Point Method (MPM) in the finite-strain elasto
 
 ### Features and limitations
 
-Currently only supports 2D and quadratic splines.
+Currently only supports 2D. However, the code is written in a general way and expanding to 3D is easy.
+
+Supports quadratic B-splines and PIC for particle-grid interpolation.
 
 Supports Neo-Hookean and St. Venant-Kirchhoff elasticity.
 
-So far the only plastic model is Von Mises with Hencky strain, which can only be used with the St. Venant-Kirchhoff elastic model.
+Supports Von Mises plasticity with Hencky strain, which can only be used with the St. Venant-Kirchhoff elastic model.
 
 Implementing other elastic or plastic models is easy due to the general framework of the code.
 
@@ -44,4 +46,4 @@ Larsie is continously implemented according to the principle that premature opti
 
 ### Dependencies
 
-Larsie only relies on the linear algebra library Eigen. 
+Larsie only relies only on CMake and the linear algebra library Eigen.

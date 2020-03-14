@@ -1,4 +1,6 @@
 #include "simulation.hpp"
+#include <omp.h>
+int N_THREADS = 4;
 
 Simulation::Simulation(){
     current_time_step = 0;
@@ -64,6 +66,7 @@ void Simulation::simulate(){
         current_time_step++;
         if( std::abs(time - frame_dt*(frame+1)) < 1e-15 ){
             frame++;
+            std::cout << "Saving frame " << frame << std::endl;
             saveSim();
             saveGridVelocities();
         }
@@ -182,7 +185,8 @@ void Simulation::remesh(){
 void Simulation::P2G(){
     timer t_p2g; t_p2g.start();
     // P2G_Baseline();
-    P2G_Optimized();
+    // P2G_Optimized();
+    P2G_Optimized_Parallel();
     t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
 } // end P2G
 
@@ -196,7 +200,8 @@ void Simulation::explicitEulerUpdate(){
 void Simulation::G2P(){
     timer t_g2p; t_g2p.start();
     // G2P_Baseline();
-    G2P_Optimized();
+    // G2P_Optimized();
+    G2P_Optimized_Parallel();
     t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
 }
 
@@ -269,6 +274,67 @@ void Simulation::P2G_Optimized(){
     grid.mass *= particle_mass;
 
 } // end P2G_Optimized
+
+
+void Simulation::P2G_Optimized_Parallel(){
+
+    T x0 = grid.x(0);
+    T y0 = grid.y(0);
+
+    grid.mass.setZero(Nx, Ny);
+    grid.vx.setZero(Nx, Ny);
+    grid.vy.setZero(Nx, Ny);
+
+    #pragma omp parallel num_threads(N_THREADS)
+    {
+        TMX grid_mass_local = TMX::Zero(Nx, Ny);
+        TMX grid_vx_local   = TMX::Zero(Nx, Ny);
+        TMX grid_vy_local   = TMX::Zero(Nx, Ny);
+
+        #pragma omp for
+        for(int p = 0; p < Np; p++){
+            T xp = particles.x(p);
+            T yp = particles.y(p);
+            unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+            unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+
+            for(int i = i_base; i < i_base+4; i++){
+                T xi = grid.x(i);
+                for(int j = j_base; j < j_base+4; j++){
+                    T yi = grid.y(j);
+                    T weight = wip(xp, yp, xi, yi, dx);
+
+                    if (weight > 1e-25){
+                        grid_mass_local(i,j) += weight;
+                        grid_vx_local(i,j)   += particles.vx(p) * weight;
+                        grid_vy_local(i,j)   += particles.vy(p) * weight;
+                    }
+
+                } // end for j
+            } // end for i
+        } // end for p
+
+        #pragma omp critical
+        {
+            for(int i = 0; i < Nx; i++){
+                for(int j = 0; j < Ny; j++){
+                    grid.mass(i,j) += grid_mass_local(i,j);
+                    grid.vx(i,j)   += grid_vx_local(i,j);
+                    grid.vy(i,j)   += grid_vy_local(i,j);
+                } // end for j
+            } // end for i
+        } // end omp critical
+
+    } // end omp parallel
+
+    ///////////////////////////////////////////////////////////
+    // At this point in time grid.mass is equal to m_i / m_p //
+    ///////////////////////////////////////////////////////////
+    grid.vx = (grid.mass.array() > 0).select( (grid.vx.array() / grid.mass.array()).matrix(), TMX::Zero(Nx, Ny) );
+    grid.vy = (grid.mass.array() > 0).select( (grid.vy.array() / grid.mass.array()).matrix(), TMX::Zero(Nx, Ny) );
+    grid.mass *= particle_mass;
+
+} // end P2G_Optimized_Parallel
 
 
 
@@ -523,6 +589,53 @@ void Simulation::G2P_Optimized(){
         particles.vy(p) = vyp;
     } // end loop p
 } // end G2P_Optimized
+
+void Simulation::G2P_Optimized_Parallel(){
+
+    T x0 = grid.x(0);
+    T y0 = grid.y(0);
+
+    particles.vx.setZero(Np);
+    particles.vy.setZero(Np);
+
+    #pragma omp parallel num_threads(N_THREADS)
+    {
+        TVX particles_vx_local = TVX::Zero(Np);
+        TVX particles_vy_local = TVX::Zero(Np);
+
+        #pragma omp for
+        for(int p = 0; p < Np; p++){
+            T xp = particles.x(p);
+            T yp = particles.y(p);
+            T vxp = 0;
+            T vyp = 0;
+            unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+            unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+
+            for(int i = i_base; i < i_base+4; i++){
+                T xi = grid.x(i);
+                for(int j = j_base; j < j_base+4; j++){
+                    T yi = grid.y(j);
+                    T weight = wip(xp, yp, xi, yi, dx);
+                    vxp += grid.vx(i,j) * weight;
+                    vyp += grid.vy(i,j) * weight;
+                } // end loop j
+            } // end loop i
+            particles_vx_local(p) = vxp;
+            particles_vy_local(p) = vyp;
+        } // end loop p
+
+        #pragma omp critical
+        {
+            for(int p = 0; p < Np; p++){
+                particles.vx(p) += particles_vx_local(p);
+                particles.vy(p) += particles_vy_local(p);
+            }
+        } // end omp critical
+
+    } // end omp paralell
+
+} // end G2P_Optimized_Parallel
 
 
 
