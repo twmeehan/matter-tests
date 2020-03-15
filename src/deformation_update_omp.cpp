@@ -11,6 +11,7 @@ void Simulation::deformationUpdate_Parallel(){
     T x0 = grid.x(0);
     T y0 = grid.y(0);
 
+    #pragma omp parallel for reduction(+:plastic_count) num_threads(n_threads)
     for(int p=0; p<Np; p++){
 
         TM2 sum = TM2::Zero();
@@ -52,7 +53,7 @@ void Simulation::deformationUpdate_Parallel(){
             T delta_gamma = hencky_deviatoric_norm - yield_stress / (2 * mu);
             if (delta_gamma > 0){ // project to yield surface
                 plastic_count++;
-                particles.eps_pl_dev[p] += delta_gamma;
+                particles.eps_pl_dev(p) += delta_gamma;
                 hencky -= delta_gamma * (hencky_deviatoric / hencky_deviatoric_norm);
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
             }

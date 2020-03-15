@@ -10,7 +10,7 @@
 #include "data_arrays.hpp"
 #include "timer.hpp"
 
-// #define OMP //comment out if not using omp
+#define OMP //comment out if not using omp
 
 class Simulation{
 public:
@@ -90,6 +90,7 @@ public:
       void P2G_Optimized_Parallel();
       void G2P_Optimized_Parallel();
       void deformationUpdate_Parallel();
+      void explicitEulerUpdate_Optimized_Parallel();
   #endif
 
   void positionUpdate();

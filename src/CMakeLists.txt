@@ -19,6 +19,7 @@ if (USE_OMP)
 			       g2p.cpp
 			       g2p_omp.cpp
 			       explicit_euler_update.cpp
+				   explicit_euler_update_omp.cpp
 			       )
 	find_package(OpenMP REQUIRED)
 	target_link_libraries (mpm OpenMP::OpenMP_CXX Eigen3::Eigen ${ALEMBIC_LIBRARIES})

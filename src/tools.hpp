@@ -20,7 +20,7 @@ enum ElasticModel { StvkWithHencky, NeoHookean };
 enum PlasticModel { NoPlasticity, VonMises };
 enum BoundaryCondition { STICKY, SLIP };
 
-// #define CUBICSPLINES
+#define CUBICSPLINES
 
 ///////////////////// TOOLS ////////////////////////
 
@@ -90,6 +90,19 @@ inline T selfDoubleDot(TM2& A){
         }
     }
 
+    inline T d2Ndu2(T u){
+        T uabs = std::abs(u);
+        if (uabs < 1.0){
+            return (3.0 * uabs - 2.0);
+        }
+        else if (uabs < 2.0){
+            return (2.0 - uabs);
+        }
+        else {
+            return 0;
+        }
+    }
+
 #else // QUADRATIC SPLINES
 
     inline T N(T u){
@@ -112,6 +125,19 @@ inline T selfDoubleDot(TM2& A){
         }
     	else if (uabs < 1.5){
             return (u - 1.5*sgn(u));
+        }
+    	else {
+            return 0;
+    	}
+    }
+
+    inline T d2Ndu2(T u){
+        T uabs = std::abs(u);
+        if (uabs < 0.5){
+            return -2.0;
+        }
+    	else if (uabs < 1.5){
+            return 1;
         }
     	else {
             return 0;

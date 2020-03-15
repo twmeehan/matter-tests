@@ -3,13 +3,12 @@
 
 // TODO:
 //  * 3D
-//  * Cubic spline
 //  * Complete doxygen
 //  * Alembic output
 //  * FLIP
 //  * SLIP BC
-//  * Laplace of splines and regularization
-//  * Parallilize for loops
+//  * Regularization via laplace
+//  * Parallilize explicit euler
 //////////////////////////////////////////////////////////////////
 
 int main(){
