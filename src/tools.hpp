@@ -20,7 +20,7 @@ enum ElasticModel { StvkWithHencky, NeoHookean };
 enum PlasticModel { NoPlasticity, VonMises };
 enum BoundaryCondition { STICKY, SLIP };
 
-#define CUBICSPLINES
+// #define CUBICSPLINES
 
 ///////////////////// TOOLS ////////////////////////
 
@@ -64,13 +64,13 @@ inline T selfDoubleDot(TM2& A){
 
 #ifdef CUBICSPLINES
 
-    inline T N(T x){
-        T uabs = std::abs(x);
-        if (uabs < 1){
-            return 0.5 * uabs*uabs*uabs - uabs*uabs + 2.0/3.0,
+    inline T N(T u){
+        T uabs = std::abs(u);
+        if (uabs < 1.0){
+            return 0.5 * uabs*uabs*uabs - uabs*uabs + 0.6666666666666666666666666666666666666666666666666;
         }
-            else if (uabs < 2){
-            return (1.0/6.0) * (2.0 - uabs) * (2.0 - uabs) * (2.0 - uabs);
+            else if (uabs < 2.0){
+            return 0.1666666666666666666666666666666666666666666 * (2.0 - uabs) * (2.0 - uabs) * (2.0 - uabs);
         }
             else {
             return 0;
@@ -80,20 +80,20 @@ inline T selfDoubleDot(TM2& A){
     inline T dNdu(T u){
         T uabs = std::abs(u);
         if (uabs < 1.0){
-            return (-2*u);
+            return u * (1.5 * uabs - 2.0);
         }
         else if (uabs < 2.0){
-            return (u - 1.5*sgn(u));
+            return -0.5 * sgn(u) * (2.0 - uabs) * (2.0 - uabs);
         }
         else {
             return 0;
         }
     }
 
-#else
+#else // QUADRATIC SPLINES
 
-    inline T N(T x){
-        T uabs = std::abs(x);
+    inline T N(T u){
+        T uabs = std::abs(u);
         if (uabs < 0.5){
             return 0.75 - uabs * uabs;
         }
