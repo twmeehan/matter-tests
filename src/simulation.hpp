@@ -10,7 +10,7 @@
 #include "data_arrays.hpp"
 #include "timer.hpp"
 
-#include <omp.h>
+// #define OMP //comment out if not using omp
 
 class Simulation{
 public:
@@ -74,7 +74,6 @@ public:
   void P2G();
   void P2G_Baseline();
   void P2G_Optimized();
-  void P2G_Optimized_Parallel();
 
   void explicitEulerUpdate();
   void explicitEulerUpdate_Baseline();
@@ -83,11 +82,15 @@ public:
   void G2P();
   void G2P_Baseline();
   void G2P_Optimized();
-  void G2P_Optimized_Parallel();
 
   void deformationUpdate();
   void deformationUpdate_Baseline();
-  void deformationUpdate_Parallel();
+
+  #ifdef OMP
+      void P2G_Optimized_Parallel();
+      void G2P_Optimized_Parallel();
+      void deformationUpdate_Parallel();
+  #endif
 
   void positionUpdate();
 

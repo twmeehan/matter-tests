@@ -42,8 +42,9 @@ The code offers the possibility for a user-defined external force which may depe
 
 ### Performance
 
-Larsie is continously implemented according to the principle that premature optimization is the root of all evil. Basic optimizations (precomputations, clever particle-grid loops, memory reads, etc...) are currently still being explored before moving onto parallelization.
+Larsie is continously implemented according to the principle that premature optimization is the root of all evil. Basic optimizations (precomputations, clever particle-grid loops, memory reads, etc...) are currently still being explored. Larsie also supports parallelization on shared memory with OpenMP.
 
 ### Dependencies
 
 Larsie only relies only on CMake and the linear algebra library Eigen.
+To use OpenMP, use the CMake option `-DUSE_OMP=True`, and select the appropriate parallelized functions you want to use.

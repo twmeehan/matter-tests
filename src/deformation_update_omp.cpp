@@ -1,9 +1,10 @@
 #include "simulation.hpp"
+#include <omp.h>
 
 // Deformation gradient is updated based on the NEW GRID VELOCITIES and the OLD PARTICLE POSITIONS
 
 
-void Simulation::deformationUpdate_Baseline(){
+void Simulation::deformationUpdate_Parallel(){
 
     unsigned int plastic_count = 0;
 
@@ -66,4 +67,4 @@ void Simulation::deformationUpdate_Baseline(){
 
     debug("               projected particles = ", plastic_count, " / ", Np);
 
-} // end deformationUpdate_Baseline
+} // end deformationUpdate_Parallel

@@ -20,6 +20,7 @@ enum ElasticModel { StvkWithHencky, NeoHookean };
 enum PlasticModel { NoPlasticity, VonMises };
 enum BoundaryCondition { STICKY, SLIP };
 
+#define CUBICSPLINES
 
 ///////////////////// TOOLS ////////////////////////
 
@@ -61,42 +62,67 @@ inline T selfDoubleDot(TM2& A){
     return out;
 }
 
-/*!
- \param x x
- \return weight
+#ifdef CUBICSPLINES
 
- Quadratic spline basis function
-*/
-inline T N(T x){
-    T xabs = std::abs(x);
-    if (xabs < 0.5){
-        return 0.75 - xabs * xabs;
+    inline T N(T x){
+        T uabs = std::abs(x);
+        if (uabs < 1){
+            return 0.5 * uabs*uabs*uabs - uabs*uabs + 2.0/3.0,
+        }
+            else if (uabs < 2){
+            return (1.0/6.0) * (2.0 - uabs) * (2.0 - uabs) * (2.0 - uabs);
+        }
+            else {
+            return 0;
+        }
     }
-		else if (xabs < 1.5){
-        return 0.5 * (1.5 - xabs) * (1.5 - xabs);
-    }
-		else {
-        return 0;
-	}
-}
-/*!
- \param u u
- \return derivative of function evaluated at u
 
- Derivative of quadratic spline basis function
-*/
-inline T dNdu(T u){
-    T uabs = std::abs(u);
-    if (uabs < 0.5){
-        return (-2*u);
+    inline T dNdu(T u){
+        T uabs = std::abs(u);
+        if (uabs < 1.0){
+            return (-2*u);
+        }
+        else if (uabs < 2.0){
+            return (u - 1.5*sgn(u));
+        }
+        else {
+            return 0;
+        }
     }
-	else if (uabs < 1.5){
-        return (u - 1.5*sgn(u));
+
+#else
+
+    inline T N(T x){
+        T uabs = std::abs(x);
+        if (uabs < 0.5){
+            return 0.75 - uabs * uabs;
+        }
+    		else if (uabs < 1.5){
+            return 0.5 * (1.5 - uabs) * (1.5 - uabs);
+        }
+    		else {
+            return 0;
+    	}
     }
-	else {
-        return 0;
-	}
-}
+
+    inline T dNdu(T u){
+        T uabs = std::abs(u);
+        if (uabs < 0.5){
+            return (-2*u);
+        }
+    	else if (uabs < 1.5){
+            return (u - 1.5*sgn(u));
+        }
+    	else {
+            return 0;
+    	}
+    }
+
+#endif
+
+
+
+
 inline T wip(T xp, T yp, T xi, T yi, T h){
     return N( (xp - xi) / h ) * N( (yp - yi) / h );
 }
