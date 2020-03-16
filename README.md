@@ -32,7 +32,7 @@ Run from the `build` directory with the following command:
 
 ### Output data
 
-Assuming, the code is run from the `build` directory, the output is saved in the directory `dumps/<sim_name>` where `sim_name` is specified in the setup. The data is saved as csv-files with the format (x, y, z, vx, vy, vz, ...) for both particles (`out_part_X.csv`) and grid (`out_grid_X.csv`) data where X represents the frame number (from 0 to `end_frame`).
+Assuming the code is run from the `build` directory, the output is saved in the directory `dumps/<sim_name>` where `sim_name` is specified in the setup. The data is saved as csv-files with the format (x, y, z, vx, vy, vz, ...) for both particles (`out_part_X.csv`) and grid (`out_grid_X.csv`) data where X represents the frame number (from 0 to `end_frame`).
 
 ### Validation
 
@@ -40,7 +40,7 @@ The code offers the possibility for a user-defined external force which may depe
 
 ### Performance
 
-Larsie is continously implemented according to the principle that premature optimization is the root of all evil. Basic optimizations (precomputations, clever particle-grid loops, memory reads, etc...) are currently still being explored. Larsie also supports parallelization on shared memory with OpenMP.
+Larsie is continously implemented according to the principle that premature optimization is the root of all evil. Basic optimizations (precomputations, clever particle-grid loops, memory reads, etc...) are currently still being explored. Although still under development, Larsie also supports parallelization on shared memory with OpenMP.
 
 ### Dependencies
 

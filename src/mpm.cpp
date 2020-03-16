@@ -7,21 +7,20 @@
 //  * Alembic output
 //  * FLIP
 //  * SLIP BC
-//  * trial collision
-//  * python functions
-//  * Boundary condition for laplace??
-//  * Parallilize explicit euler
+//  * Python functions
+//  * Boundary condition for Laplace? Basically using Dirichlet now
+//  * Parallilize explicit_euler_update
 //////////////////////////////////////////////////////////////////
 
 int main(){
 
       Simulation sim;
 
-      sim.sim_name = "elastic_dx01_T02";
+      sim.sim_name = "elastic";
 
       sim.end_frame = 40;
-      sim.frame_dt = 1.0 / 200.0;
-      sim.dx = 0.1;
+      sim.frame_dt = 1.0 / 400.0;
+      sim.dx = 0.05;
       sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
 

@@ -155,6 +155,7 @@ void Simulation::explicitEulerUpdate_Optimized(){
                 T new_xi = grid.x(i) + dt * new_vxi;
                 T new_yi = grid.y(j) + dt * new_vyi;
                 boundaryCollision(new_xi, new_yi, new_vxi, new_vyi);
+                // boundaryCorrection(new_xi, new_yi, new_vxi, new_vyi);
                 grid.vx(i,j) = new_vxi;
                 grid.vy(i,j) = new_vyi;
 

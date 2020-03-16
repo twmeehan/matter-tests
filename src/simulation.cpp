@@ -54,6 +54,19 @@ void Simulation::simulate(){
     else
         std::cout << "Directory created" << std::endl;
 
+    std::ofstream infoFile("dumps/" + sim_name + "/info.txt");
+    infoFile << end_frame      << "\n"  // 0
+             << frame_dt       << "\n"  // 1
+             << dx             << "\n"  // 2
+             << mu             << "\n"  // 3
+             << lambda         << "\n"  // 4
+             << elastic_model  << "\n"  // 5
+             << plastic_model  << "\n"  // 6
+             << yield_stress   << "\n"  // 7
+             << reg_length     << "\n"  // 8
+             << reg_const      << "\n";  // 9
+    infoFile.close();
+
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     // Lagrangian coordinates
@@ -101,7 +114,7 @@ void Simulation::simulate(){
 void Simulation::advanceStep(){
     updateDt();
     remesh();
-    moveObjects();
+    moveObjects(dt);
     P2G();
     // calculateMassConservation();
     explicitEulerUpdate();
@@ -227,9 +240,9 @@ void Simulation::remesh(){
 
 
 
-void Simulation::moveObjects(){
+void Simulation::moveObjects(T delta_t){
     for (InfinitePlate &obj : objects) {
-        obj.move(dt);
+        obj.move(delta_t);
     }
 }
 
@@ -250,8 +263,36 @@ void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
 
     } // end iterator over objects
 
-
 } // end boundaryCollision
+
+
+// Currently not working!!
+void Simulation::boundaryCorrection(T xi, T yi, T& vxi, T& vyi){
+
+    // trial step
+    T x_next = xi + vxi * dt;
+    T y_next = yi + vyi * dt;
+    moveObjects(dt);
+
+    for (InfinitePlate &obj : objects) {
+        bool colliding = obj.inside(x_next, y_next);
+        if (colliding) {
+            if (obj.plate_type == upper ){
+                debug(obj.name, " dist = ", obj.distance(x_next, y_next));
+                vyi += obj.distance(x_next, y_next) / dt; // distance is negative since grid point is inside object
+            }
+            else if (obj.plate_type == lower){
+                debug(obj.name, " dist = ", obj.distance(x_next, y_next));
+                vyi -= obj.distance(x_next, y_next) / dt;
+            }
+        } // end if colliding
+
+    } // end iterator over objects
+
+    // Correct back
+    moveObjects(-dt);
+
+} // end boundaryCorrection
 
 
 

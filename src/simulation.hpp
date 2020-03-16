@@ -101,8 +101,9 @@ public:
 
   void positionUpdate();
 
-  void moveObjects();
+  void moveObjects(T delta_t);
   void boundaryCollision(T xi, T yi, T& vxi, T& vyi);
+  void boundaryCorrection(T xi, T yi, T& vxi, T& vyi);
 
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();
