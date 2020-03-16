@@ -39,6 +39,10 @@ void Simulation::P2G_Optimized(){
     T x0 = grid.x(0);
     T y0 = grid.y(0);
 
+    grid.vx.setZero(Nx, Ny);
+    grid.vy.setZero(Nx, Ny);
+    grid.regularization.setZero(Nx, Ny);
+
     for(int p = 0; p < Np; p++){
         T xp = particles.x(p);
         T yp = particles.y(p);
@@ -55,11 +59,14 @@ void Simulation::P2G_Optimized(){
                     grid.mass(i,j) += weight;
                     grid.vx(i,j)   += particles.vx(p) * weight;
                     grid.vy(i,j)   += particles.vy(p) * weight;
+                    grid.regularization(i,j) += particles.eps_pl_dev(p) * laplace_wip(xp, yp, xi, yi, dx);
                 }
 
             } // end for j
         } // end for i
     } // end for p
+
+    // Apply BC to regularization here!
 
     ///////////////////////////////////////////////////////////
     // At this point in time grid.mass is equal to m_i / m_p //

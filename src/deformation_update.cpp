@@ -48,7 +48,16 @@ void Simulation::deformationUpdate_Baseline(){
             TV2 hencky_deviatoric = hencky - (hencky_trace / 2.0) * TV2::Ones();
             T   hencky_deviatoric_norm = hencky_deviatoric.norm();
 
-            T delta_gamma = hencky_deviatoric_norm - yield_stress / (2 * mu);
+            /////////// REGULARIZATION ///////////
+            T yield_stress_reg = /* std::max((T)0.0, */ yield_stress - reg_const * reg_length*reg_length * particles.regularization(p);
+            if (yield_stress_reg < 0.0){
+                debug("NEGATIVE YIELD STRESS!!!");
+                exit = 1;
+                return;
+            }
+            //////////////////////////////////////
+
+            T delta_gamma = hencky_deviatoric_norm - yield_stress_reg / (2 * mu);
             if (delta_gamma > 0){ // project to yield surface
                 plastic_count++;
                 particles.eps_pl_dev[p] += delta_gamma;
@@ -62,6 +71,9 @@ void Simulation::deformationUpdate_Baseline(){
         else{
             debug("You specified an unvalid PLASTIC model!");
         }
+
+        // particles.eps_pl_dev[p] = 0.1; // Testing regularization
+
     } // end loop over particles
 
     debug("               projected particles = ", plastic_count, " / ", Np);

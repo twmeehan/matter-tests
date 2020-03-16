@@ -7,13 +7,17 @@
 //  * Alembic output
 //  * FLIP
 //  * SLIP BC
-//  * Regularization via laplace
+//  * trial collision
+//  * python functions
+//  * Boundary condition for laplace??
 //  * Parallilize explicit euler
 //////////////////////////////////////////////////////////////////
 
 int main(){
 
       Simulation sim;
+
+      sim.sim_name = "elastic_dx01_T02";
 
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 200.0;
@@ -33,16 +37,18 @@ int main(){
       name = "compressor"; InfinitePlate compressor = InfinitePlate(1, -1, upper, name); sim.objects.push_back(compressor);
       sim.boundary_condition = STICKY;
 
-      sim.elastic_model = StvkWithHencky;
-      sim.plastic_model = VonMises;
-      sim.yield_stress = std::sqrt(2.0/3.0) * /* q_max */ 50000.0;
-
       sim.initialize(/* E */ 1e7, /* nu */ 0.3, /* rho */ 100);
       debug("Wave speed      = ", sim.wave_speed);
       debug("dt_max          = ", sim.dt_max);
       debug("particle_volume = ", sim.particle_volume);
       debug("particle_mass   = ", sim.particle_mass);
       debug("Np              = ", sim.Np);
+
+      sim.elastic_model = StvkWithHencky;
+      sim.plastic_model = NoPlasticity;
+      sim.yield_stress = std::sqrt(2.0/3.0) * /* q_max */ 400000.0;
+      sim.reg_length = 0.00;
+      sim.reg_const = 2*sim.mu;
 
       sim.amplitude = 0.0;
       std::vector<T> disp_i(4); disp_i[0] = 0.25; disp_i[1] = 0.75; disp_i[2] = 0.25; disp_i[3] = 0.75;

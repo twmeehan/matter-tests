@@ -44,6 +44,16 @@ void Simulation::initialize(T E, T nu, T density){
 
 void Simulation::simulate(){
 
+    if (mkdir("dumps", 0777) == -1)
+        std::cerr << "Error :  " << strerror(errno) << std::endl;
+    else
+        std::cout << "Directory created" << std::endl;
+
+    if (mkdir(("dumps/" + sim_name).c_str(), 0777) == -1)
+        std::cerr << "Error :  " << strerror(errno) << std::endl;
+    else
+        std::cout << "Directory created" << std::endl;
+
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     // Lagrangian coordinates
@@ -53,8 +63,8 @@ void Simulation::simulate(){
     time = 0;
     frame = 0;
     final_time = end_frame * frame_dt;
-    saveSim();
-    saveGridVelocities();
+    saveParticleData();
+    saveGridData();
     while (frame < end_frame){
         std::cout << "Step: " << current_time_step << "    Time: " << time << std::endl;
         advanceStep();
@@ -65,16 +75,16 @@ void Simulation::simulate(){
         if( std::abs(time - frame_dt*(frame+1)) < 1e-15 ){
             frame++;
             std::cout << "Saving frame " << frame << std::endl;
-            saveSim();
-            saveGridVelocities();
+            saveParticleData();
+            saveGridData();
         }
         if (std::abs(final_time-time) < 1e-15 || final_time < time){
             std::cout << "The simulation ended successfully at time = " << time << std::endl;
             break;
         }
     }
-    saveSim();
-    saveGridVelocities();
+    saveParticleData();
+    saveGridData();
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "Simulation took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " milliseconds" << std::endl;
@@ -100,6 +110,41 @@ void Simulation::advanceStep(){
     deformationUpdate();
     positionUpdate();
 }
+
+
+
+void Simulation::P2G(){
+    timer t_p2g; t_p2g.start();
+    // P2G_Baseline();
+    P2G_Optimized();
+    // P2G_Optimized_Parallel();
+    t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
+} // end P2G
+
+void Simulation::explicitEulerUpdate(){
+    timer t_euler; t_euler.start();
+    // explicitEulerUpdate_Baseline();
+    explicitEulerUpdate_Optimized();
+    // explicitEulerUpdate_Optimized_Parallel(); // CURRENTLY NOT WORKING!
+    t_euler.stop(); runtime_euler += t_euler.get_timing();
+}
+
+void Simulation::deformationUpdate(){
+    timer t_defgrad; t_defgrad.start();
+    deformationUpdate_Baseline();
+    // deformationUpdate_Parallel();
+    t_defgrad.stop(); runtime_defgrad += t_defgrad.get_timing();
+}
+
+void Simulation::G2P(){
+    timer t_g2p; t_g2p.start();
+    // G2P_Baseline();
+    G2P_Optimized();
+    // G2P_Optimized_Parallel();
+    t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
+}
+
+
 
 
 
@@ -180,36 +225,6 @@ void Simulation::remesh(){
 }
 
 
-void Simulation::P2G(){
-    timer t_p2g; t_p2g.start();
-    // P2G_Baseline();
-    // P2G_Optimized();
-    P2G_Optimized_Parallel();
-    t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
-} // end P2G
-
-void Simulation::explicitEulerUpdate(){
-    timer t_euler; t_euler.start();
-    // explicitEulerUpdate_Baseline();
-    explicitEulerUpdate_Optimized();
-    // explicitEulerUpdate_Optimized_Parallel(); // CURRENTLY NOT WORKING!
-    t_euler.stop(); runtime_euler += t_euler.get_timing();
-}
-
-void Simulation::deformationUpdate(){
-    timer t_defgrad; t_defgrad.start();
-    // deformationUpdate_Baseline();
-    deformationUpdate_Parallel();
-    t_defgrad.stop(); runtime_defgrad += t_defgrad.get_timing();
-}
-
-void Simulation::G2P(){
-    timer t_g2p; t_g2p.start();
-    // G2P_Baseline();
-    // G2P_Optimized();
-    G2P_Optimized_Parallel();
-    t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
-}
 
 
 void Simulation::moveObjects(){
@@ -253,8 +268,20 @@ void Simulation::positionUpdate(){
 
 
 
-void Simulation::saveSim(std::string extra){
-    std::ofstream outFile("dumps/out_part_frame_" + extra + std::to_string(frame) + ".csv");
+void Simulation::saveParticleData(std::string extra){
+    std::ofstream outFile("dumps/" + sim_name + "/out_part_frame_" + extra + std::to_string(frame) + ".csv");
+
+    outFile << "x"            << ","   // 0
+            << "y"            << ","   // 1
+            << "z"            << ","   // 2
+            << "vx"           << ","   // 3
+            << "vy"           << ","   // 4
+            << "vz"           << ","   // 5
+            << "eps_pl_dev"   << ","   // 6
+            << "reg"          << ","   // 7
+            << "pressure"     << ","   // 8
+            << "devstress"    << "\n"; // 9
+
     for(int p = 0; p < Np; p++){
 
         TM2 tau = particles.tau[p];
@@ -262,23 +289,27 @@ void Simulation::saveSim(std::string extra){
         TM2 tau_dev = tau + pressure * TM2::Identity();
         T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
 
-        outFile << particles.x[p]          << ","
-                << particles.y[p]          << ","
-                << 0                       << ","
-                << particles.vx[p]         << ","
-                << particles.vy[p]         << ","
-                << 0                       << ","
-                << particles.eps_pl_dev[p] << ","
-                << pressure                << ","
-                << devstress               << "\n";
+        T reg = particles.regularization(p);
+
+        outFile << particles.x(p)              << ","   // 0
+                << particles.y(p)              << ","   // 1
+                << 0                           << ","   // 2
+                << particles.vx(p)             << ","   // 3
+                << particles.vy(p)             << ","   // 4
+                << 0                           << ","   // 5
+                << particles.eps_pl_dev(p)     << ","   // 6
+                << reg                         << ","   // 7
+                << pressure                    << ","   // 8
+                << devstress                   << "\n"; // 9
     }
 }
 
-void Simulation::saveGridVelocities(std::string extra){
-    std::ofstream outFile("dumps/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
+void Simulation::saveGridData(std::string extra){
+    std::ofstream outFile("dumps/" + sim_name + "/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
+    outFile         << "x"       << "," << "y"       << "," << "z" << "," << "vx"         << "," << "vy"         << "," << "vz" << "," << "mass"         << "," << "reg"                    << "\n";
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
-            outFile << grid.x(i) << "," << grid.y(j) << "," << 0 << "," << grid.vx(i,j) << "," << grid.vy(i,j) << "," << 0 << "\n";
+            outFile << grid.x(i) << "," << grid.y(j) << "," << 0   << "," << grid.vx(i,j) << "," << grid.vy(i,j) << "," << 0    << "," << grid.mass(i,j) << "," << grid.regularization(i,j) << "\n";
         }
     }
 }

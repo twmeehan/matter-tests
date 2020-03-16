@@ -160,4 +160,10 @@ inline T grady_wip(T xp, T yp, T xi, T yi, T h){
     return ( dNdu((yp - yi) / h) *  N((xp - xi) / h) ) / h;
 }
 
+inline T laplace_wip(T xp, T yp, T xi, T yi, T h){
+    T term1 = d2Ndu2((xp - xi) / h) *  N((yp - yi) / h);
+    T term2 = d2Ndu2((yp - yi) / h) *  N((xp - xi) / h);
+    return ( term1 + term2 ) / (h*h);
+}
+
 #endif  // TOOLS_HPP

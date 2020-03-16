@@ -3,6 +3,9 @@
 
 #include <iostream>
 #include <fstream>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <vector>
 #include <chrono>
 #include "tools.hpp"
@@ -18,8 +21,10 @@ public:
   Simulation();
   void initialize(T E, T nu, T density);
   void simulate();
-  void saveSim(std::string extra = "");
-  void saveGridVelocities(std::string extra = "");
+  void saveParticleData(std::string extra = "");
+  void saveGridData(std::string extra = "");
+
+  std::string sim_name;
 
   unsigned int n_threads;
   unsigned int current_time_step;
@@ -55,7 +60,8 @@ public:
   ElasticModel elastic_model;
   PlasticModel plastic_model;
   T yield_stress;
-
+  T reg_length;
+  T reg_const;
   // Objects
   BoundaryCondition boundary_condition;
   std::vector<InfinitePlate> objects;

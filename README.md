@@ -20,8 +20,6 @@ Implementing other elastic or plastic models is easy due to the general framewor
 
 `cd build`
 
-`mkdir dumps`
-
 `cmake -DCMAKE_BUILD_TYPE=Release ..`
 
 Set up your simulation parameters and initial state in the `mpm.cpp` file.   
@@ -34,7 +32,7 @@ Run from the `build` directory with the following command:
 
 ### Output data
 
-The output is saved in the `dumps` directory as csv-files in the format (x, y, z, vx, vy, vz) for both particles (`out_part_X.csv`) and grid (`out_grid_X.csv`) data where X represents the frame number (from 0 to `end_frame`). The particle data file may contain more information than just position and velocity, e.g., pressure, plastic deviatoric/volumetric strain.
+Assuming, the code is run from the `build` directory, the output is saved in the directory `dumps/<sim_name>` where `sim_name` is specified in the setup. The data is saved as csv-files with the format (x, y, z, vx, vy, vz, ...) for both particles (`out_part_X.csv`) and grid (`out_grid_X.csv`) data where X represents the frame number (from 0 to `end_frame`).
 
 ### Validation
 
