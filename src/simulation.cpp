@@ -31,7 +31,7 @@ void Simulation::initialize(T E, T nu, T density){
     wave_speed = std::sqrt(E/rho);
     dt_max = 0.1 * dx / wave_speed;
 
-    particle_volume = 1.0 / Np; // INITIAL particle volume V^0
+    particle_volume = std::pow(L, dim) / Np; // INITIAL particle volume V^0
     particle_mass = rho * particle_volume;
 
     particles = Particles(Np);
@@ -96,6 +96,7 @@ void Simulation::simulate(){
     T sin_phi = std::sin(friction_angle / 180.0 * M_PI);
     T alpha = std::sqrt(2.0/3.0) * 2.0 * sin_phi / (3.0 - sin_phi);
     alpha_K_d_over_2mu = alpha * K * dim / (2*mu); // = alpha * bulk_modulus * dimension / (2*mu)
+    particles.cohesion_proj = cohesion * TVX::Ones(Np);
 
     // Lagrangian coordinates
     particles.x0 = particles.x;

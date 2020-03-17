@@ -36,6 +36,9 @@ Run from the `build` directory with the following command:
 
 Assuming the code is run from the `build` directory, the output is saved in the directory `dumps/<sim_name>` where `sim_name` is specified in the setup. The data is saved as csv-files with the format (x, y, z, vx, vy, vz, ...) for both particles (`out_part_X.csv`) and grid (`out_grid_X.csv`) data where X represents the frame number (from 0 to `end_frame`).
 
+### Pre- and post processing
+Two python scripts are provided for preprocessing and postprocessing, respectively. The preprocessing script generates samples distributed according to the Poisson Disk Sampling by R. Bridson, ACM SIGGRAPH 2007.
+
 ### Validation
 
 The code offers the possibility for a user-defined external force which may depend on the Lagrangian coordinates of the particles. This allows for the creation of manufactured solutions, which can be used to validate the code (at least in the pure elastic case).

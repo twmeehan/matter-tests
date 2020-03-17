@@ -68,25 +68,28 @@ void Simulation::deformationUpdate_Baseline(){
                     plastic_count++;
                     hencky -= delta_gamma * (hencky_deviatoric / hencky_deviatoric_norm);
                     particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                    particles.eps_pl_dev[p] += delta_gamma;
+                    particles.eps_pl_dev(p) += delta_gamma;
                 }
             } // end VonMises
 
             else if (plastic_model == DPSimpleSoft){
 
+                T cohesion_proj = particles.cohesion_proj(p);
                 if (hencky_trace >= dim * cohesion_proj) { // Project to tip
-                    cohesion_proj = cohesion * std::exp(-xi * particles.eps_pl_dev[p]);
+                    plastic_count++;
+                    cohesion_proj = cohesion * std::exp(-xi * particles.eps_pl_dev(p));
                     particles.F[p] = svd.matrixU() * std::exp(cohesion_proj) * svd.matrixV().transpose();
-                    particles.eps_pl_dev[p] += hencky_deviatoric_norm;
-                    particles.eps_pl_vol[p] += (hencky_trace - dim * cohesion_proj);
+                    particles.eps_pl_dev(p) += hencky_deviatoric_norm;
+                    particles.eps_pl_vol(p) += (hencky_trace - dim * cohesion_proj);
                 }
                 else{ // Right of tip
                     T delta_gamma = hencky_deviatoric_norm + alpha_K_d_over_2mu * hencky_trace - alpha_K_d_over_2mu * dim * cohesion_proj;
                     if (delta_gamma > 0) { // outside yield surface
-                        cohesion_proj = cohesion * std::exp(-xi * particles.eps_pl_dev[p]);
+                        plastic_count++;
+                        cohesion_proj = cohesion * std::exp(-xi * particles.eps_pl_dev(p));
                         hencky -= delta_gamma * (hencky_deviatoric / hencky_deviatoric_norm);
                         particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                        particles.eps_pl_dev[p] += delta_gamma;
+                        particles.eps_pl_dev(p) += delta_gamma;
                     } // end outside yield surface
                 } // end left or right of tip
 

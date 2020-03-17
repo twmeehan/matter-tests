@@ -4,6 +4,9 @@
 #include <cmath>
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 /// FLOAT OR DOUBLE ////
 typedef float T;
@@ -61,6 +64,9 @@ inline T selfDoubleDot(TM2& A){
     T out = A(0,0)*A(0,0) + A(1,1)*A(1,1) + A(0,1)*A(0,1) + A(1,0)*A(1,0);
     return out;
 }
+
+void load_array(TVX& array_, unsigned int n_cols, std::string file_name);
+
 
 #ifdef CUBICSPLINES
 

@@ -12,6 +12,7 @@ if (USE_OMP)
 	add_executable(mpm
 				   mpm.cpp
 			   	   simulation.cpp
+				   tools.cpp
 			       deformation_update.cpp
 			       deformation_update_omp.cpp
 			       p2g.cpp
@@ -27,6 +28,7 @@ else (USE_OMP)
 	add_executable(mpm
 				   mpm.cpp
 			   	   simulation.cpp
+				   tools.cpp
 			       deformation_update.cpp
 			       p2g.cpp
 			       g2p.cpp

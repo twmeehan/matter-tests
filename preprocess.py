@@ -1,0 +1,28 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from bridson import poisson_disc_samples
+
+w = 1
+h = 1
+r = 0.017
+samples = poisson_disc_samples(width=w, height=h, r=r)
+
+Np = len(samples)
+print("Number of particles created: ", Np)
+
+x = np.zeros(Np)
+y = np.zeros(Np)
+for i in range(0, len(samples)):
+    x[i] = samples[i][0]
+    y[i] = samples[i][1]
+
+filename = "samples/sample_w" + str(w) + "_h" + str(h) + "_r" + str(r)
+np.savetxt(filename + "_x.txt", x )
+np.savetxt(filename + "_y.txt", y )
+
+plt.figure()
+plt.title("Number of particles: " + str(Np))
+plt.xlabel("x")
+plt.ylabel("y")
+plt.plot(x, y,'k.')
+plt.show()

@@ -19,6 +19,7 @@ int main(){
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 400.0;
       sim.dx = 0.05;
+      sim.L = 1;
       sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
 
@@ -27,39 +28,46 @@ int main(){
       unsigned int Nloop = std::round(1.0/sim.dx);
       debug("Nloop           = ", Nloop);
       sim.Np = Nloop * Nloop * 4;
+      // sim.Np = 1762;
 
       std::string name;
       name = "Ground";     InfinitePlate ground      = InfinitePlate(0, 0, 0, 0,  bottom, name); sim.objects.push_back(ground);
-      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -1, top,    name); sim.objects.push_back(compressor);
+      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -0.1, top,    name); sim.objects.push_back(compressor);
       // name = "Left";       InfinitePlate left_plate  = InfinitePlate(0, 0, 0, 0,  left,   name); sim.objects.push_back(left_plate);
       // name = "Right";      InfinitePlate right_plate = InfinitePlate(1, 0, 0, 0,  right,  name); sim.objects.push_back(right_plate);
 
-      sim.boundary_condition = STICKY;
-      sim.friction = 0.5;
+      sim.boundary_condition = SLIP;
+      sim.friction = 0.0;
 
-      sim.initialize(/* E */ 1e7, /* nu */ 0.0, /* rho */ 100);
+      sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1000);
       debug("Wave speed      = ", sim.wave_speed);
       debug("dt_max          = ", sim.dt_max);
       debug("particle_volume = ", sim.particle_volume);
       debug("particle_mass   = ", sim.particle_mass);
       debug("Np              = ", sim.Np);
 
+      // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
-      sim.plastic_model = DPSimpleSoft;
+      sim.plastic_model = VonMises;
 
       // Von Mises:
-      sim.yield_stress = std::sqrt(2.0/3.0) * /* q_max */ 400000.0;
+      sim.yield_stress = std::sqrt(2.0/3.0) * /* q_max */ 4000.0;
 
       // DPSimpleSoft
       sim.friction_angle = 13;
-      sim.cohesion = 10000.0 / (sim.K * sim.dim); // p_min = - K * dim * cohesion
+      sim.cohesion = 8000.0 / (sim.K * sim.dim); // p_min = - K * dim * cohesion
       sim.xi = 1e15;
 
       // Regularization by Laplacian
       sim.reg_length = 0.00;
       sim.reg_const = 2*sim.mu;
 
+      // Initial state
       sim.amplitude = 0.0;
+
+      // load_array(sim.particles.x, 1, "samples/sample_w1_h1_r0.017_x.txt");
+      // load_array(sim.particles.y, 1, "samples/sample_w1_h1_r0.017_y.txt");
+
       std::vector<T> disp_i(4); disp_i[0] = 0.25; disp_i[1] = 0.75; disp_i[2] = 0.25; disp_i[3] = 0.75;
       std::vector<T> disp_j(4); disp_j[0] = 0.25; disp_j[1] = 0.75; disp_j[2] = 0.75; disp_j[3] = 0.25;
       int p = -1;
@@ -79,7 +87,7 @@ int main(){
                   // T pvx = sim.amplitude * sim.frame_dt * sim.end_frame;
                   // T pvy = sim.amplitude * sim.frame_dt * sim.end_frame;
                   // CASE 0:
-                  T pvx = 0;
+                  T pvx = sim.amplitude;
                   T pvy = sim.amplitude;
                   sim.particles.x(p) = px;
                   sim.particles.y(p) = py;
@@ -94,7 +102,6 @@ int main(){
           debug("Particle number mismatch!!!");
           return 0;
       }
-
 
     sim.simulate();
 

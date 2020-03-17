@@ -40,6 +40,7 @@ public:
   T wave_speed;
   T cfl;
   T dx;
+  T L;
   T rho;
   TV2 gravity;
 
@@ -69,7 +70,6 @@ public:
   T friction_angle;
   T alpha_K_d_over_2mu;
   T cohesion;
-  T cohesion_proj;
   T xi;
 
   // Regularization by Laplacian
