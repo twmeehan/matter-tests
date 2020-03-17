@@ -40,8 +40,8 @@ void Simulation::explicitEulerUpdate_Baseline(){
                             debug("You specified an unvalid ELASTIC model!");
                         }
 
-                        grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
-                        grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
+                        grad_wip(0) = gradx_wip(xp, yp, xi, yi, one_over_dx);
+                        grad_wip(1) = grady_wip(xp, yp, xi, yi, one_over_dx);
 
                         grid_force += dPsidF * Fe.transpose() * grad_wip;
 
@@ -106,8 +106,8 @@ void Simulation::explicitEulerUpdate_Optimized(){
 
         T xp = particles.x(p);
         T yp = particles.y(p);
-        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
-        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int i_base = std::floor((xp-x0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((yp-y0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);
@@ -115,8 +115,8 @@ void Simulation::explicitEulerUpdate_Optimized(){
                 T yi = grid.y(j);
 
                 if (grid.mass(i,j) > 1e-25){
-                    grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
-                    grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
+                    grad_wip(0) = gradx_wip(xp, yp, xi, yi, one_over_dx);
+                    grad_wip(1) = grady_wip(xp, yp, xi, yi, one_over_dx);
                     TV2 grid_force_increment = tau * grad_wip;
                     grid_force_x(i,j) += grid_force_increment(0);
                     grid_force_y(i,j) += grid_force_increment(1);

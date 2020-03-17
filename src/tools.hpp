@@ -149,21 +149,21 @@ inline T selfDoubleDot(TM2& A){
 
 
 
-inline T wip(T xp, T yp, T xi, T yi, T h){
-    return N( (xp - xi) / h ) * N( (yp - yi) / h );
+inline T wip(T xp, T yp, T xi, T yi, T one_over_h){
+    return N( (xp - xi) * one_over_h ) * N( (yp - yi) * one_over_h );
 }
 
-inline T gradx_wip(T xp, T yp, T xi, T yi, T h){
-    return ( dNdu((xp - xi) / h) *  N((yp - yi) / h) ) / h;
+inline T gradx_wip(T xp, T yp, T xi, T yi, T one_over_h){
+    return dNdu((xp - xi) * one_over_h) *  N((yp - yi) * one_over_h) * one_over_h;
 }
-inline T grady_wip(T xp, T yp, T xi, T yi, T h){
-    return ( dNdu((yp - yi) / h) *  N((xp - xi) / h) ) / h;
+inline T grady_wip(T xp, T yp, T xi, T yi, T one_over_h){
+    return dNdu((yp - yi) * one_over_h) *  N((xp - xi) * one_over_h) * one_over_h;
 }
 
-inline T laplace_wip(T xp, T yp, T xi, T yi, T h){
-    T term1 = d2Ndu2((xp - xi) / h) *  N((yp - yi) / h);
-    T term2 = d2Ndu2((yp - yi) / h) *  N((xp - xi) / h);
-    return ( term1 + term2 ) / (h*h);
+inline T laplace_wip(T xp, T yp, T xi, T yi, T one_over_h, T one_over_h_square){
+    T term1 = d2Ndu2((xp - xi) * one_over_h) *  N((yp - yi) * one_over_h);
+    T term2 = d2Ndu2((yp - yi) * one_over_h) *  N((xp - xi) * one_over_h);
+    return ( term1 + term2 ) * one_over_h_square;
 }
 
 #endif  // TOOLS_HPP

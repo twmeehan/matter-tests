@@ -44,8 +44,8 @@ void Simulation::explicitEulerUpdate_Optimized_Parallel(){
 
             T xp = particles.x(p);
             T yp = particles.y(p);
-            unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
-            unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+            unsigned int i_base = std::floor((xp-x0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+            unsigned int j_base = std::floor((yp-y0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
             for(int i = i_base; i < i_base+4; i++){
                 T xi = grid.x(i);
@@ -53,8 +53,8 @@ void Simulation::explicitEulerUpdate_Optimized_Parallel(){
                     T yi = grid.y(j);
 
                     if (grid.mass(i,j) > 1e-25){
-                        grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
-                        grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
+                        grad_wip(0) = gradx_wip(xp, yp, xi, yi, one_over_dx);
+                        grad_wip(1) = grady_wip(xp, yp, xi, yi, one_over_dx);
                         TV2 grid_force_increment = tau * grad_wip;
                         grid_force_x_local(i,j) += grid_force_increment(0);
                         grid_force_y_local(i,j) += grid_force_increment(1);

@@ -19,8 +19,8 @@ void Simulation::deformationUpdate_Parallel(){
         T xp = particles.x(p);
         T yp = particles.y(p);
 
-        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
-        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int i_base = std::floor((xp-x0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((yp-y0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);
@@ -32,8 +32,8 @@ void Simulation::deformationUpdate_Parallel(){
                 vi(1) = grid.vy(i,j);
 
                 TV2 grad_wip;
-                grad_wip(0) = gradx_wip(xp, yp, xi, yi, dx);
-                grad_wip(1) = grady_wip(xp, yp, xi, yi, dx);
+                grad_wip(0) = gradx_wip(xp, yp, xi, yi, one_over_dx);
+                grad_wip(1) = grady_wip(xp, yp, xi, yi, one_over_dx);
 
                 sum += vi * grad_wip.transpose();
             } // end loop i

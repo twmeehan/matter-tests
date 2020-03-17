@@ -44,30 +44,50 @@ void Simulation::initialize(T E, T nu, T density){
 
 void Simulation::simulate(){
 
+
+    // Create Directories:
     if (mkdir("dumps", 0777) == -1)
-        std::cerr << "Error :  " << strerror(errno) << std::endl;
+        std::cerr << "Directory dumps already created:  " << strerror(errno) << std::endl;
     else
-        std::cout << "Directory created" << std::endl;
-
+        std::cout << "directory dumps created" << std::endl;
     if (mkdir(("dumps/" + sim_name).c_str(), 0777) == -1)
-        std::cerr << "Error :  " << strerror(errno) << std::endl;
+        std::cerr << "Directory " << sim_name << " already created: " << strerror(errno) << std::endl;
     else
-        std::cout << "Directory created" << std::endl;
+        std::cout << "Directory " << sim_name << " created" << std::endl;
 
+    // Write parameters to file for future reference
+    std::string emodel, pmodel;
+    if (elastic_model == StvkWithHencky)
+        emodel = "StvkWithHencky";
+    else if (elastic_model == NeoHookean)
+        emodel = "NeoHookean";
+    else
+        emodel = "INVALID ELASTIC MODEL";
+    if (plastic_model == VonMises)
+        pmodel = "VonMises";
+    else if (plastic_model == NoPlasticity)
+        pmodel = "NoPlasticity";
+    else
+        pmodel = "INVALID PLASTIC MODEL";
     std::ofstream infoFile("dumps/" + sim_name + "/info.txt");
     infoFile << end_frame      << "\n"  // 0
              << frame_dt       << "\n"  // 1
              << dx             << "\n"  // 2
              << mu             << "\n"  // 3
              << lambda         << "\n"  // 4
-             << elastic_model  << "\n"  // 5
-             << plastic_model  << "\n"  // 6
+             << emodel         << "\n"  // 5
+             << pmodel         << "\n"  // 6
              << yield_stress   << "\n"  // 7
              << reg_length     << "\n"  // 8
              << reg_const      << "\n";  // 9
     infoFile.close();
 
+    // Total runtime of simulation
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+    // Precomputations
+    one_over_dx = 1.0 / dx;
+    one_over_dx_square = one_over_dx * one_over_dx;
 
     // Lagrangian coordinates
     particles.x0 = particles.x;
@@ -212,8 +232,8 @@ void Simulation::remesh(){
 
     // NEW number of grid-dx's per side length
     unsigned int safety_factor = 3;
-    Nx = std::ceil(Lx / dx) + safety_factor;
-    Ny = std::ceil(Ly / dx) + safety_factor;
+    Nx = std::ceil(Lx * one_over_dx) + safety_factor;
+    Ny = std::ceil(Ly * one_over_dx) + safety_factor;
 
     T low_x  = mid_x - Nx*dx/2.0;
     T low_y  = mid_y - Ny*dx/2.0;

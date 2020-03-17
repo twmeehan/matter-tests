@@ -7,7 +7,6 @@
 //  * Alembic output
 //  * FLIP
 //  * SLIP BC
-//  * Python functions
 //  * Boundary condition for Laplace? Basically using Dirichlet now
 //  * Parallilize explicit_euler_update
 //////////////////////////////////////////////////////////////////
@@ -16,7 +15,7 @@ int main(){
 
       Simulation sim;
 
-      sim.sim_name = "elastic";
+      sim.sim_name = "elastic_wip";
 
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 400.0;

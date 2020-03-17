@@ -72,6 +72,10 @@ public:
   T runtime_euler;
   T runtime_defgrad;
 
+  // Precomputations
+  T one_over_dx;
+  T one_over_dx_square;
+
   // Functions
   void advanceStep();
   void updateDt();

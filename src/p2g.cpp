@@ -15,7 +15,7 @@ void Simulation::P2G_Baseline(){
                 T xp = particles.x(p);
                 T yp = particles.y(p);
                 if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
-                    T weight = wip(xp, yp, xi, yi, dx);
+                    T weight = wip(xp, yp, xi, yi, one_over_dx);
                     mass += weight;
                     vxi  += particles.vx(p) * weight;
                     vyi  += particles.vy(p) * weight;
@@ -46,20 +46,20 @@ void Simulation::P2G_Optimized(){
     for(int p = 0; p < Np; p++){
         T xp = particles.x(p);
         T yp = particles.y(p);
-        unsigned int i_base = std::floor((xp-x0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
-        unsigned int j_base = std::floor((yp-y0)/dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int i_base = std::floor((xp-x0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((yp-y0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);
             for(int j = j_base; j < j_base+4; j++){
                 T yi = grid.y(j);
-                T weight = wip(xp, yp, xi, yi, dx);
+                T weight = wip(xp, yp, xi, yi, one_over_dx);
 
                 if (weight > 1e-25){
                     grid.mass(i,j) += weight;
                     grid.vx(i,j)   += particles.vx(p) * weight;
                     grid.vy(i,j)   += particles.vy(p) * weight;
-                    grid.regularization(i,j) += particles.eps_pl_dev(p) * laplace_wip(xp, yp, xi, yi, dx);
+                    grid.regularization(i,j) += particles.eps_pl_dev(p) * laplace_wip(xp, yp, xi, yi, one_over_dx, one_over_dx_square);
                 }
 
             } // end for j
