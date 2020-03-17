@@ -62,6 +62,7 @@ public:
   T yield_stress;
   T reg_length;
   T reg_const;
+
   // Objects
   BoundaryCondition boundary_condition;
   std::vector<InfinitePlate> objects;
@@ -107,7 +108,7 @@ public:
 
   void moveObjects(T delta_t);
   void boundaryCollision(T xi, T yi, T& vxi, T& vyi);
-  void boundaryCorrection(T xi, T yi, T& vxi, T& vyi);
+  // void boundaryCorrection(T xi, T yi, T& vxi, T& vyi);
 
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();

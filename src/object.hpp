@@ -33,4 +33,58 @@ public:
 };
 
 
+//
+// class InfinitePlate{
+// public:
+//   InfinitePlate() : x_object(0.0), y_object(0.0), vx_object(0.0), vy_object(0.0), name("InfinitePlate") {}
+//   InfinitePlate(std::string name) : x_object(0.0), y_object(0.0), vx_object(0.0), vy_object(0.0), name(name) {}
+//   InfinitePlate(T x_object, T y_object, T vx_object, T vy_object, std::string name) : x_object(x_object), y_object(y_object), vx_object(vx_object), vy_object(vy_object), name(name) {}
+//
+//   bool inside(T x, T y){
+//         return distance(x, y) <= 0; // inside if dist is negative
+//   }
+//
+//   virtual T distance(T x, T y){ return nan(""); }
+//
+//   void move(T dt){
+//       x_object += dt * vx_object;
+//       y_object += dt * vy_object;
+//   }
+//
+//   T x_object;
+//   T y_object;
+//   T vx_object;
+//   T vy_object;
+//   std::string name;
+//
+// };
+//
+//
+//
+//
+// class TopPlate : public InfinitePlate{
+// public:
+//   TopPlate() : InfinitePlate("TopPlate") {}
+//   TopPlate(T y_object, T vy_object) : InfinitePlate(0, y_object, 0, vy_object, "TopPlate") {}
+//
+//   T distance(T x, T y) override {
+//       return (y_object - y);
+//   }
+//
+// };
+//
+//
+//
+// class BottomPlate : public InfinitePlate{
+// public:
+//   BottomPlate() : InfinitePlate("BottomPlate") {}
+//   BottomPlate(T y_object, T vy_object) : InfinitePlate(0, y_object, 0, vy_object, "BottomPlate") {}
+//
+//   T distance(T x, T y) override {
+//       return (y - y_object);
+//   }
+//
+// };
+
+
 #endif  // OBJECT_HPP

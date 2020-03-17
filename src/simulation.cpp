@@ -286,33 +286,33 @@ void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
 } // end boundaryCollision
 
 
-// Currently not working!!
-void Simulation::boundaryCorrection(T xi, T yi, T& vxi, T& vyi){
-
-    // trial step
-    T x_next = xi + vxi * dt;
-    T y_next = yi + vyi * dt;
-    moveObjects(dt);
-
-    for (InfinitePlate &obj : objects) {
-        bool colliding = obj.inside(x_next, y_next);
-        if (colliding) {
-            if (obj.plate_type == upper ){
-                debug(obj.name, " dist = ", obj.distance(x_next, y_next));
-                vyi += obj.distance(x_next, y_next) / dt; // distance is negative since grid point is inside object
-            }
-            else if (obj.plate_type == lower){
-                debug(obj.name, " dist = ", obj.distance(x_next, y_next));
-                vyi -= obj.distance(x_next, y_next) / dt;
-            }
-        } // end if colliding
-
-    } // end iterator over objects
-
-    // Correct back
-    moveObjects(-dt);
-
-} // end boundaryCorrection
+// // Currently not working!!
+// void Simulation::boundaryCorrection(T xi, T yi, T& vxi, T& vyi){
+//
+//     // trial step
+//     T x_next = xi + vxi * dt;
+//     T y_next = yi + vyi * dt;
+//     moveObjects(dt);
+//
+//     for (InfinitePlate &obj : objects) {
+//         bool colliding = obj.inside(x_next, y_next);
+//         if (colliding) {
+//             if (obj.plate_type == upper ){
+//                 debug(obj.name, " dist = ", obj.distance(x_next, y_next));
+//                 vyi += obj.distance(x_next, y_next) / dt; // distance is negative since grid point is inside object
+//             }
+//             else if (obj.plate_type == lower){
+//                 debug(obj.name, " dist = ", obj.distance(x_next, y_next));
+//                 vyi -= obj.distance(x_next, y_next) / dt;
+//             }
+//         } // end if colliding
+//
+//     } // end iterator over objects
+//
+//     // Correct back
+//     moveObjects(-dt);
+//
+// } // end boundaryCorrection
 
 
 

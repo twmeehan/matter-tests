@@ -33,6 +33,8 @@ int main(){
       std::string name;
       name = "ground";     InfinitePlate ground     = InfinitePlate(0,  0, lower, name); sim.objects.push_back(ground);
       name = "compressor"; InfinitePlate compressor = InfinitePlate(1, -1, upper, name); sim.objects.push_back(compressor);
+      // BottomPlate ground  = BottomPlate(0,0); sim.objects.push_back(ground);
+      // TopPlate compressor = TopPlate(1, -1);  sim.objects.push_back(compressor);
       sim.boundary_condition = STICKY;
 
       sim.initialize(/* E */ 1e7, /* nu */ 0.3, /* rho */ 100);
