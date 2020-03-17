@@ -21,12 +21,11 @@ Simulation::Simulation(){
 
 void Simulation::initialize(T E, T nu, T density){
 
-    std::cout << "------------------------------------------------ " << std::endl;
-    std::cout << "---------------- This is Larsie ---------------- " << std::endl;
-    std::cout << "------------------------------------------------ " << std::endl;
+    dim = 2;
 
-    mu = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
-    lambda = E / (2.0*(1.0+nu));
+    lambda = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
+    mu     = E / (2.0*(1.0+nu));
+    K = lambda + 2.0 * mu / dim;
     rho = density;
 
     wave_speed = std::sqrt(E/rho);
@@ -37,6 +36,7 @@ void Simulation::initialize(T E, T nu, T density){
 
     particles = Particles(Np);
 
+
 }
 
 
@@ -44,6 +44,9 @@ void Simulation::initialize(T E, T nu, T density){
 
 void Simulation::simulate(){
 
+    std::cout << "------------------------------------------------ " << std::endl;
+    std::cout << "---------------- This is Larsie ---------------- " << std::endl;
+    std::cout << "------------------------------------------------ " << std::endl;
 
     // Create Directories:
     if (mkdir("dumps", 0777) == -1)
@@ -56,19 +59,19 @@ void Simulation::simulate(){
         std::cout << "Directory " << sim_name << " created" << std::endl;
 
     // Write parameters to file for future reference
-    std::string emodel, pmodel;
+    int emodel, pmodel;
     if (elastic_model == StvkWithHencky)
-        emodel = "StvkWithHencky";
+        emodel = 1;
     else if (elastic_model == NeoHookean)
-        emodel = "NeoHookean";
+        emodel = 2;
     else
-        emodel = "INVALID ELASTIC MODEL";
+        emodel = -1;
     if (plastic_model == VonMises)
-        pmodel = "VonMises";
+        pmodel = 1;
     else if (plastic_model == NoPlasticity)
-        pmodel = "NoPlasticity";
+        pmodel = 2;
     else
-        pmodel = "INVALID PLASTIC MODEL";
+        pmodel = -1;
     std::ofstream infoFile("dumps/" + sim_name + "/info.txt");
     infoFile << end_frame      << "\n"  // 0
              << frame_dt       << "\n"  // 1
@@ -88,6 +91,11 @@ void Simulation::simulate(){
     // Precomputations
     one_over_dx = 1.0 / dx;
     one_over_dx_square = one_over_dx * one_over_dx;
+
+    // Precomputations for Drucker Prager
+    T sin_phi = std::sin(friction_angle / 180.0 * M_PI);
+    T alpha = std::sqrt(2.0/3.0) * 2.0 * sin_phi / (3.0 - sin_phi);
+    alpha_K_d_over_2mu = alpha * K * dim / (2*mu); // = alpha * bulk_modulus * dimension / (2*mu)
 
     // Lagrangian coordinates
     particles.x0 = particles.x;
@@ -273,10 +281,55 @@ void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
         if (colliding) {
             T vx_rel = vxi - obj.vx_object;
             T vy_rel = vyi - obj.vy_object;
-            if (boundary_condition == STICKY) { // STICKY
+
+            if (boundary_condition == STICKY) {
                 vx_rel = 0;
                 vy_rel = 0;
             } // end STICKY
+
+            else if (boundary_condition == SLIP) {
+                if (obj.plate_type == top || obj.plate_type == bottom){
+                    // tangential velocity is the x component
+                    // normal component must be set to zero
+                    vy_rel = 0;
+                    if (friction == 0){
+                        // Do nothing
+                    }
+                    else if ( std::abs(vx_rel) < friction * std::abs(vy_rel) ){
+                        vx_rel = 0; // tangential component also set to zero
+                    }
+                    else { // just reduce tangential component
+                        if (vx_rel > 0)
+                            vx_rel -= friction * std::abs(vy_rel);
+                        else
+                            vx_rel += friction * std::abs(vy_rel);
+                    }
+                } // end top and bottom plate
+                else if (obj.plate_type == left || obj.plate_type == right){
+                    // tangential velocity is the y comp
+                    // normal component must be set to zero
+                    vx_rel = 0;
+                    if (friction == 0){
+                        // Do nothing
+                    }
+                    else if ( std::abs(vy_rel) < friction * std::abs(vx_rel) ){
+                        vy_rel = 0; // tangential component also set to zero
+                    }
+                    else { // just reduce tangential component
+                        if (vy_rel > 0)
+                            vy_rel -= friction * std::abs(vx_rel);
+                        else
+                            vy_rel += friction * std::abs(vx_rel);
+                    }
+                } // end left or right plate
+            } // end SLIP
+
+            else {
+                debug("INVALID BOUNDARY CONDITION!!!");
+                exit = 1;
+                return;
+            }
+
             vxi = vx_rel + obj.vx_object;
             vyi = vy_rel + obj.vy_object;
         } // end if colliding
@@ -332,36 +385,56 @@ void Simulation::positionUpdate(){
 void Simulation::saveParticleData(std::string extra){
     std::ofstream outFile("dumps/" + sim_name + "/out_part_frame_" + extra + std::to_string(frame) + ".csv");
 
-    outFile << "x"            << ","   // 0
-            << "y"            << ","   // 1
-            << "z"            << ","   // 2
-            << "vx"           << ","   // 3
-            << "vy"           << ","   // 4
-            << "vz"           << ","   // 5
-            << "eps_pl_dev"   << ","   // 6
-            << "reg"          << ","   // 7
-            << "pressure"     << ","   // 8
-            << "devstress"    << "\n"; // 9
+    outFile << "x"           << ","   // 0
+            << "y"           << ","   // 1
+            << "z"           << ","   // 2
+            << "vx"          << ","   // 3
+            << "vy"          << ","   // 4
+            << "vz"          << ","   // 5
+            << "eps_pl_dev"  << ","   // 6
+            << "eps_pl_vol"  << ","   // 7
+            << "reg"         << ","   // 8
+            << "pressure"    << ","   // 9
+            << "devstress"   << ","   // 10
+            << "tau_xx"      << ","   // 11
+            << "tau_xy"      << ","   // 12
+            << "tau_yx"      << ","   // 13
+            << "tau_yy"      << ","   // 14
+            << "Fe_xx"       << ","   // 15
+            << "Fe_xy"       << ","   // 16
+            << "Fe_yx"       << ","   // 17
+            << "Fe_yy"       << "\n"; // 18
 
     for(int p = 0; p < Np; p++){
 
         TM2 tau = particles.tau[p];
-        T pressure  = -tau.sum() / 2.0;
+        T pressure  = -tau.sum() / dim;
         TM2 tau_dev = tau + pressure * TM2::Identity();
         T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
 
+        TM2 Fe = particles.F[p];
+
         T reg = particles.regularization(p);
 
-        outFile << particles.x(p)              << ","   // 0
-                << particles.y(p)              << ","   // 1
-                << 0                           << ","   // 2
-                << particles.vx(p)             << ","   // 3
-                << particles.vy(p)             << ","   // 4
-                << 0                           << ","   // 5
-                << particles.eps_pl_dev(p)     << ","   // 6
-                << reg                         << ","   // 7
-                << pressure                    << ","   // 8
-                << devstress                   << "\n"; // 9
+        outFile << particles.x(p)             << ","   // 0
+                << particles.y(p)             << ","   // 1
+                << 0                          << ","   // 2
+                << particles.vx(p)            << ","   // 3
+                << particles.vy(p)            << ","   // 4
+                << 0                          << ","   // 5
+                << particles.eps_pl_dev(p)    << ","   // 6
+                << particles.eps_pl_vol(p)    << ","   // 7
+                << reg                        << ","   // 8
+                << pressure                   << ","   // 9
+                << devstress                  << ","   // 10
+                << tau(0,0)                   << ","   // 11
+                << tau(0,1)                   << ","   // 12
+                << tau(1,0)                   << ","   // 13
+                << tau(1,1)                   << ","   // 14
+                << Fe(0,0)                    << ","    // 15
+                << Fe(0,1)                    << ","    // 16
+                << Fe(1,0)                    << ","    // 17
+                << Fe(1,1)                    << "\n";  // 18
     }
 }
 

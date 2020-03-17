@@ -15,6 +15,7 @@ public:
       vx = TVX::Zero(Np);
       vy = TVX::Zero(Np);
       eps_pl_dev     = TVX::Zero(Np);
+      eps_pl_vol     = TVX::Zero(Np);
       regularization = TVX::Zero(Np);
       tau.resize(Np); std::fill( tau.begin(), tau.end(), TM2::Zero()     );
       F.resize(Np);   std::fill( F.begin(),   F.end(),   TM2::Identity() );
@@ -26,6 +27,7 @@ public:
   TVX vx;
   TVX vy;
   TVX eps_pl_dev;
+  TVX eps_pl_vol;
   TVX regularization;
   std::vector<TM2> tau;
   std::vector<TM2> F;

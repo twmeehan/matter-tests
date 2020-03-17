@@ -6,27 +6,35 @@
 
 class InfinitePlate{
 public:
-  InfinitePlate() : y_object(0.0), vy_object(0.0), vx_object(0.0), plate_type(lower), name("noname") {}
-  InfinitePlate(T y_object, T vy_object, PlateType plate_type, std::string name) : y_object(y_object), vy_object(vy_object), vx_object(0.0), plate_type(plate_type), name(name) {}
+  InfinitePlate() : x_object(0.0), y_object(0.0), vx_object(0.0), vy_object(0.0), plate_type(bottom), name("noname") {}
+  InfinitePlate(T x_object, T y_object, T vx_object, T vy_object, PlateType plate_type, std::string name) : x_object(x_object), y_object(y_object), vx_object(vx_object), vy_object(vy_object), plate_type(plate_type), name(name) {}
 
   bool inside(T x, T y){
       return distance(x, y) <= 0; // inside if dist is negative
   }
 
   T distance(T x, T y){
-      if (plate_type == lower){
+      if (plate_type == bottom)
         return (y - y_object);
-      }
-      return (y_object - y);
+      else if (plate_type == top)
+          return (y_object - y);
+      else if (plate_type == left)
+          return (x - x_object);
+      else // right
+          return (x_object - x);
   }
 
   void move(T dt){
+      x_object += dt * vx_object;
       y_object += dt * vy_object;
   }
 
+  T x_object;
+  T y_object;
+
   T vx_object;
   T vy_object;
-  T y_object;
+
   PlateType plate_type;
   std::string name;
 

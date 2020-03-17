@@ -6,7 +6,6 @@
 //  * Complete doxygen
 //  * Alembic output
 //  * FLIP
-//  * SLIP BC
 //  * Boundary condition for Laplace? Basically using Dirichlet now
 //  * Parallilize explicit_euler_update
 //////////////////////////////////////////////////////////////////
@@ -15,7 +14,7 @@ int main(){
 
       Simulation sim;
 
-      sim.sim_name = "elastic_wip";
+      sim.sim_name = "elastic_slip";
 
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 400.0;
@@ -25,19 +24,20 @@ int main(){
 
       sim.n_threads = 4;
 
-
       unsigned int Nloop = std::round(1.0/sim.dx);
       debug("Nloop           = ", Nloop);
       sim.Np = Nloop * Nloop * 4;
 
       std::string name;
-      name = "ground";     InfinitePlate ground     = InfinitePlate(0,  0, lower, name); sim.objects.push_back(ground);
-      name = "compressor"; InfinitePlate compressor = InfinitePlate(1, -1, upper, name); sim.objects.push_back(compressor);
-      // BottomPlate ground  = BottomPlate(0,0); sim.objects.push_back(ground);
-      // TopPlate compressor = TopPlate(1, -1);  sim.objects.push_back(compressor);
-      sim.boundary_condition = STICKY;
+      name = "Ground";     InfinitePlate ground      = InfinitePlate(0, 0, 0, 0,  bottom, name); sim.objects.push_back(ground);
+      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -1, top,    name); sim.objects.push_back(compressor);
+      // name = "Left";       InfinitePlate left_plate  = InfinitePlate(0, 0, 0, 0,  left,   name); sim.objects.push_back(left_plate);
+      // name = "Right";      InfinitePlate right_plate = InfinitePlate(1, 0, 0, 0,  right,  name); sim.objects.push_back(right_plate);
 
-      sim.initialize(/* E */ 1e7, /* nu */ 0.3, /* rho */ 100);
+      sim.boundary_condition = STICKY;
+      sim.friction = 0.5;
+
+      sim.initialize(/* E */ 1e7, /* nu */ 0.0, /* rho */ 100);
       debug("Wave speed      = ", sim.wave_speed);
       debug("dt_max          = ", sim.dt_max);
       debug("particle_volume = ", sim.particle_volume);
@@ -45,8 +45,17 @@ int main(){
       debug("Np              = ", sim.Np);
 
       sim.elastic_model = StvkWithHencky;
-      sim.plastic_model = NoPlasticity;
+      sim.plastic_model = DPSimpleSoft;
+
+      // Von Mises:
       sim.yield_stress = std::sqrt(2.0/3.0) * /* q_max */ 400000.0;
+
+      // DPSimpleSoft
+      sim.friction_angle = 13;
+      sim.cohesion = 10000.0 / (sim.K * sim.dim); // p_min = - K * dim * cohesion
+      sim.xi = 1e15;
+
+      // Regularization by Laplacian
       sim.reg_length = 0.00;
       sim.reg_const = 2*sim.mu;
 

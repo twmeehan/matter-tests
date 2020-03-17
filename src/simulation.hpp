@@ -26,6 +26,7 @@ public:
 
   std::string sim_name;
 
+  unsigned int dim;
   unsigned int n_threads;
   unsigned int current_time_step;
   unsigned int frame;
@@ -57,13 +58,26 @@ public:
   // Elastoplasticity
   T mu;
   T lambda;
+  T K;
   ElasticModel elastic_model;
   PlasticModel plastic_model;
+
+  // Von Mises:
   T yield_stress;
+
+  // DPSimpleSoft
+  T friction_angle;
+  T alpha_K_d_over_2mu;
+  T cohesion;
+  T cohesion_proj;
+  T xi;
+
+  // Regularization by Laplacian
   T reg_length;
   T reg_const;
 
   // Objects
+  T friction;
   BoundaryCondition boundary_condition;
   std::vector<InfinitePlate> objects;
 

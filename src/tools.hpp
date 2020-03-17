@@ -15,9 +15,9 @@ typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TVX;
 typedef Eigen::Array<T,2,1> TA2;
 ////////////////////////
 
-enum PlateType { upper, lower};
+enum PlateType { top, bottom, left, right};
 enum ElasticModel { StvkWithHencky, NeoHookean };
-enum PlasticModel { NoPlasticity, VonMises };
+enum PlasticModel { NoPlasticity, VonMises, DPSimpleSoft };
 enum BoundaryCondition { STICKY, SLIP };
 
 #define CUBICSPLINES

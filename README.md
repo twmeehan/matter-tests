@@ -6,13 +6,15 @@ An implementation of the Material Point Method (MPM) in the finite-strain elasto
 
 Currently only supports 2D. However, the code is written in a general way and expanding to 3D is easy.
 
-Supports quadratic B-splines and PIC for particle-grid interpolation.
+Supports quadratic B-splines, and PIC for particle-grid interpolation.
 
 Supports Neo-Hookean and St. Venant-Kirchhoff elasticity.
 
-Supports Von Mises plasticity with Hencky strain, which can only be used with the St. Venant-Kirchhoff elastic model.
+Supports Von Mises and Drucker-Prager plasticity, which can only be used with the St. Venant-Kirchhoff elastic model. The Drucker-Prager model has a strain-softening feature.
 
 Implementing other elastic or plastic models is easy due to the general framework of the code.
+
+Analytic objects (formulated as levelset) are supported with sticky or slipping boundary conditions. Currently, only infinite plate objects are implemented.
 
 ### How to compile and run
 
@@ -40,7 +42,7 @@ The code offers the possibility for a user-defined external force which may depe
 
 ### Performance
 
-Larsie is continously implemented according to the principle that premature optimization is the root of all evil. Basic optimizations (precomputations, clever particle-grid loops, memory reads, etc...) are currently still being explored. Although still under development, Larsie also supports parallelization on shared memory with OpenMP.
+Larsie is continously implemented according to the principle "premature optimization is the root of all evil". Basic optimizations (precomputations, clever particle-grid loops, memory reads, etc...) are still being explored. Although still under development, Larsie also supports parallelization on shared memory with OpenMP.
 
 ### Dependencies
 
