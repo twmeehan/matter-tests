@@ -58,8 +58,8 @@ void Simulation::deformationUpdate_Baseline(){
                 T yield_stress = yield_stress_min + (yield_stress_orig - yield_stress_min) * exp(-xi * particles.eps_pl_dev(p));
 
                 /////////// REGULARIZATION ///////////
-                // T yield_stress_reg =                yield_stress - reg_const * reg_length*reg_length * particles.regularization(p);
-                T yield_stress_reg = std::max( (T)0.0, yield_stress - reg_const * reg_length*reg_length * particles.regularization(p) );
+                // T yield_stress_reg =                yield_stress - reg_const_length_sq * particles.regularization(p);
+                T yield_stress_reg = std::max( (T)0.0, yield_stress - reg_const_length_sq * particles.regularization(p) );
                 if (yield_stress_reg < 0.0){
                     debug("NEGATIVE YIELD STRESS!!!");
                     exit = 1;

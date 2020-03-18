@@ -14,7 +14,7 @@ int main(){
 
       Simulation sim;
 
-      sim.sim_name = "vm_soft_reg_dx001";
+      sim.sim_name = "test";
 
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 400.0;
@@ -31,15 +31,15 @@ int main(){
       // sim.Np = 1762;
 
       std::string name;
-      name = "Ground";     InfinitePlate ground      = InfinitePlate(0, 0, 0, 0,  bottom, name); sim.objects.push_back(ground);
-      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -0.1, top,    name); sim.objects.push_back(compressor);
+      // name = "Ground";     InfinitePlate ground      = InfinitePlate(0, 0, 0, 0,  bottom, name); sim.objects.push_back(ground);
+      // name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -0.1, top,    name); sim.objects.push_back(compressor);
       // name = "Left";       InfinitePlate left_plate  = InfinitePlate(0, 0, 0, 0,  left,   name); sim.objects.push_back(left_plate);
       // name = "Right";      InfinitePlate right_plate = InfinitePlate(1, 0, 0, 0,  right,  name); sim.objects.push_back(right_plate);
 
       sim.boundary_condition = SLIP;
       sim.friction = 0.0;
 
-      sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1000);
+      sim.initialize(/* E */ 1e7, /* nu */ 0.3, /* rho */ 100);
       debug("Wave speed      = ", sim.wave_speed);
       debug("dt_max          = ", sim.dt_max);
       debug("particle_volume = ", sim.particle_volume);
@@ -52,16 +52,16 @@ int main(){
       sim.xi = 1e15;
 
       // Von Mises:
-      sim.yield_stress_orig = std::sqrt(2.0/3.0) * /* q_max */ 4000.0;
-      sim.yield_stress_min  = std::sqrt(2.0/3.0) * /* q_max */ 400.0;
+      sim.yield_stress_orig = std::sqrt(2.0/3.0) * /* q_max */ 40000.0;
+      sim.yield_stress_min  = std::sqrt(2.0/3.0) * /* q_max */ 40000.0;
 
       // DPSimpleSoft
       sim.friction_angle = 13;
       sim.cohesion = 8000.0 / (sim.K * sim.dim); // p_min = - K * dim * cohesion
 
       // Regularization by Laplacian
-      sim.reg_length = 0.01;
-      sim.reg_const = 0.3*sim.mu; // 2*sim.mu;
+      sim.reg_length = sim.dx;
+      sim.reg_const = 0; // 2*sim.mu;
 
       // Initial state
       sim.amplitude = 0.0;

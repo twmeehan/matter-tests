@@ -95,6 +95,7 @@ void Simulation::simulate(){
     // Precomputations
     one_over_dx = 1.0 / dx;
     one_over_dx_square = one_over_dx * one_over_dx;
+    reg_const_length_sq = reg_const * reg_length * reg_length;
 
     // Precomputations for Drucker Prager
     T sin_phi = std::sin(friction_angle / 180.0 * M_PI);
@@ -419,7 +420,7 @@ void Simulation::saveParticleData(std::string extra){
 
         TM2 Fe = particles.F[p];
 
-        T reg = particles.regularization(p);
+        T reg = reg_length * reg_length * particles.regularization(p);
 
         outFile << particles.x(p)             << ","   // 0
                 << particles.y(p)             << ","   // 1
@@ -457,6 +458,17 @@ void Simulation::saveGridData(std::string extra){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////// EXTRA FUNCTIONS //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// This function is to be used in explicitEulerUpdate after boundaryCollision
+void Simulation::overwriteGridVelocity(T xi, T yi, T& vxi, T& vyi){
+    T y_start = L - 0.25*dx;
+    T width = 2*dx;
+    T v_imp = -0.5; // positive value means tension
+    if (yi > y_start - width + v_imp * time)
+        vyi = v_imp;
+    if (yi < 0       + width - v_imp * time)
+        vyi = -v_imp;
+}
 
 // This function can only be used with fixed mesh
 std::pair<TMX, TMX> Simulation::createExternalGridGravity(){

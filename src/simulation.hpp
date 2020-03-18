@@ -76,6 +76,7 @@ public:
   // Regularization by Laplacian
   T reg_length;
   T reg_const;
+  T reg_const_length_sq;
 
   // Objects
   T friction;
@@ -124,7 +125,7 @@ public:
   void moveObjects(T delta_t);
   void boundaryCollision(T xi, T yi, T& vxi, T& vyi);
   // void boundaryCorrection(T xi, T yi, T& vxi, T& vyi);
-
+  void overwriteGridVelocity(T xi, T yi, T& vxi, T& vyi);
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();
   void calculateMassConservation();
