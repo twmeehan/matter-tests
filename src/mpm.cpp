@@ -14,11 +14,11 @@ int main(){
 
       Simulation sim;
 
-      sim.sim_name = "elastic_slip";
+      sim.sim_name = "vm_soft_reg_dx001";
 
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 400.0;
-      sim.dx = 0.05;
+      sim.dx = 0.01;
       sim.L = 1;
       sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
@@ -49,18 +49,19 @@ int main(){
       // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
       sim.plastic_model = VonMises;
+      sim.xi = 1e15;
 
       // Von Mises:
-      sim.yield_stress = std::sqrt(2.0/3.0) * /* q_max */ 4000.0;
+      sim.yield_stress_orig = std::sqrt(2.0/3.0) * /* q_max */ 4000.0;
+      sim.yield_stress_min  = std::sqrt(2.0/3.0) * /* q_max */ 400.0;
 
       // DPSimpleSoft
       sim.friction_angle = 13;
       sim.cohesion = 8000.0 / (sim.K * sim.dim); // p_min = - K * dim * cohesion
-      sim.xi = 1e15;
 
       // Regularization by Laplacian
-      sim.reg_length = 0.00;
-      sim.reg_const = 2*sim.mu;
+      sim.reg_length = 0.01;
+      sim.reg_const = 0.3*sim.mu; // 2*sim.mu;
 
       // Initial state
       sim.amplitude = 0.0;

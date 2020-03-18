@@ -62,15 +62,16 @@ public:
   T K;
   ElasticModel elastic_model;
   PlasticModel plastic_model;
+  T xi;
 
   // Von Mises:
-  T yield_stress;
+  T yield_stress_orig;
+  T yield_stress_min;
 
   // DPSimpleSoft
   T friction_angle;
   T alpha_K_d_over_2mu;
   T cohesion;
-  T xi;
 
   // Regularization by Laplacian
   T reg_length;

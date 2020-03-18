@@ -73,16 +73,20 @@ void Simulation::simulate(){
     else
         pmodel = -1;
     std::ofstream infoFile("dumps/" + sim_name + "/info.txt");
-    infoFile << end_frame      << "\n"  // 0
-             << frame_dt       << "\n"  // 1
-             << dx             << "\n"  // 2
-             << mu             << "\n"  // 3
-             << lambda         << "\n"  // 4
-             << emodel         << "\n"  // 5
-             << pmodel         << "\n"  // 6
-             << yield_stress   << "\n"  // 7
-             << reg_length     << "\n"  // 8
-             << reg_const      << "\n";  // 9
+    infoFile << end_frame           << "\n"  // 0
+             << frame_dt            << "\n"  // 1
+             << dx                  << "\n"  // 2
+             << mu                  << "\n"  // 3
+             << lambda              << "\n"  // 4
+             << emodel              << "\n"  // 5
+             << pmodel              << "\n"  // 6
+             << xi                  << "\n"  // 7
+             << yield_stress_orig   << "\n"  // 8
+             << yield_stress_min    << "\n"  // 9
+             << friction_angle      << "\n"  // 10
+             << cohesion            << "\n"  // 11
+             << reg_length          << "\n"  // 12
+             << reg_const           << "\n"; // 13
     infoFile.close();
 
     // Total runtime of simulation
