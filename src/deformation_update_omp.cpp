@@ -3,7 +3,6 @@
 
 // Deformation gradient is updated based on the NEW GRID VELOCITIES and the OLD PARTICLE POSITIONS
 
-
 void Simulation::deformationUpdate_Parallel(){
 
     unsigned int plastic_count = 0;
@@ -43,27 +42,8 @@ void Simulation::deformationUpdate_Parallel(){
         Fe_trial = Fe_trial + dt * sum * Fe_trial;
         particles.F[p] = Fe_trial;
 
-        if (plastic_model == VonMises){
-            Eigen::JacobiSVD<TM2> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
-            TV2 hencky = svd.singularValues().array().log(); // Jixie does not use abs value, however Pradhana-thesis does.
-            T   hencky_trace = hencky.sum();
-            TV2 hencky_deviatoric = hencky - (hencky_trace / 2.0) * TV2::Ones();
-            T   hencky_deviatoric_norm = hencky_deviatoric.norm();
+        plasticity(p, plastic_count, Fe_trial);
 
-            T delta_gamma = hencky_deviatoric_norm - yield_stress / (2 * mu);
-            if (delta_gamma > 0){ // project to yield surface
-                plastic_count++;
-                particles.eps_pl_dev(p) += delta_gamma;
-                hencky -= delta_gamma * (hencky_deviatoric / hencky_deviatoric_norm);
-                particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-            }
-        } // end VonMises Plasticity
-        else if (plastic_model == NoPlasticity){
-            // Do nothing
-        }
-        else{
-            debug("You specified an unvalid PLASTIC model!");
-        }
     } // end loop over particles
 
     debug("               projected particles = ", plastic_count, " / ", Np);

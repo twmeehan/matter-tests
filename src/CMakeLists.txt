@@ -15,6 +15,7 @@ if (USE_OMP)
 				   tools.cpp
 			       deformation_update.cpp
 			       deformation_update_omp.cpp
+				   plasticity.cpp
 			       p2g.cpp
 			       p2g_omp.cpp
 			       g2p.cpp
@@ -30,6 +31,7 @@ else (USE_OMP)
 			   	   simulation.cpp
 				   tools.cpp
 			       deformation_update.cpp
+				   plasticity.cpp
 			       p2g.cpp
 			       g2p.cpp
 			       explicit_euler_update.cpp

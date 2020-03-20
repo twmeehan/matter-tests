@@ -31,15 +31,15 @@ int main(){
       // sim.Np = 1762;
 
       std::string name;
-      // name = "Ground";     InfinitePlate ground      = InfinitePlate(0, 0, 0, 0,  bottom, name); sim.objects.push_back(ground);
-      // name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -0.1, top,    name); sim.objects.push_back(compressor);
+      name = "Ground";     InfinitePlate ground      = InfinitePlate(0, 0, 0, 0,  bottom, name); sim.objects.push_back(ground);
+      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -0.1, top,    name); sim.objects.push_back(compressor);
       // name = "Left";       InfinitePlate left_plate  = InfinitePlate(0, 0, 0, 0,  left,   name); sim.objects.push_back(left_plate);
       // name = "Right";      InfinitePlate right_plate = InfinitePlate(1, 0, 0, 0,  right,  name); sim.objects.push_back(right_plate);
 
       sim.boundary_condition = SLIP;
       sim.friction = 0.0;
 
-      sim.initialize(/* E */ 1e7, /* nu */ 0.3, /* rho */ 100);
+      sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1000);
       debug("Wave speed      = ", sim.wave_speed);
       debug("dt_max          = ", sim.dt_max);
       debug("particle_volume = ", sim.particle_volume);
@@ -48,12 +48,12 @@ int main(){
 
       // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
-      sim.plastic_model = VonMises;
+      sim.plastic_model = DPSimpleSoft;
       sim.xi = 1e15;
 
       // Von Mises:
-      sim.yield_stress_orig = std::sqrt(2.0/3.0) * /* q_max */ 40000.0;
-      sim.yield_stress_min  = std::sqrt(2.0/3.0) * /* q_max */ 40000.0;
+      sim.yield_stress_orig = std::sqrt(2.0/3.0) * /* q_max */ 4000.0;
+      sim.yield_stress_min  = std::sqrt(2.0/3.0) * /* q_max */ 4000.0;
 
       // DPSimpleSoft
       sim.friction_angle = 13;

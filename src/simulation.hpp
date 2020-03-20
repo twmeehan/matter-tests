@@ -122,6 +122,10 @@ public:
 
   void positionUpdate();
 
+  TM2 NeoHookeanPiola(TM2 & Fe);
+  TM2 StvkWithHenckyPiola(TM2 & Fe);
+  void plasticity(unsigned int p, unsigned int & plastic_count, TM2 & Fe_trial);
+
   void moveObjects(T delta_t);
   void boundaryCollision(T xi, T yi, T& vxi, T& vyi);
   // void boundaryCorrection(T xi, T yi, T& vxi, T& vyi);
@@ -135,6 +139,21 @@ public:
 
 
 }; // END Simulation class
+
+
+
+inline TM2 Simulation::NeoHookeanPiola(TM2 & Fe){
+    return mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
+} // end NeoHookeanPiola
+
+inline TM2 Simulation::StvkWithHenckyPiola(TM2 & Fe){
+    Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    TA2 sigma = svd.singularValues().array(); // abs() for inverse also??
+    TM2 logSigma = sigma.abs().log().matrix().asDiagonal();
+    TM2 invSigma = sigma.inverse().matrix().asDiagonal();
+    TM2 dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
+    return dPsidF;
+} // end StvkWithHenckyPiola
 
 
 

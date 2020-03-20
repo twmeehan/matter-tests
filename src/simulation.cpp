@@ -413,12 +413,19 @@ void Simulation::saveParticleData(std::string extra){
 
     for(int p = 0; p < Np; p++){
 
-        TM2 tau = particles.tau[p];
-        T pressure  = -tau.sum() / dim;
-        TM2 tau_dev = tau + pressure * TM2::Identity();
-        T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
+        TM2 I = TM2::Identity();
 
         TM2 Fe = particles.F[p];
+
+        TM2 tau; // particles.tau[p];
+        if (elastic_model == NeoHookean)
+            tau = NeoHookeanPiola(Fe) * Fe.transpose();
+        else if (elastic_model == StvkWithHencky)
+            tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
+
+        T pressure  = -tau.sum() / dim;
+        TM2 tau_dev = tau + pressure * I;
+        T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
 
         T reg = reg_length * reg_length * particles.regularization(p);
 
@@ -463,7 +470,7 @@ void Simulation::saveGridData(std::string extra){
 void Simulation::overwriteGridVelocity(T xi, T yi, T& vxi, T& vyi){
     T y_start = L - 0.25*dx;
     T width = 2*dx;
-    T v_imp = -0.5; // positive value means tension
+    T v_imp = 0.1; // positive value means tension
     if (yi > y_start - width + v_imp * time)
         vyi = v_imp;
     if (yi < 0       + width - v_imp * time)

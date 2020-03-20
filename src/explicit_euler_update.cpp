@@ -1,5 +1,9 @@
 #include "simulation.hpp"
 
+// Remember:
+// P = dPsidF              (first Piola-Kirchhoff stress tensor)
+// tau = P * F.transpose() (Kirchhoff stress tensor)
+
 void Simulation::explicitEulerUpdate_Baseline(){
     TV2 grad_wip;
     TM2 Fe, dPsidF;
@@ -21,10 +25,6 @@ void Simulation::explicitEulerUpdate_Baseline(){
                     if ( std::abs(xp-xi) < 1.5*dx && std::abs(yp-yi) < 1.5*dx){
                         // Fe = particles[p].F;
                         Fe = particles.F[p];
-
-                        // Remember:
-                        // P = dPsidF              (first Piola-Kirchhoff stress tensor)
-                        // tau = P * F.transpose() (Kirchhoff stress tensor)
 
                         if (elastic_model == NeoHookean){
                             dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
@@ -73,10 +73,6 @@ void Simulation::explicitEulerUpdate_Optimized(){
     TV2 grad_wip;
     TM2 Fe, dPsidF, tau;
 
-    // Remember:
-    // P = dPsidF              (first Piola-Kirchhoff stress tensor)
-    // tau = P * F.transpose() (Kirchhoff stress tensor)
-
     T x0 = grid.x(0);
     T y0 = grid.y(0);
 
@@ -88,14 +84,10 @@ void Simulation::explicitEulerUpdate_Optimized(){
         Fe = particles.F[p];
 
         if (elastic_model == NeoHookean){
-            dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
+            dPsidF = NeoHookeanPiola(Fe);
         }
         else if (elastic_model == StvkWithHencky){ // St Venant Kirchhoff with Hencky strain
-            Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
-            TA2 sigma = svd.singularValues().array(); // abs() for inverse also??
-            TM2 logSigma = sigma.abs().log().matrix().asDiagonal();
-            TM2 invSigma = sigma.inverse().matrix().asDiagonal();
-            dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
+            dPsidF = StvkWithHenckyPiola(Fe);
         }
         else{
             debug("You specified an unvalid ELASTIC model!");
@@ -160,7 +152,7 @@ void Simulation::explicitEulerUpdate_Optimized(){
                 // boundaryCorrection(new_xi, new_yi, new_vxi, new_vyi);
 
                 // Only if impose velocity on certain grid nodes:
-                overwriteGridVelocity(new_xi, new_yi, new_vxi, new_vyi);
+                // overwriteGridVelocity(new_xi, new_yi, new_vxi, new_vyi);
 
                 grid.vx(i,j) = new_vxi;
                 grid.vy(i,j) = new_vyi;
