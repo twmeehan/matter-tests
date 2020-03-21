@@ -14,7 +14,7 @@ int main(){
 
       Simulation sim;
 
-      sim.sim_name = "test";
+      sim.sim_name = "test_dp";
 
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 400.0;

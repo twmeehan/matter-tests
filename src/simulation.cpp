@@ -423,7 +423,7 @@ void Simulation::saveParticleData(std::string extra){
         else if (elastic_model == StvkWithHencky)
             tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
 
-        T pressure  = -tau.sum() / dim;
+        T pressure  = -tau.trace() / dim;
         TM2 tau_dev = tau + pressure * I;
         T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
 

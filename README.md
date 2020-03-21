@@ -1,20 +1,20 @@
-# LarsieMPM
+# Larsie
 
 An implementation of the Material Point Method (MPM) in the finite-strain elastoplastic framework.
 
 ### Features and limitations
 
-Currently only supports 2D. However, the code is written in a general way and expanding to 3D is easy.
+Currently only supports **2D**. However, the code is written in a general way and expanding to 3D is easy.
 
-Supports quadratic and cubic B-splines, and PIC for particle-grid interpolation.
+Supports **quadratic and cubic B-splines**, and **PIC** for particle-grid interpolation.
 
-Supports Neo-Hookean and St. Venant-Kirchhoff elasticity.
+Supports **Neo-Hookean** and **St. Venant-Kirchhoff** elasticity.
 
-Supports Von Mises and Drucker-Prager plasticity, which can only be used with the St. Venant-Kirchhoff elastic model. The Drucker-Prager model has a strain-softening feature.
+Supports **Von Mises** and **Drucker-Prager** plasticity, which are to be used with the St. Venant-Kirchhoff elastic model. Both the Von Mises model and Drucker-Prager model has an optional **strain-softening** feature.
 
 Implementing other elastic or plastic models is easy due to the general framework of the code.
 
-Analytic objects (formulated as levelset) are supported with sticky or slipping boundary conditions. Currently, only infinite plate objects are implemented.
+**Analytic objects** (formulated as levelsets) are supported with **sticky** or **slipping** (with user-defined **friction**) boundary conditions. Currently, only infinite plate objects are implemented.
 
 ### How to compile and run
 
@@ -41,13 +41,13 @@ Two python scripts are provided for preprocessing and postprocessing, respective
 
 ### Validation
 
-The code offers the possibility for a user-defined external force which may depend on the Lagrangian coordinates of the particles. This allows for the creation of manufactured solutions, which can be used to validate the code (at least in the pure elastic case).
+The code offers the possibility for a user-defined external force which may depend on the Lagrangian coordinates of the particles. This allows for the creation of manufactured solutions, which can be used to validate the code (at least in the pure elastic case). The plastic models can easily be validated by plotting *p* (pressure) and *q* (Mises equivalent stress) for each particle in time.
 
 ### Performance
 
-Larsie is continously implemented according to the principle "premature optimization is the root of all evil". Basic optimizations (precomputations, clever particle-grid loops, memory reads, etc...) are still being explored. Although still under development, Larsie also supports parallelization on shared memory with OpenMP.
+Larsie is continously implemented according to the principle *premature optimization is the root of all evil*. Basic optimizations (precomputations, clever particle-grid loops, memory reads, etc...) are still being explored. Although still under development, Larsie also supports **parallelization** on shared memory with **OpenMP**.
 
 ### Dependencies
 
 Larsie only relies only on CMake and the linear algebra library Eigen.
-To use OpenMP, use the CMake option `-DUSE_OMP=True`, and select the appropriate parallelized functions you want to use.
+To use OpenMP, use the CMake option `-DUSE_OMP=True`, and make sure to select the appropriate parallelized functions you want to use in `simulation.cpp`.
