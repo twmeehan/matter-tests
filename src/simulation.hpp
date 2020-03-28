@@ -37,6 +37,7 @@ public:
   T frame_dt;
   T dt;
   T dt_max;
+  T flip_ratio;
   T wave_speed;
   T cfl;
   T dx;

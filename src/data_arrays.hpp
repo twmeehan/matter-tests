@@ -14,6 +14,10 @@ public:
       y0 = TVX::Zero(Np);
       vx = TVX::Zero(Np);
       vy = TVX::Zero(Np);
+      picx = TVX::Zero(Np);
+      picy = TVX::Zero(Np);
+      flipx = TVX::Zero(Np);
+      flipy = TVX::Zero(Np);
       eps_pl_dev     = TVX::Zero(Np);
       eps_pl_vol     = TVX::Zero(Np);
       regularization = TVX::Zero(Np);
@@ -27,6 +31,10 @@ public:
   TVX y0;
   TVX vx;
   TVX vy;
+  TVX picx;
+  TVX picy;
+  TVX flipx;
+  TVX flipy;
   TVX eps_pl_dev;
   TVX eps_pl_vol;
   TVX regularization;
@@ -38,17 +46,21 @@ public:
 class Grid{
 public:
     Grid(unsigned int Nx = 21, unsigned int Ny = 21){
-        x    = TVX::LinSpaced(Nx, -0.5, 1.5);
-        y    = TVX::LinSpaced(Ny, -0.5, 1.5);
-        vx   = TMX::Zero(Nx, Ny);
-        vy   = TMX::Zero(Nx, Ny);
-        mass = TMX::Zero(Nx, Ny);
+        x = TVX::LinSpaced(Nx, -0.5, 1.5);
+        y = TVX::LinSpaced(Ny, -0.5, 1.5);
+        mass    = TMX::Zero(Nx, Ny);
+        vx      = TMX::Zero(Nx, Ny);
+        vy      = TMX::Zero(Nx, Ny);
+        flipx   = TMX::Zero(Nx, Ny);
+        flipy   = TMX::Zero(Nx, Ny);
         regularization = TMX::Zero(Nx, Ny);
     }
     TVX x;
     TVX y;
     TMX vx;
     TMX vy;
+    TMX flipx;
+    TMX flipy;
     TMX mass;
     TMX regularization;
     T xc;

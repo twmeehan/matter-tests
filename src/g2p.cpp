@@ -34,6 +34,8 @@ void Simulation::G2P_Optimized(){
         T yp = particles.y(p);
         T vxp = 0;
         T vyp = 0;
+        T flipxp = 0;
+        T flipyp = 0;
         T regularization_p = 0;
         unsigned int i_base = std::floor((xp-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
         unsigned int j_base = std::floor((yp-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
@@ -45,11 +47,15 @@ void Simulation::G2P_Optimized(){
                 T weight = wip(xp, yp, xi, yi, one_over_dx);
                 vxp += grid.vx(i,j) * weight;
                 vyp += grid.vy(i,j) * weight;
+                flipxp += grid.flipx(i,j) * weight;
+                flipyp += grid.flipy(i,j) * weight;
                 regularization_p += grid.regularization(i,j) * weight;
             } // end loop j
         } // end loop i
-        particles.vx(p) = vxp;
-        particles.vy(p) = vyp;
+        particles.picx(p) = vxp;
+        particles.picy(p) = vyp;
+        particles.flipx(p) = flipxp;
+        particles.flipy(p) = flipyp;
         particles.regularization(p) = regularization_p;
     } // end loop p
 } // end G2P_Optimized

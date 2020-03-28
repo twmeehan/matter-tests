@@ -139,8 +139,10 @@ void Simulation::explicitEulerUpdate_Optimized(){
                 // velocity_increment_y += dt * external_gravity(1);
                 ////////////////////////////////////////////////////////
 
-                T new_vxi = grid.vx(i,j) + velocity_increment_x;
-                T new_vyi = grid.vy(i,j) + velocity_increment_y;
+                T old_vxi = grid.vx(i,j);
+                T old_vyi = grid.vy(i,j);
+                T new_vxi = old_vxi + velocity_increment_x;
+                T new_vyi = old_vyi + velocity_increment_y;
                 T new_xi = grid.x(i) + dt * new_vxi;
                 T new_yi = grid.y(j) + dt * new_vyi;
                 boundaryCollision(new_xi, new_yi, new_vxi, new_vyi);
@@ -153,6 +155,9 @@ void Simulation::explicitEulerUpdate_Optimized(){
 
                 grid.vx(i,j) = new_vxi;
                 grid.vy(i,j) = new_vyi;
+
+                grid.flipx(i,j) = new_vxi - old_vxi;
+                grid.flipy(i,j) = new_vyi - old_vyi;
 
             } // end if non-zero grid mass
 

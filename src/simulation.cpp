@@ -153,7 +153,7 @@ void Simulation::advanceStep(){
     // calculateMassConservation();
     explicitEulerUpdate();
     // addExternalParticleGravity();
-    G2P();
+    G2P();              // due to "regularization", G2P must come before deformationUpdate!!!
     deformationUpdate();
     positionUpdate();
 }
@@ -270,6 +270,8 @@ void Simulation::remesh(){
 
     grid.vx   = TMX::Zero(Nx, Ny);
     grid.vy   = TMX::Zero(Nx, Ny);
+    grid.flipx   = TMX::Zero(Nx, Ny);
+    grid.flipy   = TMX::Zero(Nx, Ny);
     grid.mass = TMX::Zero(Nx, Ny);
 
 }
@@ -382,8 +384,15 @@ void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
 
 void Simulation::positionUpdate(){
     for(int p=0; p<Np; p++){
-        particles.x(p) = particles.x(p) + dt * particles.vx(p);
-        particles.y(p) = particles.y(p) + dt * particles.vy(p);
+
+        // Position is updated according to PIC velocities
+        particles.x(p) = particles.x(p) + dt * particles.picx(p);
+        particles.y(p) = particles.y(p) + dt * particles.picy(p);
+
+        // New particle velocity is a FLIP-PIC combination
+        particles.vx(p) = flip_ratio * ( particles.vx(p) + particles.flipx(p) ) + (1 - flip_ratio) * particles.picx(p);
+        particles.vy(p) = flip_ratio * ( particles.vy(p) + particles.flipy(p) ) + (1 - flip_ratio) * particles.picy(p);
+
     } // end loop over particles
 }
 

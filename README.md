@@ -6,7 +6,7 @@ An implementation of the Material Point Method (MPM) in the finite-strain elasto
 
 Currently only supports **2D**. However, the code is written in a general way and expanding to 3D is easy.
 
-Supports **quadratic and cubic B-splines**, and **PIC** for particle-grid interpolation.
+Supports **quadratic and cubic B-splines**, and **PIC**, **FLIP** and **PIC-FLIP** for particle-grid interpolation.
 
 Supports **Neo-Hookean** and **St. Venant-Kirchhoff** elasticity.
 
