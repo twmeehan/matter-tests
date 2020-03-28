@@ -73,9 +73,6 @@ void Simulation::explicitEulerUpdate_Optimized(){
     TV2 grad_wip;
     TM2 Fe, dPsidF, tau;
 
-    T x0 = grid.x(0);
-    T y0 = grid.y(0);
-
     TMX grid_force_x = TMX::Zero(Nx, Ny);
     TMX grid_force_y = TMX::Zero(Nx, Ny);
 
@@ -98,8 +95,8 @@ void Simulation::explicitEulerUpdate_Optimized(){
 
         T xp = particles.x(p);
         T yp = particles.y(p);
-        unsigned int i_base = std::floor((xp-x0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
-        unsigned int j_base = std::floor((yp-y0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int i_base = std::floor((xp-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((yp-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);

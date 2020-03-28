@@ -265,6 +265,9 @@ void Simulation::remesh(){
     grid.x = TVX::LinSpaced(Nx, low_x, high_x);
     grid.y = TVX::LinSpaced(Ny, low_y, high_y);
 
+    grid.xc = grid.x(0);
+    grid.yc = grid.y(0);
+
     grid.vx   = TMX::Zero(Nx, Ny);
     grid.vy   = TMX::Zero(Nx, Ny);
     grid.mass = TMX::Zero(Nx, Ny);

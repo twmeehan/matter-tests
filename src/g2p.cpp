@@ -27,9 +27,6 @@ void Simulation::G2P_Baseline(){
 
 void Simulation::G2P_Optimized(){
 
-    T x0 = grid.x(0);
-    T y0 = grid.y(0);
-
     // This loop over p can be easily paralellized
     // Need to create thread-local versions of particles.vx and vy
     for(int p = 0; p < Np; p++){
@@ -38,8 +35,8 @@ void Simulation::G2P_Optimized(){
         T vxp = 0;
         T vyp = 0;
         T regularization_p = 0;
-        unsigned int i_base = std::floor((xp-x0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
-        unsigned int j_base = std::floor((yp-y0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int i_base = std::floor((xp-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((yp-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);

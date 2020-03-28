@@ -51,6 +51,8 @@ public:
     TMX vy;
     TMX mass;
     TMX regularization;
+    T xc;
+    T yc;
 };
 
 

@@ -36,9 +36,6 @@ void Simulation::P2G_Baseline(){
 
 void Simulation::P2G_Optimized(){
 
-    T x0 = grid.x(0);
-    T y0 = grid.y(0);
-
     grid.vx.setZero(Nx, Ny);
     grid.vy.setZero(Nx, Ny);
     grid.regularization.setZero(Nx, Ny);
@@ -46,8 +43,8 @@ void Simulation::P2G_Optimized(){
     for(int p = 0; p < Np; p++){
         T xp = particles.x(p);
         T yp = particles.y(p);
-        unsigned int i_base = std::floor((xp-x0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
-        unsigned int j_base = std::floor((yp-y0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int i_base = std::floor((xp-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((yp-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);

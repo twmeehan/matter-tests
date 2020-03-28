@@ -6,9 +6,6 @@ void Simulation::deformationUpdate_Baseline(){
 
     unsigned int plastic_count = 0;
 
-    T x0 = grid.x(0);
-    T y0 = grid.y(0);
-
     for(int p=0; p<Np; p++){
 
         TM2 sum = TM2::Zero();
@@ -16,8 +13,8 @@ void Simulation::deformationUpdate_Baseline(){
         T xp = particles.x(p);
         T yp = particles.y(p);
 
-        unsigned int i_base = std::floor((xp-x0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
-        unsigned int j_base = std::floor((yp-y0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int i_base = std::floor((xp-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((yp-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);
