@@ -8,39 +8,35 @@
 class Particles{
 public:
   Particles(unsigned int Np = 400){
-      x  = TVX::Zero(Np);
-      y  = TVX::Zero(Np);
-      x0 = TVX::Zero(Np);
-      y0 = TVX::Zero(Np);
-      vx = TVX::Zero(Np);
-      vy = TVX::Zero(Np);
-      picx = TVX::Zero(Np);
-      picy = TVX::Zero(Np);
-      flipx = TVX::Zero(Np);
-      flipy = TVX::Zero(Np);
-      eps_pl_dev     = TVX::Zero(Np);
-      eps_pl_vol     = TVX::Zero(Np);
-      regularization = TVX::Zero(Np);
-      cohesion_proj  = TVX::Zero(Np);
+      x.resize(Np);    std::fill( x.begin(),    x.end(),    TV2::Zero() );
+      //x0.resize(Np);   std::fill( x0.begin(),   x0.end(),   TV2::Zero() );
+      v.resize(Np);    std::fill( v.begin(),    v.end(),    TV2::Zero() );
+      pic.resize(Np);  std::fill( pic.begin(),  pic.end(),  TV2::Zero() );
+      flip.resize(Np); std::fill( flip.begin(), flip.end(), TV2::Zero() );
+
+      eps_pl_dev.resize(Np);     std::fill( eps_pl_dev.begin(),     eps_pl_dev.end(),     0.0 );
+      eps_pl_vol.resize(Np);     std::fill( eps_pl_vol.begin(),     eps_pl_vol.end(),     0.0 );
+      regularization.resize(Np); std::fill( regularization.begin(), regularization.end(), 0.0 );
+      //cohesion_proj.resize(Np);  std::fill( cohesion_proj.begin(),  cohesion_proj.end(),  0.0 );
+
       tau.resize(Np); std::fill( tau.begin(), tau.end(), TM2::Zero()     );
       F.resize(Np);   std::fill( F.begin(),   F.end(),   TM2::Identity() );
   }
-  TVX x;
-  TVX y;
-  TVX x0;
-  TVX y0;
-  TVX vx;
-  TVX vy;
-  TVX picx;
-  TVX picy;
-  TVX flipx;
-  TVX flipy;
-  TVX eps_pl_dev;
-  TVX eps_pl_vol;
-  TVX regularization;
-  TVX cohesion_proj;
+
+  std::vector<TV2> x;
+  std::vector<TV2> x0;
+  std::vector<TV2> v;
+  std::vector<TV2> pic;
+  std::vector<TV2> flip;
+
+  std::vector<T> eps_pl_dev;
+  std::vector<T> eps_pl_vol;
+  std::vector<T> regularization;
+  std::vector<T> cohesion_proj;
+
   std::vector<TM2> tau;
   std::vector<TM2> F;
+
 };
 
 class Grid{

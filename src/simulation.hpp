@@ -54,8 +54,11 @@ public:
   Particles particles;
 
   // Grid data
-  unsigned int Nx, Ny;
+  unsigned int Nx, Ny, Nz;
   Grid grid;
+  inline unsigned int ind(unsigned int i, unsigned int j, unsigned int k){
+      return (i*Ny + j) * Nz + k;
+  }
 
   // Elastoplasticity
   T mu;

@@ -1,6 +1,6 @@
 #include "simulation.hpp"
 
-
+/*
 void Simulation::P2G_Baseline(){
     // This (nested) loop over i (and j) can easily be paralellized
     // Need to create thread-local grid.mass, grid.vx, grid.vy
@@ -32,7 +32,7 @@ void Simulation::P2G_Baseline(){
         } // end for j
     } // end for i
 } // end P2G_Baseline
-
+*/
 
 void Simulation::P2G_Optimized(){
 
@@ -41,22 +41,21 @@ void Simulation::P2G_Optimized(){
     grid.regularization.setZero(Nx, Ny);
 
     for(int p = 0; p < Np; p++){
-        T xp = particles.x(p);
-        T yp = particles.y(p);
-        unsigned int i_base = std::floor((xp-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
-        unsigned int j_base = std::floor((yp-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        TV2 xp = particles.x[p];
+        unsigned int i_base = std::floor((xp(0)-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);
             for(int j = j_base; j < j_base+4; j++){
                 T yi = grid.y(j);
-                T weight = wip(xp, yp, xi, yi, one_over_dx);
+                T weight = wip(xp(0), xp(1), xi, yi, one_over_dx);
 
                 if (weight > 1e-25){
                     grid.mass(i,j) += weight;
-                    grid.vx(i,j)   += particles.vx(p) * weight;
-                    grid.vy(i,j)   += particles.vy(p) * weight;
-                    grid.regularization(i,j) += particles.eps_pl_dev(p) * laplace_wip(xp, yp, xi, yi, one_over_dx, one_over_dx_square);
+                    grid.vx(i,j)   += particles.v[p](0) * weight;
+                    grid.vy(i,j)   += particles.v[p](1) * weight;
+                    grid.regularization(i,j) += particles.eps_pl_dev[p] * laplace_wip(xp(0), xp(1), xi, yi, one_over_dx, one_over_dx_square);
                 }
 
             } // end for j

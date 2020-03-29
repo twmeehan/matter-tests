@@ -3,7 +3,7 @@
 // Remember:
 // P = dPsidF              (first Piola-Kirchhoff stress tensor)
 // tau = P * F.transpose() (Kirchhoff stress tensor)
-
+/*
 void Simulation::explicitEulerUpdate_Baseline(){
     TV2 grad_wip;
     TM2 Fe, dPsidF;
@@ -68,6 +68,7 @@ void Simulation::explicitEulerUpdate_Baseline(){
         } // end for j
     } // end for i
 } // end explicitEulerUpdate_Baseline
+*/
 
 void Simulation::explicitEulerUpdate_Optimized(){
     TV2 grad_wip;
@@ -93,10 +94,9 @@ void Simulation::explicitEulerUpdate_Optimized(){
         tau = dPsidF * Fe.transpose();
         particles.tau[p] = tau;
 
-        T xp = particles.x(p);
-        T yp = particles.y(p);
-        unsigned int i_base = std::floor((xp-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
-        unsigned int j_base = std::floor((yp-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        TV2 xp = particles.x[p];
+        unsigned int i_base = std::floor((xp(0)-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+        unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
             T xi = grid.x(i);
@@ -104,8 +104,8 @@ void Simulation::explicitEulerUpdate_Optimized(){
                 T yi = grid.y(j);
 
                 if (grid.mass(i,j) > 1e-25){
-                    grad_wip(0) = gradx_wip(xp, yp, xi, yi, one_over_dx);
-                    grad_wip(1) = grady_wip(xp, yp, xi, yi, one_over_dx);
+                    grad_wip(0) = gradx_wip(xp(0), xp(1), xi, yi, one_over_dx);
+                    grad_wip(1) = grady_wip(xp(0), xp(1), xi, yi, one_over_dx);
                     TV2 grid_force_increment = tau * grad_wip;
                     grid_force_x(i,j) += grid_force_increment(0);
                     grid_force_y(i,j) += grid_force_increment(1);

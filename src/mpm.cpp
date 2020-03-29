@@ -15,7 +15,7 @@ int main(){
 
       Simulation sim;
 
-      sim.sim_name = "FLIP-dp-099";
+      sim.sim_name = "container-dp-0.99";
 
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 400.0;
@@ -92,10 +92,10 @@ int main(){
                   // CASE 0:
                   T pvx = sim.amplitude;
                   T pvy = sim.amplitude;
-                  sim.particles.x(p) = px;
-                  sim.particles.y(p) = py;
-                  sim.particles.vx(p) = pvx;
-                  sim.particles.vy(p) = pvy;
+                  sim.particles.x[p](0) = px;
+                  sim.particles.x[p](1) = py;
+                  sim.particles.v[p](0) = pvx;
+                  sim.particles.v[p](1) = pvy;
               } // end for d
           } // end for i
       } // end for j

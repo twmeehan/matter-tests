@@ -101,11 +101,10 @@ void Simulation::simulate(){
     T sin_phi = std::sin(friction_angle / 180.0 * M_PI);
     T alpha = std::sqrt(2.0/3.0) * 2.0 * sin_phi / (3.0 - sin_phi);
     alpha_K_d_over_2mu = alpha * K * dim / (2*mu); // = alpha * bulk_modulus * dimension / (2*mu)
-    particles.cohesion_proj = cohesion * TVX::Ones(Np);
+    particles.cohesion_proj.resize(Np);  std::fill( particles.cohesion_proj.begin(),  particles.cohesion_proj.end(),  cohesion );
 
-    // Lagrangian coordinates
+    // Lagrangian coordinates. Using assignment operator to copy
     particles.x0 = particles.x;
-    particles.y0 = particles.y;
 
     time = 0;
     frame = 0;
@@ -198,7 +197,14 @@ void Simulation::G2P(){
 
 void Simulation::updateDt(){
 
-    T max_speed = std::sqrt((particles.vx.array().square() + particles.vy.array().square()).maxCoeff());
+    // T max_speed = std::sqrt((particles.vx.array().square() + particles.vy.array().square()).maxCoeff());
+    auto max_velocity_it = std::max_element( particles.v.begin(), particles.v.end(),
+                                             []( const TV2 &v1, const TV2 &v2 )
+                                             {
+                                                 return v1.squaredNorm() < v2.squaredNorm();
+                                             } );
+    T max_speed = (*max_velocity_it).norm();
+
     T dt_cfl = cfl * dx / max_speed;
     dt = std::min(dt_cfl, dt_max);
     dt = std::min(dt, frame_dt*(frame+1) - time);
@@ -231,10 +237,34 @@ void Simulation::updateDt(){
 void Simulation::remesh(){
 
     // ACTUAL min and max position of particles
-    T min_x = particles.x.minCoeff();
-    T min_y = particles.y.minCoeff();
-    T max_x = particles.x.maxCoeff();
-    T max_y = particles.y.maxCoeff();
+    // T min_x = particles.x.minCoeff();
+    // T min_y = particles.y.minCoeff();
+    // T max_x = particles.x.maxCoeff();
+    // T max_y = particles.y.maxCoeff();
+    auto max_x_it = std::max_element( particles.x.begin(), particles.x.end(),
+                                             []( const TV2 &x1, const TV2 &x2 )
+                                             {
+                                                 return x1[0] < x2[0];
+                                             } );
+    T max_x = (*max_x_it).norm();
+    auto max_y_it = std::max_element( particles.x.begin(), particles.x.end(),
+                                             []( const TV2 &x1, const TV2 &x2 )
+                                             {
+                                                 return x1[1] < x2[1];
+                                             } );
+    T max_y = (*max_y_it).norm();
+    auto min_x_it = std::min_element( particles.x.begin(), particles.x.end(),
+                                             []( const TV2 &x1, const TV2 &x2 )
+                                             {
+                                                 return x1[0] < x2[0];
+                                             } );
+    T min_x = (*min_x_it).norm();
+    auto min_y_it = std::min_element( particles.x.begin(), particles.x.end(),
+                                             []( const TV2 &x1, const TV2 &x2 )
+                                             {
+                                                 return x1[1] < x2[1];
+                                             } );
+    T min_y = (*min_y_it).norm();
 
     // ACTUAL (old) side lengths
     T Lx = max_x - min_x;
@@ -386,12 +416,10 @@ void Simulation::positionUpdate(){
     for(int p=0; p<Np; p++){
 
         // Position is updated according to PIC velocities
-        particles.x(p) = particles.x(p) + dt * particles.picx(p);
-        particles.y(p) = particles.y(p) + dt * particles.picy(p);
+        particles.x[p] = particles.x[p] + dt * particles.pic[p];
 
         // New particle velocity is a FLIP-PIC combination
-        particles.vx(p) = flip_ratio * ( particles.vx(p) + particles.flipx(p) ) + (1 - flip_ratio) * particles.picx(p);
-        particles.vy(p) = flip_ratio * ( particles.vy(p) + particles.flipy(p) ) + (1 - flip_ratio) * particles.picy(p);
+        particles.v[p] = flip_ratio * ( particles.v[p] + particles.flip[p] ) + (1 - flip_ratio) * particles.pic[p];
 
     } // end loop over particles
 }
@@ -439,16 +467,16 @@ void Simulation::saveParticleData(std::string extra){
         TM2 tau_dev = tau + pressure * I;
         T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
 
-        T reg = reg_length * reg_length * particles.regularization(p);
+        T reg = reg_length * reg_length * particles.regularization[p];
 
-        outFile << particles.x(p)             << ","   // 0
-                << particles.y(p)             << ","   // 1
+        outFile << particles.x[p](0)          << ","   // 0
+                << particles.x[p](1)          << ","   // 1
                 << 0                          << ","   // 2
-                << particles.vx(p)            << ","   // 3
-                << particles.vy(p)            << ","   // 4
+                << particles.v[p](0)          << ","   // 3
+                << particles.v[p](1)          << ","   // 4
                 << 0                          << ","   // 5
-                << particles.eps_pl_dev(p)    << ","   // 6
-                << particles.eps_pl_vol(p)    << ","   // 7
+                << particles.eps_pl_dev[p]    << ","   // 6
+                << particles.eps_pl_vol[p]    << ","   // 7
                 << reg                        << ","   // 8
                 << pressure                   << ","   // 9
                 << devstress                  << ","   // 10
@@ -515,8 +543,7 @@ void Simulation::addExternalParticleGravity(){
     G2P();
     // 2. Apply gravity on particle velocity
     for(int p=0; p<Np; p++){
-        particles.vx(p) += dt * (-2.0*amplitude*particles.x0(p));
-        particles.vy(p) += dt * (-2.0*amplitude*particles.y0(p));
+        particles.v[p] += dt * (-2.0*amplitude*particles.x0[p]);
     }
     // 3. Transfer particle velocity back to grid
     P2G();
@@ -525,14 +552,11 @@ void Simulation::addExternalParticleGravity(){
 
 // These functions are only for validating conservation laws
 void Simulation::calculateMomentumOnParticles(){
-    T momentum_x = 0;
-    T momentum_y = 0;
+    TV2 momentum = TV2::Zero();
     for(int p=0; p<Np; p++){
-        momentum_x += particle_mass * particles.vx(p);
-        momentum_y += particle_mass * particles.vy(p);
+        momentum += particle_mass * particles.v[p];
     }
-    debug("               total part momentum x-comp = ", momentum_x);
-    debug("               total part momentum y-comp = ", momentum_y);
+    debug("               total part momentum = ", momentum.norm());
 }
 void Simulation::calculateMomentumOnGrid(){
     T momentum_x = 0;
