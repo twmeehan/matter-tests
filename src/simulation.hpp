@@ -43,7 +43,7 @@ public:
   T dx;
   T L;
   T rho;
-  TV2 gravity;
+  TV gravity;
 
   T amplitude;
 
@@ -127,14 +127,14 @@ public:
 
   void positionUpdate();
 
-  TM2 NeoHookeanPiola(TM2 & Fe);
-  TM2 StvkWithHenckyPiola(TM2 & Fe);
-  void plasticity(unsigned int p, unsigned int & plastic_count, TM2 & Fe_trial);
+  TM NeoHookeanPiola(TM & Fe);
+  TM StvkWithHenckyPiola(TM & Fe);
+  void plasticity(unsigned int p, unsigned int & plastic_count, TM & Fe_trial);
 
   void moveObjects(T delta_t);
-  void boundaryCollision(T xi, T yi, TV2& vi);
+  void boundaryCollision(T xi, T yi, TV& vi);
   // void boundaryCorrection(T xi, T yi, T& vxi, T& vyi);
-  void overwriteGridVelocity(T xi, T yi, TV2& vi);
+  void overwriteGridVelocity(T xi, T yi, TV& vi);
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();
   void calculateMassConservation();
@@ -147,16 +147,16 @@ public:
 
 
 
-inline TM2 Simulation::NeoHookeanPiola(TM2 & Fe){
+inline TM Simulation::NeoHookeanPiola(TM & Fe){
     return mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
 } // end NeoHookeanPiola
 
-inline TM2 Simulation::StvkWithHenckyPiola(TM2 & Fe){
-    Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    TA2 sigma = svd.singularValues().array(); // abs() for inverse also??
-    TM2 logSigma = sigma.abs().log().matrix().asDiagonal();
-    TM2 invSigma = sigma.inverse().matrix().asDiagonal();
-    TM2 dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
+inline TM Simulation::StvkWithHenckyPiola(TM & Fe){
+    Eigen::JacobiSVD<TM> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    TA sigma = svd.singularValues().array(); // abs() for inverse also??
+    TM logSigma = sigma.abs().log().matrix().asDiagonal();
+    TM invSigma = sigma.inverse().matrix().asDiagonal();
+    TM dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
     return dPsidF;
 } // end StvkWithHenckyPiola
 

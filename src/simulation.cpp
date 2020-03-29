@@ -199,7 +199,7 @@ void Simulation::updateDt(){
 
     // T max_speed = std::sqrt((particles.vx.array().square() + particles.vy.array().square()).maxCoeff());
     auto max_velocity_it = std::max_element( particles.v.begin(), particles.v.end(),
-                                             []( const TV2 &v1, const TV2 &v2 )
+                                             []( const TV &v1, const TV &v2 )
                                              {
                                                  return v1.squaredNorm() < v2.squaredNorm();
                                              } );
@@ -248,25 +248,25 @@ void Simulation::remesh(){
 
     // ACTUAL min and max position of particles
     auto max_x_it = std::max_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV2 &x1, const TV2 &x2 )
+                                             []( const TV &x1, const TV &x2 )
                                              {
                                                  return x1(0) < x2(0);
                                              } );
     T max_x = (*max_x_it)(0);
     auto max_y_it = std::max_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV2 &x1, const TV2 &x2 )
+                                             []( const TV &x1, const TV &x2 )
                                              {
                                                  return x1(1) < x2(1);
                                              } );
     T max_y = (*max_y_it)(1);
     auto min_x_it = std::min_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV2 &x1, const TV2 &x2 )
+                                             []( const TV &x1, const TV &x2 )
                                              {
                                                  return x1(0) < x2(0);
                                              } );
     T min_x = (*min_x_it)(0);
     auto min_y_it = std::min_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV2 &x1, const TV2 &x2 )
+                                             []( const TV &x1, const TV &x2 )
                                              {
                                                  return x1(1) < x2(1);
                                              } );
@@ -343,8 +343,8 @@ void Simulation::remesh(){
     grid.xc = grid.x[0];
     grid.yc = grid.y[0];
 
-    grid.v.resize(Nx*Ny);    std::fill( grid.v.begin(),    grid.v.end(),    TV2::Zero() );
-    grid.flip.resize(Nx*Ny); std::fill( grid.flip.begin(), grid.flip.end(), TV2::Zero() );
+    grid.v.resize(Nx*Ny);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
+    grid.flip.resize(Nx*Ny); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
     grid.mass.resize(Nx*Ny); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
 
 }
@@ -399,18 +399,18 @@ void Simulation::saveParticleData(std::string extra){
 
     for(int p = 0; p < Np; p++){
 
-        TM2 I = TM2::Identity();
+        TM I = TM::Identity();
 
-        TM2 Fe = particles.F[p];
+        TM Fe = particles.F[p];
 
-        TM2 tau; // particles.tau[p];
+        TM tau; // particles.tau[p];
         if (elastic_model == NeoHookean)
             tau = NeoHookeanPiola(Fe) * Fe.transpose();
         else if (elastic_model == StvkWithHencky)
             tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
 
         T pressure  = -tau.trace() / dim;
-        TM2 tau_dev = tau + pressure * I;
+        TM tau_dev = tau + pressure * I;
         T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
 
         T reg = reg_length * reg_length * particles.regularization[p];
@@ -451,7 +451,7 @@ void Simulation::saveGridData(std::string extra){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////// EXTRA FUNCTIONS //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-void Simulation::boundaryCollision(T xi, T yi, TV2& vi){
+void Simulation::boundaryCollision(T xi, T yi, TV& vi){
 
     // TODO: Make this a vector-based function
 
@@ -558,7 +558,7 @@ void Simulation::boundaryCollision(T xi, T yi, TV2& vi){
 
 
 // This function is to be used in explicitEulerUpdate after boundaryCollision
-void Simulation::overwriteGridVelocity(T xi, T yi, TV2& vi){
+void Simulation::overwriteGridVelocity(T xi, T yi, TV& vi){
     T y_start = L - 0.25*dx;
     T width = 2*dx;
     T v_imp = 0.1; // positive value means tension
@@ -603,14 +603,14 @@ void Simulation::addExternalParticleGravity(){
 
 // These functions are only for validating conservation laws
 void Simulation::calculateMomentumOnParticles(){
-    TV2 momentum = TV2::Zero();
+    TV momentum = TV::Zero();
     for(int p=0; p<Np; p++){
         momentum += particle_mass * particles.v[p];
     }
     debug("               total part momentum = ", momentum.norm());
 }
 void Simulation::calculateMomentumOnGrid(){
-    TV2 momentum = TV2::Zero();
+    TV momentum = TV::Zero();
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
             momentum += grid.mass[ind(i,j)] * grid.v[ind(i,j)];

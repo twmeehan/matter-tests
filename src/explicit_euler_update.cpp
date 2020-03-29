@@ -5,12 +5,12 @@
 // tau = P * F.transpose() (Kirchhoff stress tensor)
 /*
 void Simulation::explicitEulerUpdate_Baseline(){
-    TV2 grad_wip;
-    TM2 Fe, dPsidF;
+    TV grad_wip;
+    TM Fe, dPsidF;
 
     //////////// if external grid gravity: //////////////////
     // std::pair<TMX, TMX> external_gravity_pair = createExternalGridGravity();
-    // TV2 external_gravity;
+    // TV external_gravity;
     ////////////////////////////////////////////////////////
 
     for(int i=0; i<Nx; i++){
@@ -18,7 +18,7 @@ void Simulation::explicitEulerUpdate_Baseline(){
             if (grid.mass(i,j) > 1e-25){
                 T xi = grid.x(i);
                 T yi = grid.y(j);
-                TV2 grid_force = TV2::Zero();
+                TV grid_force = TV::Zero();
                 for(int p=0; p<Np; p++){
                     T xp = particles.x(p);
                     T yp = particles.y(p);
@@ -30,10 +30,10 @@ void Simulation::explicitEulerUpdate_Baseline(){
                             dPsidF = mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
                         }
                         else if (elastic_model == StvkWithHencky){
-                            Eigen::JacobiSVD<TM2> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
-                            TA2 sigma = svd.singularValues().array(); // abs() for inverse also??
-                            TM2 logSigma = sigma.abs().log().matrix().asDiagonal();
-                            TM2 invSigma = sigma.inverse().matrix().asDiagonal();
+                            Eigen::JacobiSVD<TM> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
+                            TA sigma = svd.singularValues().array(); // abs() for inverse also??
+                            TM logSigma = sigma.abs().log().matrix().asDiagonal();
+                            TM invSigma = sigma.inverse().matrix().asDiagonal();
                             dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
                         }
                         else{
@@ -48,7 +48,7 @@ void Simulation::explicitEulerUpdate_Baseline(){
                     }
                 } // end for particles
 
-                TV2 velocity_increment = -dt * particle_volume * grid_force / grid.mass(i,j) + dt * gravity;
+                TV velocity_increment = -dt * particle_volume * grid_force / grid.mass(i,j) + dt * gravity;
 
                 //////////// if external grid gravity: //////////////////
                 // external_gravity(0) = external_gravity_pair.first(i,j);
@@ -71,9 +71,9 @@ void Simulation::explicitEulerUpdate_Baseline(){
 */
 
 void Simulation::explicitEulerUpdate_Optimized(){
-    TM2 Fe, dPsidF, tau;
+    TM Fe, dPsidF, tau;
 
-    std::vector<TV2> grid_force(Nx*Ny, TV2::Zero());
+    std::vector<TV> grid_force(Nx*Ny, TV::Zero());
 
     for(int p = 0; p < Np; p++){
 
@@ -92,7 +92,7 @@ void Simulation::explicitEulerUpdate_Optimized(){
         tau = dPsidF * Fe.transpose();
         particles.tau[p] = tau;
 
-        TV2 xp = particles.x[p];
+        TV xp = particles.x[p];
         unsigned int i_base = std::floor((xp(0)-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
         unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
@@ -113,14 +113,14 @@ void Simulation::explicitEulerUpdate_Optimized(){
     ////////////////////////////////////////////////////////
 
     T dt_particle_volume = dt * particle_volume;
-    TV2 dt_gravity = dt * gravity;
+    TV dt_gravity = dt * gravity;
 
     for(int i = 0; i < Nx; i++){
         for(int j = 0; j < Ny; j++){
             T mi = grid.mass[ind(i,j)];
             if (mi > 0){
 
-                TV2 velocity_increment = -dt_particle_volume * grid_force[ind(i,j)] / mi + dt_gravity;
+                TV velocity_increment = -dt_particle_volume * grid_force[ind(i,j)] / mi + dt_gravity;
 
                 //////////// if external grid gravity: //////////////////
                 // T external_gravity = external_gravity_pair.first(i,j);
@@ -129,8 +129,8 @@ void Simulation::explicitEulerUpdate_Optimized(){
                 // velocity_increment_y += dt * external_gravity(1);
                 ////////////////////////////////////////////////////////
 
-                TV2 old_vi = grid.v[ind(i,j)];
-                TV2 new_vi = old_vi + velocity_increment;
+                TV old_vi = grid.v[ind(i,j)];
+                TV new_vi = old_vi + velocity_increment;
                 boundaryCollision(grid.x[i], grid.y[j], new_vi);
 
                 // Currently not working:

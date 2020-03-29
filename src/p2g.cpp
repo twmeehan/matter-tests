@@ -36,12 +36,12 @@ void Simulation::P2G_Baseline(){
 
 void Simulation::P2G_Optimized(){
 
-    grid.v.resize(Nx*Ny); std::fill( grid.v.begin(), grid.v.end(), TV2::Zero() );
+    grid.v.resize(Nx*Ny); std::fill( grid.v.begin(), grid.v.end(), TV::Zero() );
     grid.mass.resize(Nx*Ny); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
     grid.regularization.resize(Nx*Ny); std::fill( grid.regularization.begin(), grid.regularization.end(), 0.0 );
 
     for(int p = 0; p < Np; p++){
-        TV2 xp = particles.x[p];
+        TV xp = particles.x[p];
         unsigned int i_base = std::floor((xp(0)-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
         unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
@@ -73,7 +73,7 @@ void Simulation::P2G_Optimized(){
             grid.v[l] /= mi;
         else
             grid.v[l].setZero();
-        //grid.v[l] = (mi > 0) ? grid.v[l]/mi : TV2::Zero(); // condition ? result_if_true : result_if_false
+        //grid.v[l] = (mi > 0) ? grid.v[l]/mi : TV::Zero(); // condition ? result_if_true : result_if_false
     }
 
     for(auto&& m: grid.mass){

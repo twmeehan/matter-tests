@@ -9,22 +9,22 @@
 #include <sstream>
 #include <vector>
 
-/// FLOAT OR DOUBLE ////
+//// PARAMETERS ////
 typedef float T;
+#define CUBICSPLINES
 ////////////////////////
-typedef Eigen::Matrix<T, 2, 2> TM2;
+
+typedef Eigen::Matrix<T, 3, 3> TM;
 typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> TMX;
-typedef Eigen::Matrix<T, 2, 1> TV2;
-typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TVX;
-typedef Eigen::Array<T,2,1> TA2;
+typedef Eigen::Matrix<T, 3, 1> TV;
+typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TV;
+typedef Eigen::Array<T,3,1> TA;
 ////////////////////////
 
 enum PlateType { top, bottom, left, right};
 enum ElasticModel { StvkWithHencky, NeoHookean };
 enum PlasticModel { NoPlasticity, VonMises, DPSimpleSoft };
 enum BoundaryCondition { STICKY, SLIP };
-
-#define CUBICSPLINES
 
 ///////////////////// TOOLS ////////////////////////
 
@@ -61,8 +61,10 @@ inline int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
-inline T selfDoubleDot(TM2& A){
-    T out = A(0,0)*A(0,0) + A(1,1)*A(1,1) + A(0,1)*A(0,1) + A(1,0)*A(1,0);
+inline T selfDoubleDot(TM& A){
+    T out = A(0,0)*A(0,0) + A(0,1)*A(0,1) + A(0,2)*A(0,2)
+          + A(1,0)*A(1,0) + A(1,1)*A(1,1) + A(1,2)*A(1,2)
+          + A(2,0)*A(2,0) + A(2,1)*A(2,1) + A(2,2)*A(2,2);
     return out;
 }
 
@@ -156,21 +158,23 @@ std::vector<T> linspace(T a, T b, size_t N);
 
 
 
-inline T wip(T xp, T yp, T xi, T yi, T one_over_h){
-    return N( (xp - xi) * one_over_h ) * N( (yp - yi) * one_over_h );
+inline T wip(T xp, T yp, T zp, T xi, T yi, T zi, T one_over_h){
+    return N( (xp - xi) * one_over_h ) * N( (yp - yi) * one_over_h ) * N( (zp - zi) * one_over_h );
 }
 
-inline TV2 grad_wip(T xp, T yp, T xi, T yi, T one_over_h){
-    TV2 out;
-    out << dNdu((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) * one_over_h,
-           dNdu((yp - yi) * one_over_h) * N((xp - xi) * one_over_h) * one_over_h;
+inline TV grad_wip(T xp, T yp, T zp, T xi, T yi, T zi, T one_over_h){
+    TV out;
+    out << dNdu((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) * N((zp - zi) * one_over_h) * one_over_h,
+           dNdu((yp - yi) * one_over_h) * N((xp - xi) * one_over_h) * N((zp - zi) * one_over_h) * one_over_h,
+           dNdu((zp - zi) * one_over_h) * N((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) * one_over_h;
     return out;
 }
 
 inline T laplace_wip(T xp, T yp, T xi, T yi, T one_over_h, T one_over_h_square){
-    T term1 = d2Ndu2((xp - xi) * one_over_h) * N((yp - yi) * one_over_h);
-    T term2 = d2Ndu2((yp - yi) * one_over_h) * N((xp - xi) * one_over_h);
-    return ( term1 + term2 ) * one_over_h_square;
+    T term1 = d2Ndu2((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) *  N((zp - zi) * one_over_h);
+    T term2 = d2Ndu2((yp - yi) * one_over_h) * N((xp - xi) * one_over_h) *  N((zp - zi) * one_over_h);
+    T term3 = d2Ndu2((zp - zi) * one_over_h) * N((xp - xi) * one_over_h) *  N((yp - yi) * one_over_h);
+    return ( term1 + term2 + term3 ) * one_over_h_square;
 }
 
 #endif  // TOOLS_HPP

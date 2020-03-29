@@ -1,16 +1,16 @@
 #include "simulation.hpp"
 
-void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM2 & Fe_trial){
+void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & Fe_trial){
 
     if (plastic_model == NoPlasticity){
         // Do nothing
     }
 
     else if (plastic_model == VonMises || plastic_model == DPSimpleSoft){
-        Eigen::JacobiSVD<TM2> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
-        TV2 hencky = svd.singularValues().array().log(); // Jixie does not use abs value, however Pradhana-thesis does.
+        Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        TV hencky = svd.singularValues().array().log(); // Jixie does not use abs value, however Pradhana-thesis does.
         T   hencky_trace = hencky.sum();
-        TV2 hencky_deviatoric = hencky - (hencky_trace / dim) * TV2::Ones();
+        TV hencky_deviatoric = hencky - (hencky_trace / dim) * TV::Ones();
         T   hencky_deviatoric_norm = hencky_deviatoric.norm();
 
         if (plastic_model == VonMises){
