@@ -36,9 +36,9 @@ void Simulation::P2G_Baseline(){
 
 void Simulation::P2G_Optimized(){
 
-    grid.vx.setZero(Nx, Ny);
-    grid.vy.setZero(Nx, Ny);
-    grid.regularization.setZero(Nx, Ny);
+    grid.v.resize(Nx*Ny); std::fill( grid.v.begin(), grid.v.end(), TV2::Zero() );
+    grid.mass.resize(Nx*Ny); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
+    grid.regularization.resize(Nx*Ny); std::fill( grid.regularization.begin(), grid.regularization.end(), 0.0 );
 
     for(int p = 0; p < Np; p++){
         TV2 xp = particles.x[p];
@@ -46,16 +46,15 @@ void Simulation::P2G_Optimized(){
         unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
-            T xi = grid.x(i);
+            T xi = grid.x[i];
             for(int j = j_base; j < j_base+4; j++){
-                T yi = grid.y(j);
+                T yi = grid.y[j];
                 T weight = wip(xp(0), xp(1), xi, yi, one_over_dx);
 
                 if (weight > 1e-25){
-                    grid.mass(i,j) += weight;
-                    grid.vx(i,j)   += particles.v[p](0) * weight;
-                    grid.vy(i,j)   += particles.v[p](1) * weight;
-                    grid.regularization(i,j) += particles.eps_pl_dev[p] * laplace_wip(xp(0), xp(1), xi, yi, one_over_dx, one_over_dx_square);
+                    grid.mass[ind(i,j)]           += weight;
+                    grid.v[ind(i,j)]              += particles.v[p] * weight;
+                    grid.regularization[ind(i,j)] += particles.eps_pl_dev[p] * laplace_wip(xp(0), xp(1), xi, yi, one_over_dx, one_over_dx_square);
                 }
 
             } // end for j
@@ -67,8 +66,18 @@ void Simulation::P2G_Optimized(){
     ///////////////////////////////////////////////////////////
     // At this point in time grid.mass is equal to m_i / m_p //
     ///////////////////////////////////////////////////////////
-    grid.vx = (grid.mass.array() > 0).select( (grid.vx.array() / grid.mass.array()).matrix(), TMX::Zero(Nx, Ny) );
-    grid.vy = (grid.mass.array() > 0).select( (grid.vy.array() / grid.mass.array()).matrix(), TMX::Zero(Nx, Ny) );
-    grid.mass *= particle_mass;
+
+    for (int l = 0; l<Nx*Ny; l++){
+        T mi = grid.mass[l];
+        if (mi > 0)
+            grid.v[l] /= mi;
+        else
+            grid.v[l].setZero();
+        //grid.v[l] = (mi > 0) ? grid.v[l]/mi : TV2::Zero(); // condition ? result_if_true : result_if_false
+    }
+
+    for(auto&& m: grid.mass){
+        m *= particle_mass;
+    }
 
 } // end P2G_Optimized

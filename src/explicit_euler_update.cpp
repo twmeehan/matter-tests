@@ -71,11 +71,9 @@ void Simulation::explicitEulerUpdate_Baseline(){
 */
 
 void Simulation::explicitEulerUpdate_Optimized(){
-    TV2 grad_wip;
     TM2 Fe, dPsidF, tau;
 
-    TMX grid_force_x = TMX::Zero(Nx, Ny);
-    TMX grid_force_y = TMX::Zero(Nx, Ny);
+    std::vector<TV2> grid_force(Nx*Ny, TV2::Zero());
 
     for(int p = 0; p < Np; p++){
 
@@ -99,21 +97,15 @@ void Simulation::explicitEulerUpdate_Optimized(){
         unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
-            T xi = grid.x(i);
+            T xi = grid.x[i];
             for(int j = j_base; j < j_base+4; j++){
-                T yi = grid.y(j);
+                T yi = grid.y[j];
 
-                if (grid.mass(i,j) > 1e-25){
-                    grad_wip(0) = gradx_wip(xp(0), xp(1), xi, yi, one_over_dx);
-                    grad_wip(1) = grady_wip(xp(0), xp(1), xi, yi, one_over_dx);
-                    TV2 grid_force_increment = tau * grad_wip;
-                    grid_force_x(i,j) += grid_force_increment(0);
-                    grid_force_y(i,j) += grid_force_increment(1);
+                if (grid.mass[ind(i,j)] > 0){
+                    grid_force[ind(i,j)] += tau * grad_wip(xp(0), xp(1), xi, yi, one_over_dx);
                 } // end if non-zero grid mass
-
              } // end for j
          } // end for i
-
     } // end for particles
 
     //////////// if external grid gravity: //////////////////
@@ -121,16 +113,14 @@ void Simulation::explicitEulerUpdate_Optimized(){
     ////////////////////////////////////////////////////////
 
     T dt_particle_volume = dt * particle_volume;
-    T dt_gravity_x = dt * gravity(0);
-    T dt_gravity_y = dt * gravity(1);
+    TV2 dt_gravity = dt * gravity;
 
     for(int i = 0; i < Nx; i++){
         for(int j = 0; j < Ny; j++){
-            T mi = grid.mass(i,j);
-            if (mi > 1e-25){
+            T mi = grid.mass[ind(i,j)];
+            if (mi > 0){
 
-                T velocity_increment_x = -dt_particle_volume * grid_force_x(i,j) / mi + dt_gravity_x;
-                T velocity_increment_y = -dt_particle_volume * grid_force_y(i,j) / mi + dt_gravity_y;
+                TV2 velocity_increment = -dt_particle_volume * grid_force[ind(i,j)] / mi + dt_gravity;
 
                 //////////// if external grid gravity: //////////////////
                 // T external_gravity = external_gravity_pair.first(i,j);
@@ -139,25 +129,18 @@ void Simulation::explicitEulerUpdate_Optimized(){
                 // velocity_increment_y += dt * external_gravity(1);
                 ////////////////////////////////////////////////////////
 
-                T old_vxi = grid.vx(i,j);
-                T old_vyi = grid.vy(i,j);
-                T new_vxi = old_vxi + velocity_increment_x;
-                T new_vyi = old_vyi + velocity_increment_y;
-                T new_xi = grid.x(i) + dt * new_vxi;
-                T new_yi = grid.y(j) + dt * new_vyi;
-                boundaryCollision(new_xi, new_yi, new_vxi, new_vyi);
+                TV2 old_vi = grid.v[ind(i,j)];
+                TV2 new_vi = old_vi + velocity_increment;
+                boundaryCollision(grid.x[i], grid.y[j], new_vi);
 
-                // Not working:
+                // Currently not working:
                 // boundaryCorrection(new_xi, new_yi, new_vxi, new_vyi);
 
                 // Only if impose velocity on certain grid nodes:
-                // overwriteGridVelocity(new_xi, new_yi, new_vxi, new_vyi);
+                // overwriteGridVelocity(grid.x[i], grid.y[j], new_vi);
 
-                grid.vx(i,j) = new_vxi;
-                grid.vy(i,j) = new_vyi;
-
-                grid.flipx(i,j) = new_vxi - old_vxi;
-                grid.flipy(i,j) = new_vyi - old_vyi;
+                grid.v[ind(i,j)] = new_vi;
+                grid.flip[ind(i,j)] = new_vi - old_vi;
 
             } // end if non-zero grid mass
 

@@ -9,25 +9,15 @@ void Simulation::deformationUpdate_Baseline(){
     for(int p=0; p<Np; p++){
 
         TM2 sum = TM2::Zero();
-
         TV2 xp = particles.x[p];
         unsigned int i_base = std::floor((xp(0)-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
         unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
-            T xi = grid.x(i);
+            T xi = grid.x[i];
             for(int j = j_base; j < j_base+4; j++){
-                T yi = grid.y(j);
-
-                TV2 vi;
-                vi(0) = grid.vx(i,j);
-                vi(1) = grid.vy(i,j);
-
-                TV2 grad_wip;
-                grad_wip(0) = gradx_wip(xp(0), xp(1), xi, yi, one_over_dx);
-                grad_wip(1) = grady_wip(xp(0), xp(1), xi, yi, one_over_dx);
-
-                sum += vi * grad_wip.transpose();
+                T yi = grid.y[j];
+                sum += grid.v[ind(i,j)] * grad_wip(xp(0), xp(1), xi, yi, one_over_dx).transpose();
             } // end loop i
         } // end loop j
 

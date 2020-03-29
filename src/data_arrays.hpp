@@ -40,23 +40,21 @@ public:
 class Grid{
 public:
     Grid(unsigned int Nx = 21, unsigned int Ny = 21){
-        x = TVX::LinSpaced(Nx, -0.5, 1.5);
-        y = TVX::LinSpaced(Ny, -0.5, 1.5);
-        mass    = TMX::Zero(Nx, Ny);
-        vx      = TMX::Zero(Nx, Ny);
-        vy      = TMX::Zero(Nx, Ny);
-        flipx   = TMX::Zero(Nx, Ny);
-        flipy   = TMX::Zero(Nx, Ny);
-        regularization = TMX::Zero(Nx, Ny);
+        x.resize(Nx); std::fill( x.begin(), x.end(), 0.0 );
+        y.resize(Ny); std::fill( y.begin(), y.end(), 0.0 );
+
+        v.resize(Nx*Ny);    std::fill( v.begin(),    v.end(),    TV2::Zero() );
+        flip.resize(Nx*Ny); std::fill( flip.begin(), flip.end(), TV2::Zero() );
+
+        mass.resize(Nx*Ny);           std::fill( mass.begin(),           mass.end(),           0.0 );
+        regularization.resize(Nx*Ny); std::fill( regularization.begin(), regularization.end(), 0.0 );
     }
-    TVX x;
-    TVX y;
-    TMX vx;
-    TMX vy;
-    TMX flipx;
-    TMX flipy;
-    TMX mass;
-    TMX regularization;
+    std::vector<T> x;
+    std::vector<T> y;
+    std::vector<TV2> v;
+    std::vector<TV2> flip;
+    std::vector<T> mass;
+    std::vector<T> regularization;
     T xc;
     T yc;
 };

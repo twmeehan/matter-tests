@@ -38,15 +38,13 @@ void Simulation::G2P_Optimized(){
         unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
 
         for(int i = i_base; i < i_base+4; i++){
-            T xi = grid.x(i);
+            T xi = grid.x[i];
             for(int j = j_base; j < j_base+4; j++){
-                T yi = grid.y(j);
+                T yi = grid.y[j];
                 T weight = wip(xp(0), xp(1), xi, yi, one_over_dx);
-                vp(0) += grid.vx(i,j) * weight;
-                vp(1) += grid.vy(i,j) * weight;
-                flipp(0) += grid.flipx(i,j) * weight;
-                flipp(1) += grid.flipy(i,j) * weight;
-                regularization_p += grid.regularization(i,j) * weight;
+                vp               += grid.v[ind(i,j)]    * weight;
+                flipp            += grid.flip[ind(i,j)] * weight;
+                regularization_p += grid.regularization[ind(i,j)] * weight;
             } // end loop j
         } // end loop i
         particles.pic[p] = vp;

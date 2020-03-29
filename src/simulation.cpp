@@ -336,22 +336,18 @@ void Simulation::remesh(){
     debug("               grid   = (", Nx, ", ", Ny, ")");
 
     // Linspace x and y
-    // LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
-    grid.x = TVX::LinSpaced(Nx, low_x, high_x);
-    grid.y = TVX::LinSpaced(Ny, low_y, high_y);
+    // Eigen:  LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
+    grid.x = linspace(low_x, high_x, Nx);
+    grid.y = linspace(low_y, high_y, Ny);
 
-    grid.xc = grid.x(0);
-    grid.yc = grid.y(0);
+    grid.xc = grid.x[0];
+    grid.yc = grid.y[0];
 
-    grid.vx   = TMX::Zero(Nx, Ny);
-    grid.vy   = TMX::Zero(Nx, Ny);
-    grid.flipx   = TMX::Zero(Nx, Ny);
-    grid.flipy   = TMX::Zero(Nx, Ny);
-    grid.mass = TMX::Zero(Nx, Ny);
+    grid.v.resize(Nx*Ny);    std::fill( grid.v.begin(),    grid.v.end(),    TV2::Zero() );
+    grid.flip.resize(Nx*Ny); std::fill( grid.flip.begin(), grid.flip.end(), TV2::Zero() );
+    grid.mass.resize(Nx*Ny); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
 
 }
-
-
 
 
 void Simulation::moveObjects(T delta_t){
@@ -360,7 +356,112 @@ void Simulation::moveObjects(T delta_t){
     }
 }
 
-void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
+
+
+void Simulation::positionUpdate(){
+    for(int p=0; p<Np; p++){
+
+        // Position is updated according to PIC velocities
+        particles.x[p] = particles.x[p] + dt * particles.pic[p];
+
+        // New particle velocity is a FLIP-PIC combination
+        particles.v[p] = flip_ratio * ( particles.v[p] + particles.flip[p] ) + (1 - flip_ratio) * particles.pic[p];
+
+    } // end loop over particles
+}
+
+
+
+
+
+void Simulation::saveParticleData(std::string extra){
+    std::ofstream outFile("dumps/" + sim_name + "/out_part_frame_" + extra + std::to_string(frame) + ".csv");
+
+    outFile << "x"           << ","   // 0
+            << "y"           << ","   // 1
+            << "z"           << ","   // 2
+            << "vx"          << ","   // 3
+            << "vy"          << ","   // 4
+            << "vz"          << ","   // 5
+            << "eps_pl_dev"  << ","   // 6
+            << "eps_pl_vol"  << ","   // 7
+            << "reg"         << ","   // 8
+            << "pressure"    << ","   // 9
+            << "devstress"   << ","   // 10
+            << "tau_xx"      << ","   // 11
+            << "tau_xy"      << ","   // 12
+            << "tau_yx"      << ","   // 13
+            << "tau_yy"      << ","   // 14
+            << "Fe_xx"       << ","   // 15
+            << "Fe_xy"       << ","   // 16
+            << "Fe_yx"       << ","   // 17
+            << "Fe_yy"       << "\n"; // 18
+
+    for(int p = 0; p < Np; p++){
+
+        TM2 I = TM2::Identity();
+
+        TM2 Fe = particles.F[p];
+
+        TM2 tau; // particles.tau[p];
+        if (elastic_model == NeoHookean)
+            tau = NeoHookeanPiola(Fe) * Fe.transpose();
+        else if (elastic_model == StvkWithHencky)
+            tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
+
+        T pressure  = -tau.trace() / dim;
+        TM2 tau_dev = tau + pressure * I;
+        T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
+
+        T reg = reg_length * reg_length * particles.regularization[p];
+
+        outFile << particles.x[p](0)          << ","   // 0
+                << particles.x[p](1)          << ","   // 1
+                << 0                          << ","   // 2
+                << particles.v[p](0)          << ","   // 3
+                << particles.v[p](1)          << ","   // 4
+                << 0                          << ","   // 5
+                << particles.eps_pl_dev[p]    << ","   // 6
+                << particles.eps_pl_vol[p]    << ","   // 7
+                << reg                        << ","   // 8
+                << pressure                   << ","   // 9
+                << devstress                  << ","   // 10
+                << tau(0,0)                   << ","   // 11
+                << tau(0,1)                   << ","   // 12
+                << tau(1,0)                   << ","   // 13
+                << tau(1,1)                   << ","   // 14
+                << Fe(0,0)                    << ","    // 15
+                << Fe(0,1)                    << ","    // 16
+                << Fe(1,0)                    << ","    // 17
+                << Fe(1,1)                    << "\n";  // 18
+    }
+}
+
+void Simulation::saveGridData(std::string extra){
+    std::ofstream outFile("dumps/" + sim_name + "/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
+    outFile         << "x"       << "," << "y"       << "," << "z" << "," << "vx"         << "," << "vy"         << "," << "vz" << "," << "mass"         << "," << "reg"                    << "\n";
+    for(int i=0; i<Nx; i++){
+        for(int j=0; j<Ny; j++){
+            outFile << grid.x[i] << "," << grid.y[j] << "," << 0   << "," << grid.v[ind(i,j)](0) << "," << grid.v[ind(i,j)](1) << "," << 0    << "," << grid.mass[ind(i,j)] << "," << grid.regularization[ind(i,j)] << "\n";
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////// EXTRA FUNCTIONS //////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Simulation::boundaryCollision(T xi, T yi, TV2& vi){
+
+    // TODO: Make this a vector-based function
+
+    // Reference to velocity components
+    T& vxi = vi(0);
+    T& vyi = vi(1);
+
+    // New positions
+    xi += dt * vxi;
+    yi += dt * vyi;
 
     for (InfinitePlate &obj : objects) {
         bool colliding = obj.inside(xi, yi);
@@ -456,110 +557,15 @@ void Simulation::boundaryCollision(T xi, T yi, T& vxi, T& vyi){
 
 
 
-
-void Simulation::positionUpdate(){
-    for(int p=0; p<Np; p++){
-
-        // Position is updated according to PIC velocities
-        particles.x[p] = particles.x[p] + dt * particles.pic[p];
-
-        // New particle velocity is a FLIP-PIC combination
-        particles.v[p] = flip_ratio * ( particles.v[p] + particles.flip[p] ) + (1 - flip_ratio) * particles.pic[p];
-
-    } // end loop over particles
-}
-
-
-
-
-
-void Simulation::saveParticleData(std::string extra){
-    std::ofstream outFile("dumps/" + sim_name + "/out_part_frame_" + extra + std::to_string(frame) + ".csv");
-
-    outFile << "x"           << ","   // 0
-            << "y"           << ","   // 1
-            << "z"           << ","   // 2
-            << "vx"          << ","   // 3
-            << "vy"          << ","   // 4
-            << "vz"          << ","   // 5
-            << "eps_pl_dev"  << ","   // 6
-            << "eps_pl_vol"  << ","   // 7
-            << "reg"         << ","   // 8
-            << "pressure"    << ","   // 9
-            << "devstress"   << ","   // 10
-            << "tau_xx"      << ","   // 11
-            << "tau_xy"      << ","   // 12
-            << "tau_yx"      << ","   // 13
-            << "tau_yy"      << ","   // 14
-            << "Fe_xx"       << ","   // 15
-            << "Fe_xy"       << ","   // 16
-            << "Fe_yx"       << ","   // 17
-            << "Fe_yy"       << "\n"; // 18
-
-    for(int p = 0; p < Np; p++){
-
-        TM2 I = TM2::Identity();
-
-        TM2 Fe = particles.F[p];
-
-        TM2 tau; // particles.tau[p];
-        if (elastic_model == NeoHookean)
-            tau = NeoHookeanPiola(Fe) * Fe.transpose();
-        else if (elastic_model == StvkWithHencky)
-            tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
-
-        T pressure  = -tau.trace() / dim;
-        TM2 tau_dev = tau + pressure * I;
-        T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
-
-        T reg = reg_length * reg_length * particles.regularization[p];
-
-        outFile << particles.x[p](0)          << ","   // 0
-                << particles.x[p](1)          << ","   // 1
-                << 0                          << ","   // 2
-                << particles.v[p](0)          << ","   // 3
-                << particles.v[p](1)          << ","   // 4
-                << 0                          << ","   // 5
-                << particles.eps_pl_dev[p]    << ","   // 6
-                << particles.eps_pl_vol[p]    << ","   // 7
-                << reg                        << ","   // 8
-                << pressure                   << ","   // 9
-                << devstress                  << ","   // 10
-                << tau(0,0)                   << ","   // 11
-                << tau(0,1)                   << ","   // 12
-                << tau(1,0)                   << ","   // 13
-                << tau(1,1)                   << ","   // 14
-                << Fe(0,0)                    << ","    // 15
-                << Fe(0,1)                    << ","    // 16
-                << Fe(1,0)                    << ","    // 17
-                << Fe(1,1)                    << "\n";  // 18
-    }
-}
-
-void Simulation::saveGridData(std::string extra){
-    std::ofstream outFile("dumps/" + sim_name + "/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
-    outFile         << "x"       << "," << "y"       << "," << "z" << "," << "vx"         << "," << "vy"         << "," << "vz" << "," << "mass"         << "," << "reg"                    << "\n";
-    for(int i=0; i<Nx; i++){
-        for(int j=0; j<Ny; j++){
-            outFile << grid.x(i) << "," << grid.y(j) << "," << 0   << "," << grid.vx(i,j) << "," << grid.vy(i,j) << "," << 0    << "," << grid.mass(i,j) << "," << grid.regularization(i,j) << "\n";
-        }
-    }
-}
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////// EXTRA FUNCTIONS //////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 // This function is to be used in explicitEulerUpdate after boundaryCollision
-void Simulation::overwriteGridVelocity(T xi, T yi, T& vxi, T& vyi){
+void Simulation::overwriteGridVelocity(T xi, T yi, TV2& vi){
     T y_start = L - 0.25*dx;
     T width = 2*dx;
     T v_imp = 0.1; // positive value means tension
     if (yi > y_start - width + v_imp * time)
-        vyi = v_imp;
+        vi(1) = v_imp;
     if (yi < 0       + width - v_imp * time)
-        vyi = -v_imp;
+        vi(1) = -v_imp;
 }
 
 // This function can only be used with fixed mesh
@@ -568,12 +574,12 @@ std::pair<TMX, TMX> Simulation::createExternalGridGravity(){
     TMX grid_Y0 = TMX::Zero(Nx,Ny);
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
-            if (grid.mass(i,j) < 1e-25){ // if no mass at current grid point, no point adding a external force to it.
+            if (grid.mass[ind(i,j)] < 1e-25){ // if no mass at current grid point, no point adding a external force to it.
                 grid_X0(i,j) = 0.0;
                 grid_Y0(i,j) = 0.0;
             } else {
-                grid_X0(i,j) = grid.x(i);
-                grid_Y0(i,j) = grid.y(j);
+                grid_X0(i,j) = grid.x[i];
+                grid_Y0(i,j) = grid.y[j];
             } // end if grid mass nonzero
         } // end for j
     } // end for i
@@ -604,21 +610,21 @@ void Simulation::calculateMomentumOnParticles(){
     debug("               total part momentum = ", momentum.norm());
 }
 void Simulation::calculateMomentumOnGrid(){
-    T momentum_x = 0;
-    T momentum_y = 0;
+    TV2 momentum = TV2::Zero();
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
-            momentum_x += grid.mass(i,j) * grid.vx(i,j);
-            momentum_y += grid.mass(i,j) * grid.vy(i,j);
+            momentum += grid.mass[ind(i,j)] * grid.v[ind(i,j)];
         }
     }
-    debug("               total grid momentum x-comp = ", momentum_x);
-    debug("               total grid momentum y-comp = ", momentum_y);
+    debug("               total grid momentum = ", momentum.norm());
 }
 
 void Simulation::calculateMassConservation(){
-    T grid_mass_total     = grid.mass.sum();
     T particle_mass_total = particle_mass*Np;
+    T grid_mass_total = 0;
+    for(auto&& m: grid.mass){
+        grid_mass_total += m;
+    }
     debug("               total grid mass = ", grid_mass_total    );
     debug("               total part mass = ", particle_mass_total);
     if ( std::abs(grid_mass_total-particle_mass_total) > 1e-5 * particle_mass_total ){

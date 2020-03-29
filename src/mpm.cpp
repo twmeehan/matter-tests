@@ -15,11 +15,11 @@ int main(){
 
       Simulation sim;
 
-      sim.sim_name = "container-elastic-2";
+      sim.sim_name = "container-dp-2";
 
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 400.0;
-      sim.dx = 0.05;
+      sim.dx = 0.01;
       sim.L = 1;
       sim.gravity = TV2::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
@@ -34,7 +34,7 @@ int main(){
 
       std::string name;
       name = "Ground";     InfinitePlate ground      = InfinitePlate(0, 0, 0, 0,  bottom, name); sim.objects.push_back(ground);
-      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -1, top,    name); sim.objects.push_back(compressor);
+      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -0.1, top,    name); sim.objects.push_back(compressor);
       // name = "Left";       InfinitePlate left_plate  = InfinitePlate(0, 0, 0, 0,  left,   name); sim.objects.push_back(left_plate);
       // name = "Right";      InfinitePlate right_plate = InfinitePlate(1, 0, 0, 0,  right,  name); sim.objects.push_back(right_plate);
 
@@ -50,7 +50,7 @@ int main(){
 
       // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
-      sim.plastic_model = NoPlasticity;
+      sim.plastic_model = DPSimpleSoft;
       sim.xi = 1e15;
 
       // Von Mises:

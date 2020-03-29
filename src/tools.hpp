@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 /// FLOAT OR DOUBLE ////
 typedef float T;
@@ -67,6 +68,7 @@ inline T selfDoubleDot(TM2& A){
 
 void load_array(TVX& array_, unsigned int n_cols, std::string file_name);
 
+std::vector<T> linspace(T a, T b, size_t N);
 
 #ifdef CUBICSPLINES
 
@@ -154,21 +156,20 @@ void load_array(TVX& array_, unsigned int n_cols, std::string file_name);
 
 
 
-
 inline T wip(T xp, T yp, T xi, T yi, T one_over_h){
     return N( (xp - xi) * one_over_h ) * N( (yp - yi) * one_over_h );
 }
 
-inline T gradx_wip(T xp, T yp, T xi, T yi, T one_over_h){
-    return dNdu((xp - xi) * one_over_h) *  N((yp - yi) * one_over_h) * one_over_h;
-}
-inline T grady_wip(T xp, T yp, T xi, T yi, T one_over_h){
-    return dNdu((yp - yi) * one_over_h) *  N((xp - xi) * one_over_h) * one_over_h;
+inline TV2 grad_wip(T xp, T yp, T xi, T yi, T one_over_h){
+    TV2 out;
+    out << dNdu((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) * one_over_h,
+           dNdu((yp - yi) * one_over_h) * N((xp - xi) * one_over_h) * one_over_h;
+    return out;
 }
 
 inline T laplace_wip(T xp, T yp, T xi, T yi, T one_over_h, T one_over_h_square){
-    T term1 = d2Ndu2((xp - xi) * one_over_h) *  N((yp - yi) * one_over_h);
-    T term2 = d2Ndu2((yp - yi) * one_over_h) *  N((xp - xi) * one_over_h);
+    T term1 = d2Ndu2((xp - xi) * one_over_h) * N((yp - yi) * one_over_h);
+    T term2 = d2Ndu2((yp - yi) * one_over_h) * N((xp - xi) * one_over_h);
     return ( term1 + term2 ) * one_over_h_square;
 }
 
