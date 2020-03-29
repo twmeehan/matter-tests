@@ -11,17 +11,17 @@ Simulation::Simulation(){
     runtime_euler = 0;
     runtime_defgrad = 0;
 
-    /////////// Default - will be overwritten by remesh if used ////////////
-    Nx = 21; // N = (L / dx + 1)
-    Ny = 21;
-    grid = Grid(Nx, Ny);
-    /////////////////////////////////////////////////////////////////////////
+    // Default values
+    Nx = 3;
+    Ny = 3;
+    Nz = 3;
+    grid = Grid(Nx, Ny, Nz);
 }
 
 
 void Simulation::initialize(T E, T nu, T density){
 
-    dim = 2;
+    dim = 3;
 
     lambda = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
     mu     = E / (2.0*(1.0+nu));
@@ -149,7 +149,7 @@ void Simulation::advanceStep(){
     remesh();
     moveObjects(dt);
     P2G();
-    // calculateMassConservation();
+    calculateMassConservation();
     explicitEulerUpdate();
     // addExternalParticleGravity();
     G2P();              // due to "regularization", G2P must come before deformationUpdate!!!
@@ -259,6 +259,12 @@ void Simulation::remesh(){
                                                  return x1(1) < x2(1);
                                              } );
     T max_y = (*max_y_it)(1);
+    auto max_z_it = std::max_element( particles.x.begin(), particles.x.end(),
+                                             []( const TV &x1, const TV &x2 )
+                                             {
+                                                 return x1(2) < x2(2);
+                                             } );
+    T max_z = (*max_z_it)(2);
     auto min_x_it = std::min_element( particles.x.begin(), particles.x.end(),
                                              []( const TV &x1, const TV &x2 )
                                              {
@@ -271,6 +277,12 @@ void Simulation::remesh(){
                                                  return x1(1) < x2(1);
                                              } );
     T min_y = (*min_y_it)(1);
+    auto min_z_it = std::min_element( particles.x.begin(), particles.x.end(),
+                                             []( const TV &x1, const TV &x2 )
+                                             {
+                                                 return x1(2) < x2(2);
+                                             } );
+    T min_z = (*min_z_it)(2);
 
     // ///////////// DEBUG /////////////
     // debug("max_x (iterator) = ", max_x);
@@ -314,38 +326,46 @@ void Simulation::remesh(){
     // ACTUAL (old) side lengths
     T Lx = max_x - min_x;
     T Ly = max_y - min_y;
+    T Lz = max_z - min_z;
 
     // ACTUAL midpoints of particles
     T mid_x = min_x + Lx / 2.0;
     T mid_y = min_y + Ly / 2.0;
+    T mid_z = min_z + Lz / 2.0;
 
     // NEW number of grid-dx's per side length
     unsigned int safety_factor = 3;
     Nx = std::ceil(Lx * one_over_dx) + safety_factor;
     Ny = std::ceil(Ly * one_over_dx) + safety_factor;
+    Nz = std::ceil(Lz * one_over_dx) + safety_factor;
 
     T low_x  = mid_x - Nx*dx/2.0;
     T low_y  = mid_y - Ny*dx/2.0;
+    T low_z  = mid_z - Nz*dx/2.0;
     T high_x = mid_x + Nx*dx/2.0;
     T high_y = mid_y + Ny*dx/2.0;
+    T high_z = mid_z + Nz*dx/2.0;
 
     // NEW grid dimensions N = (L / dx + 1)
     Nx++;
     Ny++;
+    Nz++;
 
-    debug("               grid   = (", Nx, ", ", Ny, ")");
+    debug(  "               grid   = (", Nx, ", ", Ny, ", ", Nz, ")"  );
 
     // Linspace x and y
     // Eigen:  LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
     grid.x = linspace(low_x, high_x, Nx);
     grid.y = linspace(low_y, high_y, Ny);
+    grid.z = linspace(low_z, high_z, Nz);
 
     grid.xc = grid.x[0];
     grid.yc = grid.y[0];
+    grid.zc = grid.z[0];
 
-    grid.v.resize(Nx*Ny);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
-    grid.flip.resize(Nx*Ny); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
-    grid.mass.resize(Nx*Ny); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
+    grid.v.resize(Nx*Ny*Nz);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
+    grid.flip.resize(Nx*Ny*Nz); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
+    grid.mass.resize(Nx*Ny*Nz); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
 
 }
 
@@ -390,12 +410,22 @@ void Simulation::saveParticleData(std::string extra){
             << "devstress"   << ","   // 10
             << "tau_xx"      << ","   // 11
             << "tau_xy"      << ","   // 12
-            << "tau_yx"      << ","   // 13
-            << "tau_yy"      << ","   // 14
-            << "Fe_xx"       << ","   // 15
-            << "Fe_xy"       << ","   // 16
-            << "Fe_yx"       << ","   // 17
-            << "Fe_yy"       << "\n"; // 18
+            << "tau_xz"      << ","   // 13
+            << "tau_yx"      << ","   // 14
+            << "tau_yy"      << ","   // 15
+            << "tau_yz"      << ","   // 16
+            << "tau_zx"      << ","   // 17
+            << "tau_zy"      << ","   // 18
+            << "tau_zz"      << ","   // 19
+            << "Fe_xx"       << ","   // 20
+            << "Fe_xy"       << ","   // 21
+            << "Fe_xz"       << ","   // 22
+            << "Fe_yx"       << ","   // 23
+            << "Fe_yy"       << ","   // 24
+            << "Fe_yz"       << ","   // 25
+            << "Fe_zx"       << ","   // 26
+            << "Fe_zy"       << ","   // 27
+            << "Fe_zz"       << "\n"; // 28
 
     for(int p = 0; p < Np; p++){
 
@@ -417,10 +447,10 @@ void Simulation::saveParticleData(std::string extra){
 
         outFile << particles.x[p](0)          << ","   // 0
                 << particles.x[p](1)          << ","   // 1
-                << 0                          << ","   // 2
+                << particles.x[p](2)          << ","   // 2
                 << particles.v[p](0)          << ","   // 3
                 << particles.v[p](1)          << ","   // 4
-                << 0                          << ","   // 5
+                << particles.v[p](2)          << ","   // 5
                 << particles.eps_pl_dev[p]    << ","   // 6
                 << particles.eps_pl_vol[p]    << ","   // 7
                 << reg                        << ","   // 8
@@ -428,21 +458,48 @@ void Simulation::saveParticleData(std::string extra){
                 << devstress                  << ","   // 10
                 << tau(0,0)                   << ","   // 11
                 << tau(0,1)                   << ","   // 12
-                << tau(1,0)                   << ","   // 13
-                << tau(1,1)                   << ","   // 14
-                << Fe(0,0)                    << ","    // 15
-                << Fe(0,1)                    << ","    // 16
-                << Fe(1,0)                    << ","    // 17
-                << Fe(1,1)                    << "\n";  // 18
+                << tau(0,2)                   << ","   // 13
+                << tau(1,0)                   << ","   // 14
+                << tau(1,1)                   << ","   // 15
+                << tau(1,2)                   << ","   // 16
+                << tau(2,0)                   << ","   // 17
+                << tau(2,1)                   << ","   // 18
+                << tau(2,2)                   << ","   // 19
+                << Fe(0,0)                    << ","    // 20
+                << Fe(0,1)                    << ","    // 21
+                << Fe(0,2)                    << ","    // 22
+                << Fe(1,0)                    << ","    // 23
+                << Fe(1,1)                    << ","    // 24
+                << Fe(1,2)                    << ","    // 25
+                << Fe(2,0)                    << ","    // 26
+                << Fe(2,1)                    << ","    // 27
+                << Fe(2,2)                    << "\n";  // 28
     }
 }
 
 void Simulation::saveGridData(std::string extra){
     std::ofstream outFile("dumps/" + sim_name + "/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
-    outFile         << "x"       << "," << "y"       << "," << "z" << "," << "vx"         << "," << "vy"         << "," << "vz" << "," << "mass"         << "," << "reg"                    << "\n";
+    outFile         << "x"       << ","
+                    << "y"       << ","
+                    << "z"       << ","
+                    << "vx"      << ","
+                    << "vy"      << ","
+                    << "vz"      << ","
+                    << "mass"    << ","
+                    << "reg"     << "\n";
+
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
-            outFile << grid.x[i] << "," << grid.y[j] << "," << 0   << "," << grid.v[ind(i,j)](0) << "," << grid.v[ind(i,j)](1) << "," << 0    << "," << grid.mass[ind(i,j)] << "," << grid.regularization[ind(i,j)] << "\n";
+            for(int k=0; k<Nz; k++){
+                outFile << grid.x[i]             << ","
+                        << grid.y[j]             << ","
+                        << grid.z[k]             << ","
+                        << grid.v[ind(i,j,k)](0) << ","
+                        << grid.v[ind(i,j,k)](1) << ","
+                        << grid.v[ind(i,j,k)](2) << ","
+                        << grid.mass[ind(i,j,k)] << ","
+                        << grid.regularization[ind(i,j,k)] << "\n";
+            }
         }
     }
 }
@@ -451,17 +508,19 @@ void Simulation::saveGridData(std::string extra){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////// EXTRA FUNCTIONS //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-void Simulation::boundaryCollision(T xi, T yi, TV& vi){
+void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
 
     // TODO: Make this a vector-based function
 
     // Reference to velocity components
     T& vxi = vi(0);
     T& vyi = vi(1);
+    T& vzi = vi(2);
 
     // New positions
     xi += dt * vxi;
     yi += dt * vyi;
+    zi += dt * vzi;
 
     for (InfinitePlate &obj : objects) {
         bool colliding = obj.inside(xi, yi);
@@ -558,7 +617,7 @@ void Simulation::boundaryCollision(T xi, T yi, TV& vi){
 
 
 // This function is to be used in explicitEulerUpdate after boundaryCollision
-void Simulation::overwriteGridVelocity(T xi, T yi, TV& vi){
+void Simulation::overwriteGridVelocity(T xi, T yi, T zi, TV& vi){
     T y_start = L - 0.25*dx;
     T width = 2*dx;
     T v_imp = 0.1; // positive value means tension
@@ -568,34 +627,12 @@ void Simulation::overwriteGridVelocity(T xi, T yi, TV& vi){
         vi(1) = -v_imp;
 }
 
-// This function can only be used with fixed mesh
-std::pair<TMX, TMX> Simulation::createExternalGridGravity(){
-    TMX grid_X0 = TMX::Zero(Nx,Ny);
-    TMX grid_Y0 = TMX::Zero(Nx,Ny);
-    for(int i=0; i<Nx; i++){
-        for(int j=0; j<Ny; j++){
-            if (grid.mass[ind(i,j)] < 1e-25){ // if no mass at current grid point, no point adding a external force to it.
-                grid_X0(i,j) = 0.0;
-                grid_Y0(i,j) = 0.0;
-            } else {
-                grid_X0(i,j) = grid.x[i];
-                grid_Y0(i,j) = grid.y[j];
-            } // end if grid mass nonzero
-        } // end for j
-    } // end for i
-    return std::make_pair(-2.0*amplitude*grid_X0, -2.0*amplitude*grid_Y0);
-} // end createExternalGridGravity
-
-
-// Much more computationally expensive than createExternalGridGravity,
-// but can be used with remeshing
 void Simulation::addExternalParticleGravity(){
     // 1. Transfer grid velocity to particles
     G2P();
     // 2. Apply gravity on particle velocity
-    for(int p=0; p<Np; p++){
+    for(int p=0; p<Np; p++)
         particles.v[p] += dt * (-2.0*amplitude*particles.x0[p]);
-    }
     // 3. Transfer particle velocity back to grid
     P2G();
 } // end addExternalParticleGravity
@@ -611,20 +648,18 @@ void Simulation::calculateMomentumOnParticles(){
 }
 void Simulation::calculateMomentumOnGrid(){
     TV momentum = TV::Zero();
-    for(int i=0; i<Nx; i++){
-        for(int j=0; j<Ny; j++){
-            momentum += grid.mass[ind(i,j)] * grid.v[ind(i,j)];
-        }
-    }
+    for(int i=0; i<Nx; i++)
+        for(int j=0; j<Ny; j++)
+            for(int k=0; k<Nz; k++)
+                momentum += grid.mass[ind(i,j,k)] * grid.v[ind(i,j,k)];
     debug("               total grid momentum = ", momentum.norm());
 }
 
 void Simulation::calculateMassConservation(){
     T particle_mass_total = particle_mass*Np;
     T grid_mass_total = 0;
-    for(auto&& m: grid.mass){
+    for(auto&& m: grid.mass)
         grid_mass_total += m;
-    }
     debug("               total grid mass = ", grid_mass_total    );
     debug("               total part mass = ", particle_mass_total);
     if ( std::abs(grid_mass_total-particle_mass_total) > 1e-5 * particle_mass_total ){

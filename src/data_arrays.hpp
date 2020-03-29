@@ -39,24 +39,27 @@ public:
 
 class Grid{
 public:
-    Grid(unsigned int Nx = 21, unsigned int Ny = 21){
+    Grid(unsigned int Nx = 3, unsigned int Ny = 3, unsigned int Nz = 3){
         x.resize(Nx); std::fill( x.begin(), x.end(), 0.0 );
         y.resize(Ny); std::fill( y.begin(), y.end(), 0.0 );
+        z.resize(Nz); std::fill( z.begin(), z.end(), 0.0 );
 
-        v.resize(Nx*Ny);    std::fill( v.begin(),    v.end(),    TV::Zero() );
-        flip.resize(Nx*Ny); std::fill( flip.begin(), flip.end(), TV::Zero() );
+        v.resize(Nx*Ny*Nz);    std::fill( v.begin(),    v.end(),    TV::Zero() );
+        flip.resize(Nx*Ny*Nz); std::fill( flip.begin(), flip.end(), TV::Zero() );
 
-        mass.resize(Nx*Ny);           std::fill( mass.begin(),           mass.end(),           0.0 );
-        regularization.resize(Nx*Ny); std::fill( regularization.begin(), regularization.end(), 0.0 );
+        mass.resize(Nx*Ny*Nz);           std::fill( mass.begin(),           mass.end(),           0.0 );
+        regularization.resize(Nx*Ny*Nz); std::fill( regularization.begin(), regularization.end(), 0.0 );
     }
     std::vector<T> x;
     std::vector<T> y;
+    std::vector<T> z;
     std::vector<TV> v;
     std::vector<TV> flip;
     std::vector<T> mass;
     std::vector<T> regularization;
     T xc;
     T yc;
+    T zc;
 };
 
 

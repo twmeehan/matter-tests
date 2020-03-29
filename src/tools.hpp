@@ -17,7 +17,7 @@ typedef float T;
 typedef Eigen::Matrix<T, 3, 3> TM;
 typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> TMX;
 typedef Eigen::Matrix<T, 3, 1> TV;
-typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TV;
+typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TVX;
 typedef Eigen::Array<T,3,1> TA;
 ////////////////////////
 
@@ -170,7 +170,7 @@ inline TV grad_wip(T xp, T yp, T zp, T xi, T yi, T zi, T one_over_h){
     return out;
 }
 
-inline T laplace_wip(T xp, T yp, T xi, T yi, T one_over_h, T one_over_h_square){
+inline T laplace_wip(T xp, T yp, T zp, T xi, T yi, T zi, T one_over_h, T one_over_h_square){
     T term1 = d2Ndu2((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) *  N((zp - zi) * one_over_h);
     T term2 = d2Ndu2((yp - yi) * one_over_h) * N((xp - xi) * one_over_h) *  N((zp - zi) * one_over_h);
     T term3 = d2Ndu2((zp - zi) * one_over_h) * N((xp - xi) * one_over_h) *  N((yp - yi) * one_over_h);

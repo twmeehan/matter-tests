@@ -80,6 +80,7 @@ int main(){
                   p++;
                   T px = (i+disp_i[d])*sim.dx;
                   T py = (j+disp_j[d])*sim.dx;
+                  T pz = 0; 
                   // CASE 3:
                   // T pvx = sim.amplitude*std::sin( M_PI*(px-0.5) );
                   // T pvy = sim.amplitude*std::sin( M_PI*(py-0.5) );
@@ -92,10 +93,13 @@ int main(){
                   // CASE 0:
                   T pvx = sim.amplitude;
                   T pvy = sim.amplitude;
+                  T pvz = sim.amplitude;
                   sim.particles.x[p](0) = px;
                   sim.particles.x[p](1) = py;
+                  sim.particles.x[p](2) = pz;
                   sim.particles.v[p](0) = pvx;
                   sim.particles.v[p](1) = pvy;
+                  sim.particles.v[p](2) = pvz;
               } // end for d
           } // end for i
       } // end for j

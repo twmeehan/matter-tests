@@ -56,9 +56,9 @@ public:
   // Grid data
   unsigned int Nx, Ny, Nz;
   Grid grid;
-  inline unsigned int ind(unsigned int i, unsigned int j){
-      return i*Ny + j; // 2D
-      // return (i*Ny + j) * Nz + k; // 3D
+  inline unsigned int ind(unsigned int i, unsigned int j, unsigned int k){
+      // return i*Ny + j; // 2D
+      return (i*Ny + j) * Nz + k; // 3D
   }
 
   // Elastoplasticity
@@ -132,9 +132,9 @@ public:
   void plasticity(unsigned int p, unsigned int & plastic_count, TM & Fe_trial);
 
   void moveObjects(T delta_t);
-  void boundaryCollision(T xi, T yi, TV& vi);
+  void boundaryCollision(T xi, T yi, T zi, TV& vi);
   // void boundaryCorrection(T xi, T yi, T& vxi, T& vyi);
-  void overwriteGridVelocity(T xi, T yi, TV& vi);
+  void overwriteGridVelocity(T xi, T yi, T zi, TV& vi);
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();
   void calculateMassConservation();

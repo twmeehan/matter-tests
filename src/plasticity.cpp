@@ -9,9 +9,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
     else if (plastic_model == VonMises || plastic_model == DPSimpleSoft){
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         TV hencky = svd.singularValues().array().log(); // Jixie does not use abs value, however Pradhana-thesis does.
-        T   hencky_trace = hencky.sum();
+        T  hencky_trace = hencky.sum();
         TV hencky_deviatoric = hencky - (hencky_trace / dim) * TV::Ones();
-        T   hencky_deviatoric_norm = hencky_deviatoric.norm();
+        T  hencky_deviatoric_norm = hencky_deviatoric.norm();
 
         if (plastic_model == VonMises){
 
