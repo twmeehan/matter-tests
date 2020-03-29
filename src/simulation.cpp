@@ -204,6 +204,16 @@ void Simulation::updateDt(){
                                                  return v1.squaredNorm() < v2.squaredNorm();
                                              } );
     T max_speed = (*max_velocity_it).norm();
+    // ///////////// DEBUG /////////////
+    // debug("max_speed (iterator) = ", max_speed);
+    // max_speed = -1e15;
+    // for(int p=0; p<Np; p++){
+    //     if (particles.v[p].norm() > max_speed){
+    //         max_speed = particles.v[p].norm();
+    //     }
+    // }
+    // debug("max_speed (debug)    = ", max_speed);
+    // /////////////////////////////////
 
     T dt_cfl = cfl * dx / max_speed;
     dt = std::min(dt_cfl, dt_max);
@@ -237,34 +247,69 @@ void Simulation::updateDt(){
 void Simulation::remesh(){
 
     // ACTUAL min and max position of particles
-    // T min_x = particles.x.minCoeff();
-    // T min_y = particles.y.minCoeff();
-    // T max_x = particles.x.maxCoeff();
-    // T max_y = particles.y.maxCoeff();
     auto max_x_it = std::max_element( particles.x.begin(), particles.x.end(),
                                              []( const TV2 &x1, const TV2 &x2 )
                                              {
-                                                 return x1[0] < x2[0];
+                                                 return x1(0) < x2(0);
                                              } );
-    T max_x = (*max_x_it).norm();
+    T max_x = (*max_x_it)(0);
     auto max_y_it = std::max_element( particles.x.begin(), particles.x.end(),
                                              []( const TV2 &x1, const TV2 &x2 )
                                              {
-                                                 return x1[1] < x2[1];
+                                                 return x1(1) < x2(1);
                                              } );
-    T max_y = (*max_y_it).norm();
+    T max_y = (*max_y_it)(1);
     auto min_x_it = std::min_element( particles.x.begin(), particles.x.end(),
                                              []( const TV2 &x1, const TV2 &x2 )
                                              {
-                                                 return x1[0] < x2[0];
+                                                 return x1(0) < x2(0);
                                              } );
-    T min_x = (*min_x_it).norm();
+    T min_x = (*min_x_it)(0);
     auto min_y_it = std::min_element( particles.x.begin(), particles.x.end(),
                                              []( const TV2 &x1, const TV2 &x2 )
                                              {
-                                                 return x1[1] < x2[1];
+                                                 return x1(1) < x2(1);
                                              } );
-    T min_y = (*min_y_it).norm();
+    T min_y = (*min_y_it)(1);
+
+    // ///////////// DEBUG /////////////
+    // debug("max_x (iterator) = ", max_x);
+    // debug("max_y (iterator) = ", max_y);
+    // debug("min_x (iterator) = ", min_x);
+    // debug("min_y (iterator) = ", min_y);
+    //
+    // max_x = -1e15;
+    // for(int p=0; p<Np; p++){
+    //     if (particles.x[p](0) > max_x){
+    //         max_x = particles.x[p](0);
+    //     }
+    // }
+    // debug("max_x (debug)    = ", max_x);
+    //
+    // max_y = -1e15;
+    // for(int p=0; p<Np; p++){
+    //     if (particles.x[p](1) > max_y){
+    //         max_y = particles.x[p](1);
+    //     }
+    // }
+    // debug("max_y (debug)    = ", max_y);
+    //
+    // min_x = 1e15;
+    // for(int p=0; p<Np; p++){
+    //     if (particles.x[p](0) < min_x){
+    //         min_x = particles.x[p](0);
+    //     }
+    // }
+    // debug("min_x (debug)    = ", min_x);
+    //
+    // min_y = 1e15;
+    // for(int p=0; p<Np; p++){
+    //     if (particles.x[p](1) < min_y){
+    //         min_y = particles.x[p](1);
+    //     }
+    // }
+    // debug("min_y (debug)    = ", min_y);
+    // /////////////////////////////////
 
     // ACTUAL (old) side lengths
     T Lx = max_x - min_x;
