@@ -14,27 +14,24 @@
 int main(){
 
       Simulation sim;
-
-      sim.sim_name = "threedim-elastic";
-
+      sim.sim_name = "threedim-dp";
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 400.0;
-      sim.dx = 0.1;
+      sim.dx = 0.05;
       sim.L = 1;
       sim.gravity = TV::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
       sim.flip_ratio = 0.0;
-
       sim.n_threads = 4;
 
-      unsigned int Nloop = std::round(1.0/sim.dx);
-      debug("Nloop           = ", Nloop);
-      sim.Np = Nloop * Nloop * 4;
+      const unsigned int Nloop = std::round(1.0/sim.dx);
+      const unsigned int ppc  = 8;          // 2D: ppc = 4
+      sim.Np = Nloop * Nloop * Nloop * ppc; // 2D: Np = Nloop * Nloop * ppc;
       // sim.Np = 1762;
 
       std::string name;
       name = "Ground";     InfinitePlate ground      = InfinitePlate(0, 0, 0, 0,  bottom, name); sim.objects.push_back(ground);
-      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -1, top,    name); sim.objects.push_back(compressor);
+      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -0.1, top,    name); sim.objects.push_back(compressor);
       // name = "Left";       InfinitePlate left_plate  = InfinitePlate(0, 0, 0, 0,  left,   name); sim.objects.push_back(left_plate);
       // name = "Right";      InfinitePlate right_plate = InfinitePlate(1, 0, 0, 0,  right,  name); sim.objects.push_back(right_plate);
 
@@ -50,7 +47,7 @@ int main(){
 
       // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
-      sim.plastic_model = NoPlasticity;
+      sim.plastic_model = DPSimpleSoft;
       sim.xi = 1e15;
 
       // Von Mises:
@@ -68,39 +65,49 @@ int main(){
       // Initial state
       sim.amplitude = 0.0;
 
+      // Random samples from file
       // load_array(sim.particles.x, 1, "samples/sample_w1_h1_r0.017_x.txt");
       // load_array(sim.particles.y, 1, "samples/sample_w1_h1_r0.017_y.txt");
 
-      std::vector<T> disp_i(4); disp_i[0] = 0.25; disp_i[1] = 0.75; disp_i[2] = 0.25; disp_i[3] = 0.75;
-      std::vector<T> disp_j(4); disp_j[0] = 0.25; disp_j[1] = 0.75; disp_j[2] = 0.75; disp_j[3] = 0.25;
+      // 2D:
+      // std::vector<T> disp_i(ppc); disp_i = {0.25, 0.75, 0.25, 0.75};
+      // std::vector<T> disp_j(ppc); disp_j = {0.25, 0.75, 0.75, 0.25};
+
+      // 3D
+      std::vector<T> disp_i(ppc); disp_i = {0.25, 0.75, 0.25, 0.75, 0.25, 0.75, 0.25, 0.75};
+      std::vector<T> disp_j(ppc); disp_j = {0.25, 0.75, 0.75, 0.25, 0.25, 0.75, 0.75, 0.25};
+      std::vector<T> disp_k(ppc); disp_k = {0.25, 0.25, 0.25, 0.25, 0.75, 0.75, 0.75, 0.75};
+
       int p = -1;
       for(int i = 0; i < Nloop; i++){
           for(int j = 0; j < Nloop; j++){
-              for(int d = 0; d < 4; d++){
-                  p++;
-                  T px = (i+disp_i[d])*sim.dx;
-                  T py = (j+disp_j[d])*sim.dx;
-                  T pz = 0; 
-                  // CASE 3:
-                  // T pvx = sim.amplitude*std::sin( M_PI*(px-0.5) );
-                  // T pvy = sim.amplitude*std::sin( M_PI*(py-0.5) );
-                  // CASE 2:
-                  // T pvx = sim.amplitude * sim.frame_dt * sim.end_frame * px;
-                  // T pvy = sim.amplitude * sim.frame_dt * sim.end_frame * py ;
-                  // CASE 1:
-                  // T pvx = sim.amplitude * sim.frame_dt * sim.end_frame;
-                  // T pvy = sim.amplitude * sim.frame_dt * sim.end_frame;
-                  // CASE 0:
-                  T pvx = sim.amplitude;
-                  T pvy = sim.amplitude;
-                  T pvz = sim.amplitude;
-                  sim.particles.x[p](0) = px;
-                  sim.particles.x[p](1) = py;
-                  sim.particles.x[p](2) = pz;
-                  sim.particles.v[p](0) = pvx;
-                  sim.particles.v[p](1) = pvy;
-                  sim.particles.v[p](2) = pvz;
-              } // end for d
+              for(int k = 0; k < Nloop; k++){ // 2D: Nloop must be 1
+                  for(int d = 0; d < ppc; d++){
+                      p++;
+                      T px = (i+disp_i[d])*sim.dx;
+                      T py = (j+disp_j[d])*sim.dx;
+                      T pz = (k+disp_k[d])*sim.dx; // 2D: pz = 0
+                      // CASE 3:
+                      // T pvx = sim.amplitude*std::sin( M_PI*(px-0.5) );
+                      // T pvy = sim.amplitude*std::sin( M_PI*(py-0.5) );
+                      // CASE 2:
+                      // T pvx = sim.amplitude * sim.frame_dt * sim.end_frame * px;
+                      // T pvy = sim.amplitude * sim.frame_dt * sim.end_frame * py ;
+                      // CASE 1:
+                      // T pvx = sim.amplitude * sim.frame_dt * sim.end_frame;
+                      // T pvy = sim.amplitude * sim.frame_dt * sim.end_frame;
+                      // CASE 0:
+                      T pvx = sim.amplitude;
+                      T pvy = sim.amplitude;
+                      T pvz = sim.amplitude;
+                      sim.particles.x[p](0) = px;
+                      sim.particles.x[p](1) = py;
+                      sim.particles.x[p](2) = pz;
+                      sim.particles.v[p](0) = pvx;
+                      sim.particles.v[p](1) = pvy;
+                      sim.particles.v[p](2) = pvz;
+                  } // end for d
+              } // end for k
           } // end for i
       } // end for j
 
@@ -112,14 +119,12 @@ int main(){
 
     sim.simulate();
 
-    /////////////////////////////////////////////////////////////
-
-    /*
 
     ///////////// ALEMBIC TESTING: ////////////////
-    // csv2abc("test.abc");
-    // return 0;
-
+    /*
+    csv2abc("test.abc");
+    return 0;
+    */
     ///////////// DEBUG 1: ////////////////
     /*
         sim.P2G();
@@ -135,22 +140,22 @@ int main(){
             sim.current_time_step++;
         }
     */
-
     ///////////// DEBUG 2: ////////////////
-        // for (int i=0; i<50; i++){
-        //     sim.updateDt();
-        //     sim.P2G();
-        //     sim.saveGridVelocities("before_");
-        //     sim.explicitEulerUpdate();
-        //     sim.saveGridVelocities("after_");
-        //     sim.G2P();
-        //     sim.saveSim("before_");
-        //     sim.deformationUpdate();
-        //     sim.positionUpdate();
-        //     sim.saveSim("after_");
-        //     sim.current_time_step++;
-        // }
-
+    /*
+        for (int i=0; i<50; i++){
+            sim.updateDt();
+            sim.P2G();
+            sim.saveGridVelocities("before_");
+            sim.explicitEulerUpdate();
+            sim.saveGridVelocities("after_");
+            sim.G2P();
+            sim.saveSim("before_");
+            sim.deformationUpdate();
+            sim.positionUpdate();
+            sim.saveSim("after_");
+            sim.current_time_step++;
+        }
+    */
 
 
 	return 0;

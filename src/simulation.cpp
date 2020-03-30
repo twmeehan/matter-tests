@@ -20,7 +20,6 @@ Simulation::Simulation(){
 
 
 void Simulation::initialize(T E, T nu, T density){
-
     dim = 3;
 
     lambda = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
@@ -149,7 +148,7 @@ void Simulation::advanceStep(){
     remesh();
     moveObjects(dt);
     P2G();
-    calculateMassConservation();
+    // calculateMassConservation();
     explicitEulerUpdate();
     // addExternalParticleGravity();
     G2P();              // due to "regularization", G2P must come before deformationUpdate!!!
