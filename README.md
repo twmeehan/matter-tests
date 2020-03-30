@@ -4,7 +4,7 @@ An implementation of the Material Point Method (MPM) in the finite-strain elasto
 
 ### Features and limitations
 
-Currently only supports **2D**. However, the code is written in a general way and expanding to 3D is easy.
+Supports **2D** and **3D**.
 
 Supports **quadratic and cubic B-splines**, and **PIC**, **FLIP** and **PIC-FLIP** for particle-grid interpolation.
 
