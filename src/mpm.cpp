@@ -14,15 +14,15 @@
 int main(){
 
       Simulation sim;
-      sim.sim_name = "threedim-dp";
+      sim.sim_name = "threedim-elastic-omp";
       sim.end_frame = 40;
       sim.frame_dt = 1.0 / 400.0;
-      sim.dx = 0.05;
+      sim.dx = 0.1;
       sim.L = 1;
       sim.gravity = TV::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
       sim.flip_ratio = 0.0;
-      sim.n_threads = 4;
+      sim.n_threads = 8;
 
       const unsigned int Nloop = std::round(1.0/sim.dx);
       const unsigned int ppc  = 8;          // 2D: ppc = 4
@@ -31,7 +31,7 @@ int main(){
 
       std::string name;
       name = "Ground";     InfinitePlate ground      = InfinitePlate(0, 0, 0, 0,  bottom, name); sim.objects.push_back(ground);
-      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -0.1, top,    name); sim.objects.push_back(compressor);
+      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, -1, top,    name); sim.objects.push_back(compressor);
       // name = "Left";       InfinitePlate left_plate  = InfinitePlate(0, 0, 0, 0,  left,   name); sim.objects.push_back(left_plate);
       // name = "Right";      InfinitePlate right_plate = InfinitePlate(1, 0, 0, 0,  right,  name); sim.objects.push_back(right_plate);
 
@@ -47,7 +47,7 @@ int main(){
 
       // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
-      sim.plastic_model = DPSimpleSoft;
+      sim.plastic_model = NoPlasticity;
       sim.xi = 1e15;
 
       // Von Mises:

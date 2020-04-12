@@ -1,46 +1,53 @@
 #include "simulation.hpp"
 #include <omp.h>
 
+
 void Simulation::G2P_Optimized_Parallel(){
 
-    T x0 = grid.x(0);
-    T y0 = grid.y(0);
-
-    particles.vx.setZero(Np);
-    particles.vy.setZero(Np);
+    std::fill( particles.pic.begin(), particles.pic.end(), TV::Zero() );
+    std::fill( particles.flip.begin(), particles.flip.end(), TV::Zero() );
+    std::fill( particles.regularization.begin(), particles.regularization.end(), 0.0 );
 
     #pragma omp parallel num_threads(n_threads)
     {
-        TVX particles_vx_local = TVX::Zero(Np);
-        TVX particles_vy_local = TVX::Zero(Np);
+        std::vector<TV> particles_pic_local(Np); std::fill( particles_pic_local.begin(), particles_pic_local.end(), TV::Zero() );
+        std::vector<TV> particles_flip_local(Np); std::fill( particles_flip_local.begin(), particles_flip_local.end(), TV::Zero() );
+        std::vector<T> particles_reg_local(Np);
 
         #pragma omp for
         for(int p = 0; p < Np; p++){
-            T xp = particles.x(p);
-            T yp = particles.y(p);
-            T vxp = 0;
-            T vyp = 0;
-            unsigned int i_base = std::floor((xp-x0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
-            unsigned int j_base = std::floor((yp-y0)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+            TV xp = particles.x[p];
+            TV vp = TV::Zero();
+            TV flipp = TV::Zero();
+            T regularization_p = 0;
+            unsigned int i_base = std::floor((xp(0)-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
+            unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1;
+            unsigned int k_base = std::floor((xp(2)-grid.zc)*one_over_dx) - 1;
 
             for(int i = i_base; i < i_base+4; i++){
-                T xi = grid.x(i);
+                T xi = grid.x[i];
                 for(int j = j_base; j < j_base+4; j++){
-                    T yi = grid.y(j);
-                    T weight = wip(xp, yp, xi, yi, one_over_dx);
-                    vxp += grid.vx(i,j) * weight;
-                    vyp += grid.vy(i,j) * weight;
+                    T yi = grid.y[j];
+                    for(int k = k_base; k < k_base+4; k++){
+                        T zi = grid.z[k];
+                        T weight = wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
+                        vp               += grid.v[ind(i,j,k)]    * weight;
+                        flipp            += grid.flip[ind(i,j,k)] * weight;
+                        regularization_p += grid.regularization[ind(i,j,k)] * weight;
+                    } // end loop k
                 } // end loop j
             } // end loop i
-            particles_vx_local(p) = vxp;
-            particles_vy_local(p) = vyp;
+            particles_pic_local[p]  = vp;
+            particles_flip_local[p] = flipp;
+            particles_reg_local[p]  = regularization_p;
         } // end loop p
 
         #pragma omp critical
         {
             for(int p = 0; p < Np; p++){
-                particles.vx(p) += particles_vx_local(p);
-                particles.vy(p) += particles_vy_local(p);
+                particles.pic[p]            += particles_pic_local[p];
+                particles.flip[p]           += particles_flip_local[p];
+                particles.regularization[p] += particles_reg_local[p];
             }
         } // end omp critical
 
