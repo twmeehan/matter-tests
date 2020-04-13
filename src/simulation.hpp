@@ -85,7 +85,6 @@ public:
 
   // Objects
   T friction;
-  BoundaryCondition boundary_condition;
   std::vector<InfinitePlate> objects;
 
   // Runtime measurements

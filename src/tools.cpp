@@ -1,28 +1,31 @@
 #include "tools.hpp"
 
-void load_array(TVX& array_, unsigned int n_cols, std::string file_name)
+unsigned int load_array(std::vector<TV>& array, std::string file_name)
 {
-    std::ifstream file_(file_name);
+    std::ifstream file(file_name);
 
-    if ( file_.is_open() ) {
+    std::string line;
+    T value;
+    unsigned int p = 0; // particle
+    unsigned int j;     // component (x, y or z)
 
-        std::string line_;
-        T value_;
-        unsigned int i = 0, j;
-        while ( std::getline(file_, line_) ) {
-
+    if ( file.is_open() ) {
+        while ( std::getline(file, line) ) {
             j = 0;
-            std::stringstream line_stream(line_);
-            while ( line_stream >> value_ ) {
-                array_[i*n_cols + j] = value_;
+            std::stringstream line_stream(line);
+            while ( line_stream >> value ) {
+                // debug("p = ", p, " j = ", j, " value = ", value);
+                array[p](j) = value;
                 j++;
             }
-            i++;
+            p++;
         }
     }
     else {
         std::cout << "Unable to open '"<< file_name << "'" << std::endl;
     }
+
+    return p;
 }
 
 

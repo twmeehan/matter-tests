@@ -21,7 +21,7 @@ typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TVX;
 typedef Eigen::Array<T,3,1> TA;
 ////////////////////////
 
-enum PlateType { top, bottom, left, right};
+enum PlateType { top, bottom, left, right, front, back};
 enum ElasticModel { StvkWithHencky, NeoHookean };
 enum PlasticModel { NoPlasticity, VonMises, DPSimpleSoft };
 enum BoundaryCondition { STICKY, SLIP };
@@ -68,7 +68,7 @@ inline T selfDoubleDot(TM& A){
     return out;
 }
 
-void load_array(TVX& array_, unsigned int n_cols, std::string file_name);
+unsigned int load_array(std::vector<TV>& array, std::string file_name);
 
 std::vector<T> linspace(T a, T b, size_t N);
 

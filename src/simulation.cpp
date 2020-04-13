@@ -426,9 +426,10 @@ void Simulation::saveParticleData(std::string extra){
             << "Fe_zy"       << ","   // 27
             << "Fe_zz"       << "\n"; // 28
 
+    TM I = TM::Identity();
+    TM volavg_tau = TM::Zero();
+    T Jsum = 0;
     for(int p = 0; p < Np; p++){
-
-        TM I = TM::Identity();
 
         TM Fe = particles.F[p];
 
@@ -437,6 +438,10 @@ void Simulation::saveParticleData(std::string extra){
             tau = NeoHookeanPiola(Fe) * Fe.transpose();
         else if (elastic_model == StvkWithHencky)
             tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
+
+        T J = Fe.determinant() * std::exp( particles.eps_pl_vol[p] );
+        volavg_tau += tau * J;
+        Jsum += J;
 
         T pressure  = -tau.trace() / dim;
         TM tau_dev = tau + pressure * I;
@@ -473,7 +478,16 @@ void Simulation::saveParticleData(std::string extra){
                 << Fe(2,0)                    << ","    // 26
                 << Fe(2,1)                    << ","    // 27
                 << Fe(2,2)                    << "\n";  // 28
-    }
+    } // end loop over particles
+
+    volavg_tau /= Jsum;
+    T volavg_pressure = -volavg_tau.trace() / dim;
+    TM volavg_tau_dev = volavg_tau + volavg_pressure * I;
+    T volavg_devstress = std::sqrt(3.0/2.0 * selfDoubleDot(volavg_tau_dev));
+    std::ofstream outFile2("dumps/" + sim_name + "/out_pq_frame_" + extra + std::to_string(frame) + ".csv");
+    outFile2 << volavg_pressure    << ","
+             << volavg_devstress   << "\n";
+
 }
 
 void Simulation::saveGridData(std::string extra){
@@ -522,51 +536,85 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
     zi += dt * vzi;
 
     for (InfinitePlate &obj : objects) {
-        bool colliding = obj.inside(xi, yi);
+        bool colliding = obj.inside(xi, yi, zi);
         if (colliding) {
             T vx_rel = vxi - obj.vx_object;
             T vy_rel = vyi - obj.vy_object;
+            T vz_rel = vzi - obj.vz_object;
 
-            if (boundary_condition == STICKY) {
+            if (obj.bc == STICKY) {
                 vx_rel = 0;
                 vy_rel = 0;
+                vz_rel = 0;
             } // end STICKY
 
-            else if (boundary_condition == SLIP) {
+            else if (obj.bc == SLIP) {
                 if (obj.plate_type == top || obj.plate_type == bottom){
-                    // tangential velocity is the x component
-                    // normal component must be set to zero
+                    // tangential velocity is the (x,z) components
+                    // normal component (y) must be set to zero
                     vy_rel = 0;
                     if (friction == 0){
                         // Do nothing
                     }
-                    else if ( std::abs(vx_rel) < friction * std::abs(vy_rel) ){
+                    else if ( std::sqrt(vx_rel*vx_rel + vz_rel*vz_rel) < friction * std::abs(vy_rel) ){
                         vx_rel = 0; // tangential component also set to zero
+                        vz_rel = 0;
                     }
                     else { // just reduce tangential component
                         if (vx_rel > 0)
                             vx_rel -= friction * std::abs(vy_rel);
                         else
                             vx_rel += friction * std::abs(vy_rel);
+                        if (vz_rel > 0)
+                            vz_rel -= friction * std::abs(vy_rel);
+                        else
+                            vz_rel += friction * std::abs(vy_rel);
                     }
                 } // end top and bottom plate
                 else if (obj.plate_type == left || obj.plate_type == right){
-                    // tangential velocity is the y comp
-                    // normal component must be set to zero
+                    // tangential velocity is the (y,z) components
+                    // normal component (x) must be set to zero
                     vx_rel = 0;
                     if (friction == 0){
                         // Do nothing
                     }
-                    else if ( std::abs(vy_rel) < friction * std::abs(vx_rel) ){
+                    else if ( std::sqrt(vy_rel*vy_rel + vz_rel*vz_rel) < friction * std::abs(vx_rel) ){
                         vy_rel = 0; // tangential component also set to zero
+                        vz_rel = 0;
                     }
                     else { // just reduce tangential component
                         if (vy_rel > 0)
                             vy_rel -= friction * std::abs(vx_rel);
                         else
                             vy_rel += friction * std::abs(vx_rel);
+                        if (vz_rel > 0)
+                            vz_rel -= friction * std::abs(vx_rel);
+                        else
+                            vz_rel += friction * std::abs(vx_rel);
                     }
                 } // end left or right plate
+                else if (obj.plate_type == front || obj.plate_type == back){
+                    // tangential velocity is the (x,y) components
+                    // normal component (z) must be set to zero
+                    vz_rel = 0;
+                    if (friction == 0){
+                        // Do nothing
+                    }
+                    else if ( std::sqrt(vx_rel*vx_rel + vy_rel*vy_rel) < friction * std::abs(vx_rel) ){
+                        vx_rel = 0; // tangential component also set to zero
+                        vy_rel = 0;
+                    }
+                    else { // just reduce tangential component
+                        if (vx_rel > 0)
+                            vx_rel -= friction * std::abs(vz_rel);
+                        else
+                            vx_rel += friction * std::abs(vz_rel);
+                        if (vy_rel > 0)
+                            vy_rel -= friction * std::abs(vz_rel);
+                        else
+                            vy_rel += friction * std::abs(vz_rel);
+                    }
+                } // end front or back plate
             } // end SLIP
 
             else {
@@ -577,6 +625,7 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
 
             vxi = vx_rel + obj.vx_object;
             vyi = vy_rel + obj.vy_object;
+            vzi = vz_rel + obj.vz_object;
         } // end if colliding
 
     } // end iterator over objects
