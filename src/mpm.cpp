@@ -14,30 +14,32 @@
 int main(){
 
       Simulation sim;
-      sim.sim_name = "threedim-micro-plastic-2";
+      sim.sim_name = "micro-phi032-IC";
       sim.end_frame = 80;
       sim.frame_dt = 1.0 / 800.0;
-      sim.dx = 1.0 / 40;
+      sim.dx = 1.0 / 80;
       sim.L = 1;
       sim.gravity = TV::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
-      sim.flip_ratio = 0.9;
-      sim.n_threads = 24;
+      sim.flip_ratio = 0.99;
+      sim.n_threads = 48;
 
       // const unsigned int Nloop = std::round(1.0/sim.dx);
       // const unsigned int ppc  = 8;          // 2D: ppc = 4
       // sim.Np = Nloop * Nloop * Nloop * ppc; // 2D: Np = Nloop * Nloop * ppc;
       // sim.Np = 1762;
       // sim.Np = 154360;
-      sim.Np = 19295;
+      sim.Np = 1145442;
+
+      T vel = 0.0005;
 
       std::string name;
-      name = "Ground";     InfinitePlate ground      = InfinitePlate(0, 0, 0, 0, +2,  0, bottom, SLIP, name);  sim.objects.push_back(ground);
-      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, 0, -2, 0,  top,    SLIP, name);  sim.objects.push_back(compressor);
-      name = "Left";       InfinitePlate left_plate  = InfinitePlate(0, 0, 0, +2, 0,  0, left,   SLIP, name);  sim.objects.push_back(left_plate);
-      name = "Right";      InfinitePlate right_plate = InfinitePlate(1, 0, 0, -2, 0,  0, right,  SLIP, name);  sim.objects.push_back(right_plate);
-      name = "Front";      InfinitePlate front_plate = InfinitePlate(0, 0, 0, 0, 0,  +2, front,  SLIP, name);  sim.objects.push_back(front_plate);
-      name = "Back";       InfinitePlate back_plate  = InfinitePlate(0, 0, 1, 0, 0,  -2, back,   SLIP, name);  sim.objects.push_back(back_plate);
+      name = "Ground";     InfinitePlate ground      = InfinitePlate(0, 0, 0, 0, +vel, 0,    bottom, SLIP, name);  sim.objects.push_back(ground);
+      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, 0, -vel, 0,    top,    SLIP, name);  sim.objects.push_back(compressor);
+      name = "Left";       InfinitePlate left_plate  = InfinitePlate(0, 0, 0, +vel, 0, 0,    left,   SLIP, name);  sim.objects.push_back(left_plate);
+      name = "Right";      InfinitePlate right_plate = InfinitePlate(1, 0, 0, -vel, 0, 0,    right,  SLIP, name);  sim.objects.push_back(right_plate);
+      name = "Front";      InfinitePlate front_plate = InfinitePlate(0, 0, 0, 0,    0, +vel, front,  SLIP, name);  sim.objects.push_back(front_plate);
+      name = "Back";       InfinitePlate back_plate  = InfinitePlate(0, 0, 1, 0,    0, -vel, back,   SLIP, name);  sim.objects.push_back(back_plate);
 
       sim.friction = 0.0;
 
@@ -51,15 +53,15 @@ int main(){
       // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
       sim.plastic_model = DPSimpleSoft;
-      sim.xi = 1e15; // for both VM and DP
+      sim.xi = 1e6; // for both VM and DP
 
       // Von Mises:
       sim.yield_stress_orig = std::sqrt(2.0/3.0) * /* q_max */ 4000.0;
       sim.yield_stress_min  = std::sqrt(2.0/3.0) * /* q_max */ 4000.0;
 
       // DPSimpleSoft
-      sim.friction_angle = 13.34;
-      sim.cohesion = 0.017e6 / (sim.K * sim.dim); // p_min = - K * dim * cohesion
+      sim.friction_angle = 13.342363799593;
+      sim.cohesion = 6.7e-5; //0.017e6 / (sim.K * sim.dim); // p_min = - K * dim * cohesion
 
       // Regularization by Laplacian
       sim.reg_length = sim.dx;
@@ -67,8 +69,8 @@ int main(){
 
       // Random samples from file
       //unsigned int Np = load_array(sim.particles.x, "/home/blatny/repos/phd-stuff/gold/output/microstructures/benchmarks/v4_N10000_phi03_mesh40_mc6_Lrve1_b50_mu1_typev_seed42/xyz_ext8_rand6.txt");
-      unsigned int Np = load_array(sim.particles.x, "/home/blatny/repos/phd-stuff/gold/output/microstructures/benchmarks/v4_N10000_phi03_mesh40_mc6_Lrve1_b50_mu1_typev_seed42/xyz.txt");
-      debug("Np load_array)  = ", Np);
+      unsigned int Np = load_array(sim.particles.x, "/home/blatny/repos/larsiempm/build/microstructures/m80_mc11_phi032_seed12/xyz.txt");
+      debug("Np (load_array)  = ", Np);
       if (Np != sim.Np){
           debug("Particle number mismatch!!!");
           return 0;
