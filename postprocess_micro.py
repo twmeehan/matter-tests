@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
-figsize = (18, 12)
+figsize = (15, 6)
+plt.rcParams.update({'font.size': 14})
 #################################
 # Parameters
-name = "micro-m65-mc9-phi026-IC"
+name = "micro-m65-mc9-phi026-IC-v2-pureelastic"
 velocity = np.array([-0.0005, 0.0005, -0.0005, 0.0005, -0.0005, 0.0005])
 L_rve    = 1.0
 phi = 0.2653618570778334
@@ -23,9 +24,7 @@ print("dx        = ", dx)
 
 mu   = float(info[3])
 lamb = float(info[4])
-K = mu + lamb # in 2D
 E = mu * (3*lamb + 2*mu) / (lamb + mu)
-print("Ice bulk modulus    K = ", K, " Pa")
 print("Ice Young's modulus E = ", E, " Pa")
 
 #################################
@@ -50,12 +49,20 @@ p *= phi
 q *= phi
 # NB phi should adjusted according to J_ice and eps_vol!
 
+plt.figure(figsize=figsize)
 plt.plot(eps_vol, p, "k-*")
 plt.xlabel("eps_vol [-]")
 plt.ylabel("p [Pa]")
-plt.show()
+plt.savefig("dumps/" + name + "/fig_strain_p.png", bbox_inches = 'tight')
 
+plt.figure(figsize=figsize)
 plt.plot(eps_vol, q, "k-*")
 plt.xlabel("eps_vol [-]")
 plt.ylabel("q [Pa]")
-plt.show()
+plt.savefig("dumps/" + name + "/fig_strain_q.png", bbox_inches = 'tight')
+
+plt.figure(figsize=figsize)
+plt.plot(p, q, "k-*")
+plt.xlabel("p [Pa]")
+plt.ylabel("q [Pa]")
+plt.savefig("dumps/" + name + "/fig_p_q.png", bbox_inches = 'tight')

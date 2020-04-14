@@ -39,19 +39,18 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == DPSimpleSoft){
 
-            T cohesion_proj = particles.cohesion_proj[p];
-            if (hencky_trace >= dim * cohesion_proj) { // Project to tip
+            if (hencky_trace >= dim * particles.cohesion_proj[p]) { // Project to tip
                 plastic_count++;
-                cohesion_proj = cohesion * std::exp(-xi * particles.eps_pl_dev[p]);
-                particles.F[p] = svd.matrixU() * std::exp(cohesion_proj) * svd.matrixV().transpose();
+                particles.cohesion_proj[p] = cohesion * std::exp(-xi * particles.eps_pl_dev[p]);
+                particles.F[p] = svd.matrixU() * std::exp(particles.cohesion_proj[p]) * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += hencky_deviatoric_norm;
-                particles.eps_pl_vol[p] += (hencky_trace - dim * cohesion_proj);
+                particles.eps_pl_vol[p] += (hencky_trace - dim * particles.cohesion_proj[p]);
             }
             else{ // Right of tip
-                T delta_gamma = hencky_deviatoric_norm + alpha_K_d_over_2mu * hencky_trace - alpha_K_d_over_2mu * dim * cohesion_proj;
+                T delta_gamma = hencky_deviatoric_norm + alpha_K_d_over_2mu * hencky_trace - alpha_K_d_over_2mu * dim * particles.cohesion_proj[p];
                 if (delta_gamma > 0) { // outside yield surface
                     plastic_count++;
-                    cohesion_proj = cohesion * std::exp(-xi * particles.eps_pl_dev[p]);
+                    particles.cohesion_proj[p] = cohesion * std::exp(-xi * particles.eps_pl_dev[p]);
                     hencky -= delta_gamma * (hencky_deviatoric / hencky_deviatoric_norm);
                     particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                     particles.eps_pl_dev[p] += delta_gamma;

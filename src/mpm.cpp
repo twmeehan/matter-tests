@@ -14,7 +14,7 @@
 int main(){
 
       Simulation sim;
-      sim.sim_name = "micro-m65-mc9-phi026-IC";
+      sim.sim_name = "micro-m65-mc9-phi026-IC-v2-pureelastic";
       sim.end_frame = 100;
       sim.frame_dt = 1.0 / 1000.0;
       sim.dx = 1.0 / 65;
@@ -22,7 +22,7 @@ int main(){
       sim.gravity = TV::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
       sim.flip_ratio = 0.99;
-      sim.n_threads = 24;
+      sim.n_threads = 4;
 
       // const unsigned int Nloop = std::round(1.0/sim.dx);
       // const unsigned int ppc  = 8;          // 2D: ppc = 4
@@ -63,7 +63,7 @@ int main(){
 
       // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
-      sim.plastic_model = DPSimpleSoft;
+      sim.plastic_model = NoPlasticity;
       sim.xi = 1e6; // for both VM and DP
 
       // Von Mises:
