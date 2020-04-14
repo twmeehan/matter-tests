@@ -13,6 +13,9 @@ public:
                 vx_object(0.0),
                 vy_object(0.0),
                 vz_object(0.0),
+                vx_object_original(0.0),
+                vy_object_original(0.0),
+                vz_object_original(0.0),
                 plate_type(bottom),
                 bc(STICKY),
                 name("noname") {}
@@ -23,6 +26,9 @@ public:
                 vx_object(vx_object),
                 vy_object(vy_object),
                 vz_object(vz_object),
+                vx_object_original(vx_object),
+                vy_object_original(vy_object),
+                vz_object_original(vz_object),
                 plate_type(plate_type),
                 bc(bc),
                 name(name) {}
@@ -46,7 +52,19 @@ public:
           return (z_object - z);
   }
 
-  void move(T dt){
+  void move(T dt, T frame_dt, T time){
+
+      if (time < frame_dt) {
+          vx_object = (vx_object_original / frame_dt) * time;
+          vy_object = (vy_object_original / frame_dt) * time;
+          vz_object = (vz_object_original / frame_dt) * time;
+      }
+      else{
+          vx_object = vx_object_original;
+          vy_object = vy_object_original;
+          vz_object = vz_object_original;
+      }
+
       x_object += dt * vx_object;
       y_object += dt * vy_object;
       z_object += dt * vz_object;
@@ -59,6 +77,10 @@ public:
   T vx_object;
   T vy_object;
   T vz_object;
+
+  T vx_object_original;
+  T vy_object_original;
+  T vz_object_original;
 
   BoundaryCondition bc;
   PlateType plate_type;

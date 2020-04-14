@@ -130,7 +130,7 @@ public:
   TM StvkWithHenckyPiola(TM & Fe);
   void plasticity(unsigned int p, unsigned int & plastic_count, TM & Fe_trial);
 
-  void moveObjects(T delta_t);
+  void moveObjects();
   void boundaryCollision(T xi, T yi, T zi, TV& vi);
   // void boundaryCorrection(T xi, T yi, T& vxi, T& vyi);
   void overwriteGridVelocity(T xi, T yi, T zi, TV& vi);

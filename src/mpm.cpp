@@ -14,34 +14,45 @@
 int main(){
 
       Simulation sim;
-      sim.sim_name = "micro-phi032-IC";
-      sim.end_frame = 80;
-      sim.frame_dt = 1.0 / 800.0;
-      sim.dx = 1.0 / 80;
+      sim.sim_name = "micro-m65-mc9-phi026-IC";
+      sim.end_frame = 100;
+      sim.frame_dt = 1.0 / 1000.0;
+      sim.dx = 1.0 / 65;
       sim.L = 1;
       sim.gravity = TV::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
       sim.flip_ratio = 0.99;
-      sim.n_threads = 48;
+      sim.n_threads = 24;
 
       // const unsigned int Nloop = std::round(1.0/sim.dx);
       // const unsigned int ppc  = 8;          // 2D: ppc = 4
       // sim.Np = Nloop * Nloop * Nloop * ppc; // 2D: Np = Nloop * Nloop * ppc;
       // sim.Np = 1762;
       // sim.Np = 154360;
-      sim.Np = 1145442;
+      sim.Np = 507022;
 
-      T vel = 0.0005;
+      T vel = 0.0005; // always positive
+      T alpha = 0;
+      T beta  = -1;
+      T overlap = sim.dx;
 
+      T vel_top  = vel * (beta + alpha); // Negative if compression
+      T vel_bot  = -vel_top;
+      T vel_rig  = vel * (beta - alpha); // Negative if compression
+      T vel_lef  = -vel_rig;
+      T vel_bac  = vel * (beta);         // Negative if compression
+      T vel_fro  = -vel_bac;
+
+      // Convention below: The conditional operator returns TRUE if DILATION
       std::string name;
-      name = "Ground";     InfinitePlate ground      = InfinitePlate(0, 0, 0, 0, +vel, 0,    bottom, SLIP, name);  sim.objects.push_back(ground);
-      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, 1, 0, 0, -vel, 0,    top,    SLIP, name);  sim.objects.push_back(compressor);
-      name = "Left";       InfinitePlate left_plate  = InfinitePlate(0, 0, 0, +vel, 0, 0,    left,   SLIP, name);  sim.objects.push_back(left_plate);
-      name = "Right";      InfinitePlate right_plate = InfinitePlate(1, 0, 0, -vel, 0, 0,    right,  SLIP, name);  sim.objects.push_back(right_plate);
-      name = "Front";      InfinitePlate front_plate = InfinitePlate(0, 0, 0, 0,    0, +vel, front,  SLIP, name);  sim.objects.push_back(front_plate);
-      name = "Back";       InfinitePlate back_plate  = InfinitePlate(0, 0, 1, 0,    0, -vel, back,   SLIP, name);  sim.objects.push_back(back_plate);
+      name = "Ground";     InfinitePlate ground      = InfinitePlate(0, (vel_bot < 0) ? overlap       : 0,     0, 0, vel_bot, 0,    bottom, (vel_bot < 0) ? STICKY : SLIP, name);  sim.objects.push_back(ground);
+      name = "Compressor"; InfinitePlate compressor  = InfinitePlate(0, (vel_top > 0) ? sim.L-overlap : sim.L, 0, 0, vel_top, 0,    top,    (vel_top > 0) ? STICKY : SLIP, name);  sim.objects.push_back(compressor);
+      name = "Left";       InfinitePlate left_plate  = InfinitePlate((vel_lef < 0) ? overlap       : 0,     0, 0, vel_lef, 0, 0,    left,   (vel_lef < 0) ? STICKY : SLIP, name);  sim.objects.push_back(left_plate);
+      name = "Right";      InfinitePlate right_plate = InfinitePlate((vel_rig > 0) ? sim.L-overlap : sim.L, 0, 0, vel_rig, 0, 0,    right,  (vel_rig > 0) ? STICKY : SLIP, name);  sim.objects.push_back(right_plate);
+      name = "Front";      InfinitePlate front_plate = InfinitePlate(0, 0, (vel_fro < 0) ? overlap       : 0,     0,    0, vel_fro, front,  (vel_fro < 0) ? STICKY : SLIP, name);  sim.objects.push_back(front_plate);
+      name = "Back";       InfinitePlate back_plate  = InfinitePlate(0, 0, (vel_bac > 0) ? sim.L-overlap : sim.L, 0,    0, vel_bac, back,   (vel_bac > 0) ? STICKY : SLIP, name);  sim.objects.push_back(back_plate);
 
-      sim.friction = 0.0;
+      sim.friction = 0.0; // currently only support zero friction
 
       sim.initialize(/* E */ 1e8, /* nu */ 0.3, /* rho */ 1000*10);
       debug("Wave speed      = ", sim.wave_speed);
@@ -61,7 +72,7 @@ int main(){
 
       // DPSimpleSoft
       sim.friction_angle = 13.342363799593;
-      sim.cohesion = 6.7e-5; //0.017e6 / (sim.K * sim.dim); // p_min = - K * dim * cohesion
+      sim.cohesion = 0.017e6 / (sim.K * sim.dim); // p_min = - K * dim * cohesion
 
       // Regularization by Laplacian
       sim.reg_length = sim.dx;
@@ -69,7 +80,7 @@ int main(){
 
       // Random samples from file
       //unsigned int Np = load_array(sim.particles.x, "/home/blatny/repos/phd-stuff/gold/output/microstructures/benchmarks/v4_N10000_phi03_mesh40_mc6_Lrve1_b50_mu1_typev_seed42/xyz_ext8_rand6.txt");
-      unsigned int Np = load_array(sim.particles.x, "/home/blatny/repos/larsiempm/build/microstructures/m80_mc11_phi032_seed12/xyz.txt");
+      unsigned int Np = load_array(sim.particles.x, "/home/blatny/repos/larsiempm/build/microstructures/m65_mc9_phi026_seed12/xyz.txt");
       debug("Np (load_array)  = ", Np);
       if (Np != sim.Np){
           debug("Particle number mismatch!!!");

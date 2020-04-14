@@ -28,7 +28,7 @@ void Simulation::initialize(T E, T nu, T density){
     rho = density;
 
     wave_speed = std::sqrt(E/rho);
-    dt_max = 0.1 * dx / wave_speed;
+    dt_max = 0.2 * dx / wave_speed;
 
     particle_volume = std::pow(L, dim) / Np; // INITIAL particle volume V^0
     particle_mass = rho * particle_volume;
@@ -146,7 +146,7 @@ void Simulation::simulate(){
 void Simulation::advanceStep(){
     updateDt();
     remesh();
-    moveObjects(dt);
+    moveObjects();
     P2G();
     // calculateMassConservation();
     explicitEulerUpdate();
@@ -369,9 +369,9 @@ void Simulation::remesh(){
 }
 
 
-void Simulation::moveObjects(T delta_t){
+void Simulation::moveObjects(){
     for (InfinitePlate &obj : objects) {
-        obj.move(delta_t);
+        obj.move(dt, frame_dt, time);
     }
 }
 
@@ -639,7 +639,7 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
 //     // trial step
 //     T x_next = xi + vxi * dt;
 //     T y_next = yi + vyi * dt;
-//     moveObjects(dt);
+//     moveObjects();
 //
 //     for (InfinitePlate &obj : objects) {
 //         bool colliding = obj.inside(x_next, y_next);
