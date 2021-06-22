@@ -5,7 +5,7 @@ void Simulation::P2G_Optimized_Parallel(){
 
     grid.v.resize(Nx*Ny*Nz); std::fill( grid.v.begin(), grid.v.end(), TV::Zero() );
     grid.mass.resize(Nx*Ny*Nz); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
-    grid.regularization.resize(Nx*Ny*Nz); std::fill( grid.regularization.begin(), grid.regularization.end(), 0.0 );
+    grid.reg_laplacian.resize(Nx*Ny*Nz); std::fill( grid.reg_laplacian.begin(), grid.reg_laplacian.end(), 0.0 );
 
     #pragma omp parallel num_threads(n_threads)
     {
@@ -31,7 +31,7 @@ void Simulation::P2G_Optimized_Parallel(){
                         if (weight > 1e-25){
                             grid_mass_local[ind(i,j,k)] += weight;
                             grid_v_local[ind(i,j,k)]    += particles.v[p] * weight;
-                            grid_reg_local[ind(i,j,k)]  += particles.eps_pl_dev[p] * laplace_wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx, one_over_dx_square);
+                            grid_reg_local[ind(i,j,k)]  += particles.reg_variable[p] * laplace_wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx, one_over_dx_square);
                         }
                     } // end for k
                 } // end for j
@@ -42,9 +42,9 @@ void Simulation::P2G_Optimized_Parallel(){
         #pragma omp critical
         {
             for (int l = 0; l<Nx*Ny*Nz; l++){
-                grid.mass[l]           += grid_mass_local[l];
-                grid.v[l]              += grid_v_local[l];
-                grid.regularization[l] += grid_reg_local[l];
+                grid.mass[l]          += grid_mass_local[l];
+                grid.v[l]             += grid_v_local[l];
+                grid.reg_laplacian[l] += grid_reg_local[l];
             } // end for l
         } // end omp critical
 

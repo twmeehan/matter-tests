@@ -15,26 +15,31 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         if (plastic_model == VonMises){
 
-            // Softening
-            T yield_stress = yield_stress_min + (yield_stress_orig - yield_stress_min) * exp(-xi * particles.eps_pl_dev[p]);
+            // Exponential Softening
+            // T yield_stress_local = yield_stress_min + (yield_stress_orig - yield_stress_min) * exp(-xi * particles.eps_pl_dev[p]);
+
+            // Linear Softening
+            T yield_stress_local = yield_stress_orig + xi * particles.eps_pl_dev[p];
 
             /////////// REGULARIZATION ///////////
-            // T yield_stress_reg =                yield_stress - reg_const_length_sq * particles.regularization(p);
-            T yield_stress_reg = std::max( (T)0.0, yield_stress - reg_const_length_sq * particles.regularization[p] );
-            if (yield_stress_reg < 0.0){
-                debug("NEGATIVE YIELD STRESS!!!");
-                exit = 1;
-                return;
-            }
+            T yield_stress = std::max( (T)1e-3, yield_stress_local + l_sq * particles.reg_laplacian[p] );
+            // if (yield_stress_reg < 0.0){
+            //     debug("NEGATIVE YIELD STRESS!!!");
+            //     exit = 1;
+            //     return;
+            // }
             //////////////////////////////////////
 
-            T delta_gamma = hencky_deviatoric_norm - yield_stress_reg / (2 * mu);
+            T delta_gamma = hencky_deviatoric_norm - yield_stress / (2 * mu);
             if (delta_gamma > 0){ // project to yield surface
                 plastic_count++;
                 hencky -= delta_gamma * (hencky_deviatoric / hencky_deviatoric_norm);
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                particles.eps_pl_dev[p] += delta_gamma;
+                particles.eps_pl_dev_inst[p]  = delta_gamma;
+                particles.eps_pl_dev[p]      += delta_gamma;
             }
+
+            particles.reg_variable[p] = 1.0;
         } // end VonMises
 
         else if (plastic_model == DPSimpleSoft){

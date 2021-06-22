@@ -15,7 +15,11 @@ public:
 
       eps_pl_dev.resize(Np);     std::fill( eps_pl_dev.begin(),     eps_pl_dev.end(),     0.0 );
       eps_pl_vol.resize(Np);     std::fill( eps_pl_vol.begin(),     eps_pl_vol.end(),     0.0 );
-      regularization.resize(Np); std::fill( regularization.begin(), regularization.end(), 0.0 );
+
+      eps_pl_dev_inst.resize(Np); std::fill( eps_pl_dev_inst.begin(), eps_pl_dev_inst.end(), 0.0 );
+
+      reg_variable.resize(Np); std::fill( reg_variable.begin(), reg_variable.end(), 0.0 );
+      reg_laplacian.resize(Np); std::fill( reg_laplacian.begin(), reg_laplacian.end(), 0.0 );
 
       tau.resize(Np); std::fill( tau.begin(), tau.end(), TM::Zero()     );
       F.resize(Np);   std::fill( F.begin(),   F.end(),   TM::Identity() );
@@ -29,7 +33,12 @@ public:
 
   std::vector<T> eps_pl_dev;
   std::vector<T> eps_pl_vol;
-  std::vector<T> regularization;
+
+  std::vector<T> eps_pl_dev_inst;
+
+  std::vector<T> reg_variable;
+  std::vector<T> reg_laplacian;
+
   std::vector<T> cohesion_proj;
 
   std::vector<TM> tau;
@@ -48,7 +57,7 @@ public:
         flip.resize(Nx*Ny*Nz); std::fill( flip.begin(), flip.end(), TV::Zero() );
 
         mass.resize(Nx*Ny*Nz);           std::fill( mass.begin(),           mass.end(),           0.0 );
-        regularization.resize(Nx*Ny*Nz); std::fill( regularization.begin(), regularization.end(), 0.0 );
+        reg_laplacian.resize(Nx*Ny*Nz); std::fill( reg_laplacian.begin(), reg_laplacian.end(), 0.0 );
     }
     std::vector<T> x;
     std::vector<T> y;
@@ -56,7 +65,7 @@ public:
     std::vector<TV> v;
     std::vector<TV> flip;
     std::vector<T> mass;
-    std::vector<T> regularization;
+    std::vector<T> reg_laplacian;
     T xc;
     T yc;
     T zc;

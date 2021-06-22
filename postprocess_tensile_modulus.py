@@ -12,7 +12,7 @@ figsize = (11, 6)
 # fontP = FontProperties()
 # fontP.set_size('x-small')
 
-folder_name = "/home/blatny/repos/larsiempm/build/dumps/threedim-basetest_E1e5_short/"
+folder_name = "/home/blatny/repos/larsiempm/build/dumps/threedim-test_m20/"
 file_name = 'out_part_frame_'
 Youngs = 1e5
 num_frames = 21
@@ -40,7 +40,7 @@ for i in range(0, num_frames):
     count = 0
     N = data.shape[0]
     for j in range(0, N):
-        if y[j] < 0.95 and y[j] > 0.05:
+        if y[j] < 0.90 and y[j] > 0.1:
             sum += data[j,15]
             count += 1
     tauyy[i] = sum / count
@@ -59,5 +59,5 @@ plt.ylabel(r'$\tau_{yy}$ [kPa]')
 #plt.ylim([0,2000])
 plt.locator_params(nbins=6)
 plt.legend()
-plt.savefig("tensile_modulus.eps", bbox_inches = 'tight')
+plt.savefig(folder_name + "tensile_modulus.eps", bbox_inches = 'tight')
 plt.close()

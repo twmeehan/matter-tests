@@ -41,7 +41,9 @@ public:
   T wave_speed;
   T cfl;
   T dx;
-  T L;
+  T Lx;
+  T Ly;
+  T Lz;
   T rho;
   TV gravity;
 
@@ -80,8 +82,7 @@ public:
 
   // Regularization by Laplacian
   T reg_length;
-  T reg_const;
-  T reg_const_length_sq;
+  T l_sq;
 
   // Objects
   T friction;

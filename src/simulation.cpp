@@ -28,9 +28,9 @@ void Simulation::initialize(T E, T nu, T density){
     rho = density;
 
     wave_speed = std::sqrt(E/rho);
-    dt_max = 0.2 * dx / wave_speed;
+    dt_max = 0.4 * dx / wave_speed;
 
-    particle_volume = std::pow(L, dim) / Np; // INITIAL particle volume V^0
+    particle_volume = Lx*Ly*Lz / Np; // INITIAL particle volume V^0
     particle_mass = rho * particle_volume;
 
     particles = Particles(Np);
@@ -84,8 +84,7 @@ void Simulation::simulate(){
              << yield_stress_min    << "\n"  // 9
              << friction_angle      << "\n"  // 10
              << cohesion            << "\n"  // 11
-             << reg_length          << "\n"  // 12
-             << reg_const           << "\n"; // 13
+             << reg_length          << "\n";  // 12
     infoFile.close();
 
     // Total runtime of simulation
@@ -94,7 +93,7 @@ void Simulation::simulate(){
     // Precomputations
     one_over_dx = 1.0 / dx;
     one_over_dx_square = one_over_dx * one_over_dx;
-    reg_const_length_sq = reg_const * reg_length * reg_length;
+    l_sq = reg_length * reg_length;
 
     // Precomputations for Drucker Prager
     T sin_phi = std::sin(friction_angle / 180.0 * M_PI);
@@ -151,7 +150,7 @@ void Simulation::advanceStep(){
     // calculateMassConservation();
     explicitEulerUpdate();
     // addExternalParticleGravity();
-    G2P();              // due to "regularization", G2P must come before deformationUpdate!!!
+    G2P();              // due to regularization", G2P must come before deformationUpdate!!!
     deformationUpdate();
     positionUpdate();
 }
@@ -404,27 +403,28 @@ void Simulation::saveParticleData(std::string extra){
             << "vz"          << ","   // 5
             << "eps_pl_dev"  << ","   // 6
             << "eps_pl_vol"  << ","   // 7
-            << "reg"         << ","   // 8
-            << "pressure"    << ","   // 9
-            << "devstress"   << ","   // 10
-            << "tau_xx"      << ","   // 11
-            << "tau_xy"      << ","   // 12
-            << "tau_xz"      << ","   // 13
-            << "tau_yx"      << ","   // 14
-            << "tau_yy"      << ","   // 15
-            << "tau_yz"      << ","   // 16
-            << "tau_zx"      << ","   // 17
-            << "tau_zy"      << ","   // 18
-            << "tau_zz"      << ","   // 19
-            << "Fe_xx"       << ","   // 20
-            << "Fe_xy"       << ","   // 21
-            << "Fe_xz"       << ","   // 22
-            << "Fe_yx"       << ","   // 23
-            << "Fe_yy"       << ","   // 24
-            << "Fe_yz"       << ","   // 25
-            << "Fe_zx"       << ","   // 26
-            << "Fe_zy"       << ","   // 27
-            << "Fe_zz"       << "\n"; // 28
+            << "reg_var"     << ","   // 8
+            << "reg_lap"     << ","   // 9
+            << "pressure"    << ","   // 10
+            << "devstress"   << ","   // 11
+            << "tau_xx"      << ","   // 12
+            << "tau_xy"      << ","   // 13
+            << "tau_xz"      << ","   // 14
+            << "tau_yx"      << ","   // 15
+            << "tau_yy"      << ","   // 16
+            << "tau_yz"      << ","   // 17
+            << "tau_zx"      << ","   // 18
+            << "tau_zy"      << ","   // 19
+            << "tau_zz"      << ","   // 20
+            << "Fe_xx"       << ","   // 21
+            << "Fe_xy"       << ","   // 22
+            << "Fe_xz"       << ","   // 23
+            << "Fe_yx"       << ","   // 24
+            << "Fe_yy"       << ","   // 25
+            << "Fe_yz"       << ","   // 26
+            << "Fe_zx"       << ","   // 27
+            << "Fe_zy"       << ","   // 28
+            << "Fe_zz"       << "\n"; // 29
 
     TM I = TM::Identity();
     TM volavg_tau = TM::Zero();
@@ -447,8 +447,6 @@ void Simulation::saveParticleData(std::string extra){
         TM tau_dev = tau + pressure * I;
         T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
 
-        T reg = reg_length * reg_length * particles.regularization[p];
-
         outFile << particles.x[p](0)          << ","   // 0
                 << particles.x[p](1)          << ","   // 1
                 << particles.x[p](2)          << ","   // 2
@@ -457,27 +455,28 @@ void Simulation::saveParticleData(std::string extra){
                 << particles.v[p](2)          << ","   // 5
                 << particles.eps_pl_dev[p]    << ","   // 6
                 << particles.eps_pl_vol[p]    << ","   // 7
-                << reg                        << ","   // 8
-                << pressure                   << ","   // 9
-                << devstress                  << ","   // 10
-                << tau(0,0)                   << ","   // 11
-                << tau(0,1)                   << ","   // 12
-                << tau(0,2)                   << ","   // 13
-                << tau(1,0)                   << ","   // 14
-                << tau(1,1)                   << ","   // 15
-                << tau(1,2)                   << ","   // 16
-                << tau(2,0)                   << ","   // 17
-                << tau(2,1)                   << ","   // 18
-                << tau(2,2)                   << ","   // 19
-                << Fe(0,0)                    << ","    // 20
-                << Fe(0,1)                    << ","    // 21
-                << Fe(0,2)                    << ","    // 22
-                << Fe(1,0)                    << ","    // 23
-                << Fe(1,1)                    << ","    // 24
-                << Fe(1,2)                    << ","    // 25
-                << Fe(2,0)                    << ","    // 26
-                << Fe(2,1)                    << ","    // 27
-                << Fe(2,2)                    << "\n";  // 28
+                << particles.reg_variable[p]  << ","   // 8
+                << particles.reg_laplacian[p] << ","   // 9
+                << pressure                   << ","   // 10
+                << devstress                  << ","   // 11
+                << tau(0,0)                   << ","   // 12
+                << tau(0,1)                   << ","   // 13
+                << tau(0,2)                   << ","   // 14
+                << tau(1,0)                   << ","   // 15
+                << tau(1,1)                   << ","   // 16
+                << tau(1,2)                   << ","   // 17
+                << tau(2,0)                   << ","   // 18
+                << tau(2,1)                   << ","   // 19
+                << tau(2,2)                   << ","   // 20
+                << Fe(0,0)                    << ","    // 21
+                << Fe(0,1)                    << ","    // 22
+                << Fe(0,2)                    << ","    // 23
+                << Fe(1,0)                    << ","    // 24
+                << Fe(1,1)                    << ","    // 25
+                << Fe(1,2)                    << ","    // 26
+                << Fe(2,0)                    << ","    // 27
+                << Fe(2,1)                    << ","    // 28
+                << Fe(2,2)                    << "\n";  // 29
     } // end loop over particles
 
     volavg_tau /= Jsum;
@@ -504,14 +503,14 @@ void Simulation::saveGridData(std::string extra){
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
             for(int k=0; k<Nz; k++){
-                outFile << grid.x[i]             << ","
-                        << grid.y[j]             << ","
-                        << grid.z[k]             << ","
-                        << grid.v[ind(i,j,k)](0) << ","
-                        << grid.v[ind(i,j,k)](1) << ","
-                        << grid.v[ind(i,j,k)](2) << ","
-                        << grid.mass[ind(i,j,k)] << ","
-                        << grid.regularization[ind(i,j,k)] << "\n";
+                outFile << grid.x[i]             << "," // 0
+                        << grid.y[j]             << "," // 1
+                        << grid.z[k]             << "," // 2
+                        << grid.v[ind(i,j,k)](0) << "," // 3
+                        << grid.v[ind(i,j,k)](1) << "," // 4
+                        << grid.v[ind(i,j,k)](2) << "," // 5
+                        << grid.mass[ind(i,j,k)] << "," // 6
+                        << grid.reg_laplacian[ind(i,j,k)] << "\n"; // 7
             }
         }
     }
@@ -666,7 +665,7 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
 
 // This function is to be used in explicitEulerUpdate after boundaryCollision
 void Simulation::overwriteGridVelocity(T xi, T yi, T zi, TV& vi){
-    T y_start = L - 0.25*dx;
+    T y_start = Ly - 0.25*dx;
     T width = 2*dx;
     T v_imp = 0.1; // positive value means tension
     if (yi > y_start - width + v_imp * time)
