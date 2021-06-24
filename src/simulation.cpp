@@ -35,7 +35,7 @@ void Simulation::initialize(T E, T nu, T density){
 
     particles = Particles(Np);
 
-
+    nonlocal_l_sq = nonlocal_l * nonlocal_l;
 }
 
 
@@ -84,7 +84,7 @@ void Simulation::simulate(){
              << yield_stress_min    << "\n"  // 9
              << friction_angle      << "\n"  // 10
              << cohesion            << "\n"  // 11
-             << reg_length          << "\n";  // 12
+             << nonlocal_l_sq       << "\n";  // 12
     infoFile.close();
 
     // Total runtime of simulation
@@ -93,7 +93,6 @@ void Simulation::simulate(){
     // Precomputations
     one_over_dx = 1.0 / dx;
     one_over_dx_square = one_over_dx * one_over_dx;
-    l_sq = reg_length * reg_length;
 
     // Precomputations for Drucker Prager
     T sin_phi = std::sin(friction_angle / 180.0 * M_PI);
@@ -150,8 +149,9 @@ void Simulation::advanceStep(){
     // calculateMassConservation();
     explicitEulerUpdate();
     // addExternalParticleGravity();
-    G2P();              // due to regularization", G2P must come before deformationUpdate!!!
+    G2P();
     deformationUpdate();
+    plasticity_projection();
     positionUpdate();
 }
 
@@ -403,28 +403,27 @@ void Simulation::saveParticleData(std::string extra){
             << "vz"          << ","   // 5
             << "eps_pl_dev"  << ","   // 6
             << "eps_pl_vol"  << ","   // 7
-            << "reg_var"     << ","   // 8
-            << "reg_lap"     << ","   // 9
-            << "pressure"    << ","   // 10
-            << "devstress"   << ","   // 11
-            << "tau_xx"      << ","   // 12
-            << "tau_xy"      << ","   // 13
-            << "tau_xz"      << ","   // 14
-            << "tau_yx"      << ","   // 15
-            << "tau_yy"      << ","   // 16
-            << "tau_yz"      << ","   // 17
-            << "tau_zx"      << ","   // 18
-            << "tau_zy"      << ","   // 19
-            << "tau_zz"      << ","   // 20
-            << "Fe_xx"       << ","   // 21
-            << "Fe_xy"       << ","   // 22
-            << "Fe_xz"       << ","   // 23
-            << "Fe_yx"       << ","   // 24
-            << "Fe_yy"       << ","   // 25
-            << "Fe_yz"       << ","   // 26
-            << "Fe_zx"       << ","   // 27
-            << "Fe_zy"       << ","   // 28
-            << "Fe_zz"       << "\n"; // 29
+            << "delta_gamma" << ","   // 8
+            << "pressure"    << ","   // 9
+            << "devstress"   << ","   // 10
+            << "tau_xx"      << ","   // 11
+            << "tau_xy"      << ","   // 12
+            << "tau_xz"      << ","   // 13
+            << "tau_yx"      << ","   // 14
+            << "tau_yy"      << ","   // 15
+            << "tau_yz"      << ","   // 16
+            << "tau_zx"      << ","   // 17
+            << "tau_zy"      << ","   // 18
+            << "tau_zz"      << ","   // 19
+            << "Fe_xx"       << ","   // 20
+            << "Fe_xy"       << ","   // 21
+            << "Fe_xz"       << ","   // 22
+            << "Fe_yx"       << ","   // 23
+            << "Fe_yy"       << ","   // 24
+            << "Fe_yz"       << ","   // 25
+            << "Fe_zx"       << ","   // 26
+            << "Fe_zy"       << ","   // 27
+            << "Fe_zz"       << "\n"; // 28
 
     TM I = TM::Identity();
     TM volavg_tau = TM::Zero();
@@ -455,28 +454,27 @@ void Simulation::saveParticleData(std::string extra){
                 << particles.v[p](2)          << ","   // 5
                 << particles.eps_pl_dev[p]    << ","   // 6
                 << particles.eps_pl_vol[p]    << ","   // 7
-                << particles.reg_variable[p]  << ","   // 8
-                << particles.reg_laplacian[p] << ","   // 9
-                << pressure                   << ","   // 10
-                << devstress                  << ","   // 11
-                << tau(0,0)                   << ","   // 12
-                << tau(0,1)                   << ","   // 13
-                << tau(0,2)                   << ","   // 14
-                << tau(1,0)                   << ","   // 15
-                << tau(1,1)                   << ","   // 16
-                << tau(1,2)                   << ","   // 17
-                << tau(2,0)                   << ","   // 18
-                << tau(2,1)                   << ","   // 19
-                << tau(2,2)                   << ","   // 20
-                << Fe(0,0)                    << ","    // 21
-                << Fe(0,1)                    << ","    // 22
-                << Fe(0,2)                    << ","    // 23
-                << Fe(1,0)                    << ","    // 24
-                << Fe(1,1)                    << ","    // 25
-                << Fe(1,2)                    << ","    // 26
-                << Fe(2,0)                    << ","    // 27
-                << Fe(2,1)                    << ","    // 28
-                << Fe(2,2)                    << "\n";  // 29
+                << particles.delta_gamma [p]  << ","   // 8
+                << pressure                   << ","   // 9
+                << devstress                  << ","   // 10
+                << tau(0,0)                   << ","   // 11
+                << tau(0,1)                   << ","   // 12
+                << tau(0,2)                   << ","   // 13
+                << tau(1,0)                   << ","   // 14
+                << tau(1,1)                   << ","   // 15
+                << tau(1,2)                   << ","   // 16
+                << tau(2,0)                   << ","   // 17
+                << tau(2,1)                   << ","   // 18
+                << tau(2,2)                   << ","   // 19
+                << Fe(0,0)                    << ","    // 20
+                << Fe(0,1)                    << ","    // 21
+                << Fe(0,2)                    << ","    // 22
+                << Fe(1,0)                    << ","    // 23
+                << Fe(1,1)                    << ","    // 24
+                << Fe(1,2)                    << ","    // 25
+                << Fe(2,0)                    << ","    // 26
+                << Fe(2,1)                    << ","    // 27
+                << Fe(2,2)                    << "\n";  // 28
     } // end loop over particles
 
     volavg_tau /= Jsum;
@@ -498,7 +496,7 @@ void Simulation::saveGridData(std::string extra){
                     << "vy"      << ","
                     << "vz"      << ","
                     << "mass"    << ","
-                    << "reg"     << "\n";
+                    << "delta_gamma" << "\n";
 
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
@@ -510,7 +508,7 @@ void Simulation::saveGridData(std::string extra){
                         << grid.v[ind(i,j,k)](1) << "," // 4
                         << grid.v[ind(i,j,k)](2) << "," // 5
                         << grid.mass[ind(i,j,k)] << "," // 6
-                        << grid.reg_laplacian[ind(i,j,k)] << "\n"; // 7
+                        << grid.delta_gamma[ind(i,j,k)] << "\n"; // 7
             }
         }
     }

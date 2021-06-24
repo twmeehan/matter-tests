@@ -47,12 +47,10 @@ void Simulation::G2P_Optimized(){
                     T weight = wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
                     vp               += grid.v[ind(i,j,k)]    * weight;
                     flipp            += grid.flip[ind(i,j,k)] * weight;
-                    regularization_p += grid.reg_laplacian[ind(i,j,k)] * weight;
                 } // end loop k
             } // end loop j
         } // end loop i
         particles.pic[p] = vp;
         particles.flip[p] = flipp;
-        particles.reg_laplacian[p] = regularization_p;
     } // end loop p
 } // end G2P_Optimized

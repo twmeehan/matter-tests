@@ -81,8 +81,8 @@ public:
   T cohesion;
 
   // Regularization by Laplacian
-  T reg_length;
-  T l_sq;
+  T nonlocal_l;
+  T nonlocal_l_sq;
 
   // Objects
   T friction;
@@ -123,6 +123,9 @@ public:
       void G2P_Optimized_Parallel();
       void deformationUpdate_Parallel();
       void explicitEulerUpdate_Optimized_Parallel();
+      void plasticity_projection();
+      void G2P_nonlocal();
+      void P2G_nonlocal();
   #endif
 
   void positionUpdate();

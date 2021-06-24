@@ -1,15 +1,13 @@
 #include "simulation.hpp"
 #include <omp.h>
 
-void Simulation::P2G_Optimized_Parallel(){
+void Simulation::P2G_nonlocal(){
 
-    grid.v.resize(Nx*Ny*Nz); std::fill( grid.v.begin(), grid.v.end(), TV::Zero() );
-    grid.mass.resize(Nx*Ny*Nz); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
+    grid.delta_gamma.resize(Nx*Ny*Nz); std::fill( grid.delta_gamma.begin(), grid.delta_gamma.end(), 0.0 );
 
     #pragma omp parallel num_threads(n_threads)
     {
-        std::vector<TV> grid_v_local(Nx*Ny*Nz, TV::Zero() );
-        std::vector<T> grid_mass_local(Nx*Ny*Nz);
+        std::vector<T> grid_delta_gamma_local(Nx*Ny*Nz);
 
         #pragma omp for
         for(int p = 0; p < Np; p++){
@@ -25,10 +23,8 @@ void Simulation::P2G_Optimized_Parallel(){
                     for(int k = k_base; k < k_base+4; k++){
                         T zi = grid.z[k];
                         T weight = wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
-
                         if (weight > 1e-25){
-                            grid_mass_local[ind(i,j,k)] += weight;
-                            grid_v_local[ind(i,j,k)]    += particles.v[p] * weight;
+                            grid_delta_gamma_local[ind(i,j,k)] += particles.delta_gamma[p] * weight;
                         }
                     } // end for k
                 } // end for j
@@ -39,28 +35,19 @@ void Simulation::P2G_Optimized_Parallel(){
         #pragma omp critical
         {
             for (int l = 0; l<Nx*Ny*Nz; l++){
-                grid.mass[l]          += grid_mass_local[l];
-                grid.v[l]             += grid_v_local[l];
+                grid.delta_gamma[l] += grid_delta_gamma_local[l];
             } // end for l
         } // end omp critical
 
     } // end omp parallel
 
-    ///////////////////////////////////////////////////////////
-    // At this point in time grid.mass is equal to m_i / m_p //
-    ///////////////////////////////////////////////////////////
-
     for (int l = 0; l<Nx*Ny*Nz; l++){
         T mi = grid.mass[l];
         if (mi > 0)
-            grid.v[l] /= mi;
+            grid.delta_gamma[l] /= (mi / particle_mass);
         else
-            grid.v[l].setZero();
+            grid.delta_gamma[l] = 0;
         //grid.v[l] = (mi > 0) ? grid.v[l]/mi : TV::Zero(); // condition ? result_if_true : result_if_false
-    }
-
-    for(auto&& m: grid.mass){
-        m *= particle_mass;
     }
 
 } // end P2G_Optimized_Parallel

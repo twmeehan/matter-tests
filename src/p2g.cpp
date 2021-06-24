@@ -38,7 +38,6 @@ void Simulation::P2G_Optimized(){
 
     grid.v.resize(Nx*Ny*Nz); std::fill( grid.v.begin(), grid.v.end(), TV::Zero() );
     grid.mass.resize(Nx*Ny*Nz); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
-    grid.reg_laplacian.resize(Nx*Ny*Nz); std::fill( grid.reg_laplacian.begin(), grid.reg_laplacian.end(), 0.0 );
 
     for(int p = 0; p < Np; p++){
         TV xp = particles.x[p];
@@ -57,7 +56,6 @@ void Simulation::P2G_Optimized(){
                     if (weight > 1e-25){
                         grid.mass[ind(i,j,k)]           += weight;
                         grid.v[ind(i,j,k)]              += particles.v[p] * weight;
-                        grid.reg_laplacian[ind(i,j,k)] += particles.reg_variable[p] * laplace_wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx, one_over_dx_square);
                     }
                 } // end for k
             } // end for j
