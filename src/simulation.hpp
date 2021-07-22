@@ -37,6 +37,7 @@ public:
   T frame_dt;
   T dt;
   T dt_max;
+  T dt_max_coeff;
   T flip_ratio;
   T wave_speed;
   T cfl;
@@ -59,9 +60,14 @@ public:
   unsigned int Nx, Ny, Nz;
   Grid grid;
   inline unsigned int ind(unsigned int i, unsigned int j, unsigned int k){
-      // return i*Ny + j; // 2D
       return (i*Ny + j) * Nz + k; // 3D
   }
+
+  // Remeshing Fixed Grid
+  T max_y_init;
+  T Ny_init;
+  T low_y_init;
+  T high_y_init;
 
   // Elastoplasticity
   T mu;
@@ -70,19 +76,25 @@ public:
   ElasticModel elastic_model;
   PlasticModel plastic_model;
   T xi;
+  T xi_nonloc;
 
   // Von Mises:
   T yield_stress_orig;
-  T yield_stress_min;
 
   // DPSimpleSoft
   T friction_angle;
   T alpha_K_d_over_2mu;
   T cohesion;
 
+ // QuadraticLars
+ T M;
+ T beta;
+ T p0;
+
   // Regularization by Laplacian
   T nonlocal_l;
   T nonlocal_l_sq;
+  unsigned int nonlocal_support;
 
   // Objects
   T friction;
@@ -98,10 +110,14 @@ public:
   T one_over_dx;
   T one_over_dx_square;
 
+  T mu_sqrt6;
+
   // Functions
   void advanceStep();
   void updateDt();
   void remesh();
+  void remeshFixedInit();
+  void remeshFixedCont();
 
   void P2G();
   void P2G_Baseline();
@@ -141,6 +157,8 @@ public:
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();
   void calculateMassConservation();
+
+  void validateRMA();
 
   void addExternalParticleGravity();
   std::pair<TMX, TMX> createExternalGridGravity();

@@ -46,9 +46,9 @@ public:
           return (x - x_object);
       else if (plate_type == right)
           return (x_object - x);
-      else if (plate_type == front)
-          return (z - z_object);
       else if (plate_type == back)
+          return (z - z_object);
+      else if (plate_type == front)
           return (z_object - z);
   }
 

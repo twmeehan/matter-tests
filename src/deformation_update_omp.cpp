@@ -4,6 +4,7 @@
 // Deformation gradient is updated based on the NEW GRID VELOCITIES and the OLD PARTICLE POSITIONS
 void Simulation::deformationUpdate_Parallel(){
 
+    std::fill( particles.delta_gamma.begin(), particles.delta_gamma.end(), 0.0 );
     unsigned int plastic_count = 0;
 
     #pragma omp parallel for reduction(+:plastic_count) num_threads(n_threads)

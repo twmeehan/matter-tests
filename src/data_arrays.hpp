@@ -16,10 +16,12 @@ public:
       eps_pl_dev.resize(Np);     std::fill( eps_pl_dev.begin(),     eps_pl_dev.end(),     0.0 );
       eps_pl_vol.resize(Np);     std::fill( eps_pl_vol.begin(),     eps_pl_vol.end(),     0.0 );
 
-      eps_pl_dev_inst.resize(Np); std::fill( eps_pl_dev_inst.begin(), eps_pl_dev_inst.end(), 0.0 );
+      yield_stress_orig.resize(Np); std::fill( yield_stress_orig.begin(), yield_stress_orig.end(), 0.0 );
 
-      delta_gamma.resize(Np); std::fill( delta_gamma.begin(), delta_gamma.end(), 0.0 );
-      hencky.resize(Np); std::fill( hencky.begin(), hencky.end(), TV::Zero() );
+      eps_pl_dev_nonloc.resize(Np);  std::fill( eps_pl_dev_nonloc.begin(),  eps_pl_dev_nonloc.end(),  0.0 );
+      delta_gamma_nonloc.resize(Np); std::fill( delta_gamma_nonloc.begin(), delta_gamma_nonloc.end(), 0.0 );
+      delta_gamma.resize(Np);        std::fill( delta_gamma.begin(),        delta_gamma.end(),        0.0 );
+      hencky.resize(Np);             std::fill( hencky.begin(),             hencky.end(),      TV::Zero() );
 
       tau.resize(Np); std::fill( tau.begin(), tau.end(), TM::Zero()     );
       F.resize(Np);   std::fill( F.begin(),   F.end(),   TM::Identity() );
@@ -34,8 +36,10 @@ public:
   std::vector<T> eps_pl_dev;
   std::vector<T> eps_pl_vol;
 
-  std::vector<T> eps_pl_dev_inst;
+  std::vector<T> yield_stress_orig;
 
+  std::vector<T> eps_pl_dev_nonloc;
+  std::vector<T> delta_gamma_nonloc;
   std::vector<T> delta_gamma;
   std::vector<TV> hencky;
 

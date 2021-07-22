@@ -23,7 +23,7 @@ typedef Eigen::Array<T,3,1> TA;
 
 enum PlateType { top, bottom, left, right, front, back};
 enum ElasticModel { StvkWithHencky, NeoHookean };
-enum PlasticModel { NoPlasticity, VonMises, DPSimpleSoft };
+enum PlasticModel { NoPlasticity, VonMises, DPSimpleSoft, QuadraticLars };
 enum BoundaryCondition { STICKY, SLIP };
 
 ///////////////////// TOOLS ////////////////////////
@@ -71,6 +71,10 @@ inline T selfDoubleDot(TM& A){
 unsigned int load_array(std::vector<TV>& array, std::string file_name);
 
 std::vector<T> linspace(T a, T b, size_t N);
+
+bool CamClayReturnMapping(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus);
+bool QuadraticReturnMapping(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus);
+bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta);
 
 #ifdef CUBICSPLINES
 

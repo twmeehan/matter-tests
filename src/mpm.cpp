@@ -2,11 +2,7 @@
 //#include "csv2abc.hpp"
 
 // TODO:
-//  * 3D
 //  * Complete doxygen
-//  * Alembic output
-//  * Boundary condition for Laplace? Basically using Dirichlet now
-//  * OMP-Parallilize explicit_euler_update
 //  * CUDA Parallilize
 //  * Position and def. grad update should be based on velocity before application of friction (but after collision). Problem for SLIP, not STICKY
 //////////////////////////////////////////////////////////////////
@@ -14,59 +10,70 @@
 int main(){
 
       Simulation sim;
-      sim.sim_name = "test_nolocal";
+      sim.sim_name = "test_3d_ql";
       sim.end_frame = 100;
-      sim.frame_dt = 1.0 / 300.0;
+      sim.frame_dt = 1.0 / 100.0;
       sim.gravity = TV::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.4;
-      sim.flip_ratio = 0.0;
+      sim.dt_max_coeff = 0.4;
+      sim.flip_ratio = 0.99;
       sim.n_threads = 24;
 
       sim.Lx = 1.0;
       sim.Ly = 2.0;
-      sim.Lz = 1.0;
+      sim.Lz = sim.Lx;
 
-      int Npx = 51;
-      int Npy = 101;
-      int Npz = 51;
+      int Npx = 30+1;
+      int Npy = 60+1;
+      int Npz = Npx;
 
       T dxp = sim.Lx / (Npx-1.0);
 
       sim.dx = 2.0 * dxp;
 
-      const unsigned int ppc = 8;  // 2D: ppc = 4
+      const unsigned int ppc = 4;
       sim.Np = Npx * Npy * Npz;
 
-      // sim.Np = 1762;
-      // sim.Np = 154360;
-      // sim.Np = 507022;
+      T vel_top = -0.02;
+      T vel_bot = 0.0;
+      T vel_left = 0.0;
+      T vel_right = 0.0;
+      T vel_back = 0.0;
+      T vel_front = 0.0;
 
-      // Convention below: The conditional operator returns TRUE if DILATION
-      T vel_top = -0.2;
-      T vel_bot = 0.2;
       std::string name;
-      name = "Compressor"; InfinitePlate compressor = InfinitePlate(0, sim.Ly, 0, 0, vel_top, 0,    top,  STICKY, name);  sim.objects.push_back(compressor);
-      name = "Ground";     InfinitePlate ground     = InfinitePlate(0, 0,      0, 0, vel_bot, 0, bottom,  STICKY, name);  sim.objects.push_back(ground);
-      sim.friction = 0.0; // currently only support zero friction
+      name = "Compressor"; InfinitePlate compressor = InfinitePlate(0, sim.Ly, 0,    0, vel_top, 0,       top, SLIP, name);  sim.objects.push_back(compressor);
+      name = "Ground";     InfinitePlate ground     = InfinitePlate(0, 0,      0,    0, vel_bot, 0,    bottom, SLIP, name);  sim.objects.push_back(ground);
 
-      sim.initialize(/* E */ 5e7, /* nu */ 0.0, /* rho */ 1000);
-      debug("Wave speed      = ", sim.wave_speed);
-      debug("dt_max          = ", sim.dt_max);
-      debug("particle_volume = ", sim.particle_volume);
-      debug("particle_mass   = ", sim.particle_mass);
-      debug("Np              = ", sim.Np);
+      name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0,      0, 0,    vel_left,  0, 0,    left, SLIP, name);  sim.objects.push_back(side_left);
+      name = "SideRight";  InfinitePlate side_right = InfinitePlate(sim.Lx, 0, 0,    vel_right, 0, 0,   right, SLIP, name);  sim.objects.push_back(side_right);
+
+      name = "SideBack";   InfinitePlate side_back  = InfinitePlate(0, 0, 0,         0, 0, vel_back,    back, SLIP, name);   sim.objects.push_back(side_back);
+      name = "SideFront";  InfinitePlate side_front = InfinitePlate(0, 0, sim.Lz,    0, 0, vel_front,   front, SLIP, name);  sim.objects.push_back(side_front);
+
+      sim.friction = 0.0; // currently only support zero friction
 
       // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
-      sim.plastic_model = VonMises;
-      sim.xi = 0; // for both VM and DP
+      // sim.plastic_model = VonMises;
+      sim.plastic_model = QuadraticLars;
+      // sim.plastic_model = NoPlasticity;
+      sim.beta = 0.43-0.40*0.3;
+      sim.M = 1.35;
+      sim.p0 = 50e3;
+      T ys = 50e3;
+      sim.xi = 1e20; //0.01; // 1e20;
+      sim.xi_nonloc = 0;
 
-      // Von Mises:
-      sim.yield_stress_orig = std::sqrt(2.0/3.0) * /* q_max */ 2e6;
-      sim.yield_stress_min  = std::sqrt(2.0/3.0) * /* q_max */ 2e6;
+      sim.nonlocal_l = 0;
 
-      // Regularization Nonlocal
-      sim.nonlocal_l = 0.1; //sim.dx;
+
+      sim.initialize(/* E */ 3e8, /* nu */ 0.3, /* rho */ 300);
+      debug("Wave speed       = ", sim.wave_speed);
+      debug("dt_max           = ", sim.dt_max);
+      debug("particle_volume  = ", sim.particle_volume);
+      debug("particle_mass    = ", sim.particle_mass);
+      debug("Np               = ", sim.Np);
 
       // Random samples from file
       //unsigned int Np = load_array(sim.particles.x, "/home/blatny/repos/phd-stuff/gold/output/microstructures/benchmarks/v4_N10000_phi03_mesh40_mc6_Lrve1_b50_mu1_typev_seed42/xyz_ext8_rand6.txt");
@@ -77,18 +84,6 @@ int main(){
       //     return 0;
       // }
 
-      // Initial state
-      sim.amplitude = 0.0;
-
-      // 2D:
-      // std::vector<T> disp_i(ppc); disp_i = {0.25, 0.75, 0.25, 0.75};
-      // std::vector<T> disp_j(ppc); disp_j = {0.25, 0.75, 0.75, 0.25};
-
-      // 3D
-      std::vector<T> disp_i(ppc); disp_i = {0.25, 0.75, 0.25, 0.75, 0.25, 0.75, 0.25, 0.75};
-      std::vector<T> disp_j(ppc); disp_j = {0.25, 0.75, 0.75, 0.25, 0.25, 0.75, 0.75, 0.25};
-      std::vector<T> disp_k(ppc); disp_k = {0.25, 0.25, 0.25, 0.25, 0.75, 0.75, 0.75, 0.75};
-
       int p = -1;
       for(int i = 0; i < Npx; i++){
           for(int j = 0; j < Npy; j++){
@@ -97,34 +92,23 @@ int main(){
 
                   // T px = (i+disp_i[d])*sim.dx;
                   // T py = (j+disp_j[d])*sim.dx;
-                  // T pz = (k+disp_k[d])*sim.dx; // 2D: pz = 0
-
                   T px = (i)*dxp;
                   T py = (j)*dxp;
-                  T pz = (k)*dxp; // 2D: pz = 0
+                  T pz = (k)*dxp;
 
-                  // CASE 3:
-                  // T pvx = sim.amplitude*std::sin( M_PI*(px-0.5) );
-                  // T pvy = sim.amplitude*std::sin( M_PI*(py-0.5) );
-                  // CASE 2:
-                  // T pvx = sim.amplitude * sim.frame_dt * sim.end_frame * px;
-                  // T pvy = sim.amplitude * sim.frame_dt * sim.end_frame * py ;
-                  // CASE 1:
-                  // T pvx = sim.amplitude * sim.frame_dt * sim.end_frame;
-                  // T pvy = sim.amplitude * sim.frame_dt * sim.end_frame;
-                  // CASE 0:
-                  T pvx = sim.amplitude;
-                  T pvy = sim.amplitude;
-                  T pvz = sim.amplitude;
                   sim.particles.x[p](0) = px;
                   sim.particles.x[p](1) = py;
                   sim.particles.x[p](2) = pz;
-                  sim.particles.v[p](0) = pvx;
-                  sim.particles.v[p](1) = pvy;
-                  sim.particles.v[p](2) = pvz;
+
+                  sim.particles.v[p](0) = 0;
+                  sim.particles.v[p](1) = 0;
+                  sim.particles.v[p](2) = 0;
+
+                  sim.particles.yield_stress_orig[p] = ys;
+
               } // end for k
-          } // end for i
-      } // end for j
+          } // end for j
+      } // end for i
       debug("Added particles = ", p);
       if ((p+1) != sim.Np){
           debug("Particle number mismatch!!!");
@@ -132,7 +116,7 @@ int main(){
       }
 
     sim.simulate();
-
+    // sim.validateRMA();
 
     ///////////// ALEMBIC TESTING: ////////////////
     /*

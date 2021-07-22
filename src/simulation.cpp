@@ -28,14 +28,17 @@ void Simulation::initialize(T E, T nu, T density){
     rho = density;
 
     wave_speed = std::sqrt(E/rho);
-    dt_max = 0.4 * dx / wave_speed;
+    dt_max = dt_max_coeff * dx / wave_speed;
 
     particle_volume = Lx*Ly*Lz / Np; // INITIAL particle volume V^0
     particle_mass = rho * particle_volume;
 
     particles = Particles(Np);
 
+    mu_sqrt6 = mu * std::sqrt((T)6);
+
     nonlocal_l_sq = nonlocal_l * nonlocal_l;
+    nonlocal_support = std::ceil(nonlocal_l / dx);
 }
 
 
@@ -58,33 +61,14 @@ void Simulation::simulate(){
         std::cout << "Directory " << sim_name << " created" << std::endl;
 
     // Write parameters to file for future reference
-    int emodel, pmodel;
-    if (elastic_model == StvkWithHencky)
-        emodel = 1;
-    else if (elastic_model == NeoHookean)
-        emodel = 2;
-    else
-        emodel = -1;
-    if (plastic_model == VonMises)
-        pmodel = 1;
-    else if (plastic_model == NoPlasticity)
-        pmodel = 2;
-    else
-        pmodel = -1;
     std::ofstream infoFile("dumps/" + sim_name + "/info.txt");
     infoFile << end_frame           << "\n"  // 0
              << frame_dt            << "\n"  // 1
              << dx                  << "\n"  // 2
              << mu                  << "\n"  // 3
              << lambda              << "\n"  // 4
-             << emodel              << "\n"  // 5
-             << pmodel              << "\n"  // 6
-             << xi                  << "\n"  // 7
-             << yield_stress_orig   << "\n"  // 8
-             << yield_stress_min    << "\n"  // 9
-             << friction_angle      << "\n"  // 10
-             << cohesion            << "\n"  // 11
-             << nonlocal_l_sq       << "\n";  // 12
+             << friction_angle      << "\n"  // 5
+             << nonlocal_l_sq       << "\n";  // 6
     infoFile.close();
 
     // Total runtime of simulation
@@ -143,7 +127,15 @@ void Simulation::simulate(){
 
 void Simulation::advanceStep(){
     updateDt();
-    remesh();
+
+    // remesh();
+
+    if (current_time_step == 0) {
+        remeshFixedInit();
+    } else {
+        remeshFixedCont();
+    }
+
     moveObjects();
     P2G();
     // calculateMassConservation();
@@ -151,7 +143,7 @@ void Simulation::advanceStep(){
     // addExternalParticleGravity();
     G2P();
     deformationUpdate();
-    plasticity_projection();
+    // plasticity_projection();
     positionUpdate();
 }
 
@@ -242,132 +234,6 @@ void Simulation::updateDt(){
 
 
 
-void Simulation::remesh(){
-
-    // ACTUAL min and max position of particles
-    auto max_x_it = std::max_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV &x1, const TV &x2 )
-                                             {
-                                                 return x1(0) < x2(0);
-                                             } );
-    T max_x = (*max_x_it)(0);
-    auto max_y_it = std::max_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV &x1, const TV &x2 )
-                                             {
-                                                 return x1(1) < x2(1);
-                                             } );
-    T max_y = (*max_y_it)(1);
-    auto max_z_it = std::max_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV &x1, const TV &x2 )
-                                             {
-                                                 return x1(2) < x2(2);
-                                             } );
-    T max_z = (*max_z_it)(2);
-    auto min_x_it = std::min_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV &x1, const TV &x2 )
-                                             {
-                                                 return x1(0) < x2(0);
-                                             } );
-    T min_x = (*min_x_it)(0);
-    auto min_y_it = std::min_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV &x1, const TV &x2 )
-                                             {
-                                                 return x1(1) < x2(1);
-                                             } );
-    T min_y = (*min_y_it)(1);
-    auto min_z_it = std::min_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV &x1, const TV &x2 )
-                                             {
-                                                 return x1(2) < x2(2);
-                                             } );
-    T min_z = (*min_z_it)(2);
-
-    // ///////////// DEBUG /////////////
-    // debug("max_x (iterator) = ", max_x);
-    // debug("max_y (iterator) = ", max_y);
-    // debug("min_x (iterator) = ", min_x);
-    // debug("min_y (iterator) = ", min_y);
-    //
-    // max_x = -1e15;
-    // for(int p=0; p<Np; p++){
-    //     if (particles.x[p](0) > max_x){
-    //         max_x = particles.x[p](0);
-    //     }
-    // }
-    // debug("max_x (debug)    = ", max_x);
-    //
-    // max_y = -1e15;
-    // for(int p=0; p<Np; p++){
-    //     if (particles.x[p](1) > max_y){
-    //         max_y = particles.x[p](1);
-    //     }
-    // }
-    // debug("max_y (debug)    = ", max_y);
-    //
-    // min_x = 1e15;
-    // for(int p=0; p<Np; p++){
-    //     if (particles.x[p](0) < min_x){
-    //         min_x = particles.x[p](0);
-    //     }
-    // }
-    // debug("min_x (debug)    = ", min_x);
-    //
-    // min_y = 1e15;
-    // for(int p=0; p<Np; p++){
-    //     if (particles.x[p](1) < min_y){
-    //         min_y = particles.x[p](1);
-    //     }
-    // }
-    // debug("min_y (debug)    = ", min_y);
-    // /////////////////////////////////
-
-    // ACTUAL (old) side lengths
-    T Lx = max_x - min_x;
-    T Ly = max_y - min_y;
-    T Lz = max_z - min_z;
-
-    // ACTUAL midpoints of particles
-    T mid_x = min_x + Lx / 2.0;
-    T mid_y = min_y + Ly / 2.0;
-    T mid_z = min_z + Lz / 2.0;
-
-    // NEW number of grid-dx's per side length
-    unsigned int safety_factor = 3;
-    Nx = std::ceil(Lx * one_over_dx) + safety_factor;
-    Ny = std::ceil(Ly * one_over_dx) + safety_factor;
-    Nz = std::ceil(Lz * one_over_dx) + safety_factor;
-
-    T low_x  = mid_x - Nx*dx/2.0;
-    T low_y  = mid_y - Ny*dx/2.0;
-    T low_z  = mid_z - Nz*dx/2.0;
-    T high_x = mid_x + Nx*dx/2.0;
-    T high_y = mid_y + Ny*dx/2.0;
-    T high_z = mid_z + Nz*dx/2.0;
-
-    // NEW grid dimensions N = (L / dx + 1)
-    Nx++;
-    Ny++;
-    Nz++;
-
-    debug(  "               grid   = (", Nx, ", ", Ny, ", ", Nz, ")"  );
-
-    // Linspace x and y
-    // Eigen:  LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
-    grid.x = linspace(low_x, high_x, Nx);
-    grid.y = linspace(low_y, high_y, Ny);
-    grid.z = linspace(low_z, high_z, Nz);
-
-    grid.xc = grid.x[0];
-    grid.yc = grid.y[0];
-    grid.zc = grid.z[0];
-
-    grid.v.resize(Nx*Ny*Nz);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
-    grid.flip.resize(Nx*Ny*Nz); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
-    grid.mass.resize(Nx*Ny*Nz); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
-
-}
-
-
 void Simulation::moveObjects(){
     for (InfinitePlate &obj : objects) {
         obj.move(dt, frame_dt, time);
@@ -401,29 +267,21 @@ void Simulation::saveParticleData(std::string extra){
             << "vx"          << ","   // 3
             << "vy"          << ","   // 4
             << "vz"          << ","   // 5
-            << "eps_pl_dev"  << ","   // 6
-            << "eps_pl_vol"  << ","   // 7
-            << "delta_gamma" << ","   // 8
-            << "pressure"    << ","   // 9
-            << "devstress"   << ","   // 10
-            << "tau_xx"      << ","   // 11
-            << "tau_xy"      << ","   // 12
-            << "tau_xz"      << ","   // 13
-            << "tau_yx"      << ","   // 14
-            << "tau_yy"      << ","   // 15
-            << "tau_yz"      << ","   // 16
-            << "tau_zx"      << ","   // 17
-            << "tau_zy"      << ","   // 18
-            << "tau_zz"      << ","   // 19
-            << "Fe_xx"       << ","   // 20
-            << "Fe_xy"       << ","   // 21
-            << "Fe_xz"       << ","   // 22
-            << "Fe_yx"       << ","   // 23
-            << "Fe_yy"       << ","   // 24
-            << "Fe_yz"       << ","   // 25
-            << "Fe_zx"       << ","   // 26
-            << "Fe_zy"       << ","   // 27
-            << "Fe_zz"       << "\n"; // 28
+            << "pressure"    << ","   // 6
+            << "devstress"   << ","   // 7
+            << "eps_pl_vol"  << ","   // 8
+            << "eps_pl_dev"  << ","   // 9
+            << "eps_pl_dev_nonloc"  << ","   // 10
+            << "delta_gamma"        << ","   // 11
+            << "delta_gamma_nonloc" << "\n";   // 12
+            // << "tau_xx"      << ","   // 13
+            // << "tau_xy"      << ","   // 14
+            // << "tau_yx"      << ","   // 15
+            // << "tau_yy"      << ","   // 16
+            // << "Fe_xx"       << ","   // 17
+            // << "Fe_xy"       << ","   // 18
+            // << "Fe_yx"       << ","   // 19
+            // << "Fe_yy"       << "\n";   // 20
 
     TM I = TM::Identity();
     TM volavg_tau = TM::Zero();
@@ -452,29 +310,21 @@ void Simulation::saveParticleData(std::string extra){
                 << particles.v[p](0)          << ","   // 3
                 << particles.v[p](1)          << ","   // 4
                 << particles.v[p](2)          << ","   // 5
-                << particles.eps_pl_dev[p]    << ","   // 6
-                << particles.eps_pl_vol[p]    << ","   // 7
-                << particles.delta_gamma [p]  << ","   // 8
-                << pressure                   << ","   // 9
-                << devstress                  << ","   // 10
-                << tau(0,0)                   << ","   // 11
-                << tau(0,1)                   << ","   // 12
-                << tau(0,2)                   << ","   // 13
-                << tau(1,0)                   << ","   // 14
-                << tau(1,1)                   << ","   // 15
-                << tau(1,2)                   << ","   // 16
-                << tau(2,0)                   << ","   // 17
-                << tau(2,1)                   << ","   // 18
-                << tau(2,2)                   << ","   // 19
-                << Fe(0,0)                    << ","    // 20
-                << Fe(0,1)                    << ","    // 21
-                << Fe(0,2)                    << ","    // 22
-                << Fe(1,0)                    << ","    // 23
-                << Fe(1,1)                    << ","    // 24
-                << Fe(1,2)                    << ","    // 25
-                << Fe(2,0)                    << ","    // 26
-                << Fe(2,1)                    << ","    // 27
-                << Fe(2,2)                    << "\n";  // 28
+                << pressure                   << ","   // 6
+                << devstress                  << ","   // 7
+                << particles.eps_pl_vol[p]    << ","   // 8
+                << particles.eps_pl_dev[p]    << ","   // 9
+                << particles.eps_pl_dev_nonloc[p]   << ","   // 10
+                << particles.delta_gamma[p]         << ","   // 11
+                << particles.delta_gamma_nonloc[p]  << "\n";   // 12
+                // << tau(0,0)                   << ","   // 13
+                // << tau(0,1)                   << ","   // 14
+                // << tau(1,0)                   << ","   // 15
+                // << tau(1,1)                   << ","   // 16
+                // << Fe(0,0)                    << ","    // 17
+                // << Fe(0,1)                    << ","    // 18
+                // << Fe(1,0)                    << ","    // 19
+                // << Fe(1,1)                    << "\n";  // 20
     } // end loop over particles
 
     volavg_tau /= Jsum;
@@ -659,6 +509,48 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
 // } // end boundaryCorrection
 
 
+void Simulation::validateRMA(){
+
+    if (mkdir("dumps", 0777) == -1)
+        std::cerr << "Directory dumps already created:  " << strerror(errno) << std::endl;
+    else
+        std::cout << "directory dumps created" << std::endl;
+    if (mkdir(("dumps/" + sim_name).c_str(), 0777) == -1)
+        std::cerr << "Directory " << sim_name << " already created: " << strerror(errno) << std::endl;
+    else
+        std::cout << "Directory " << sim_name << " created" << std::endl;
+
+    std::ofstream plastic_info; plastic_info.open("dumps/" + sim_name + "/plastic_info.txt");
+    plastic_info << M << "\n" << p0 << "\n" << beta << std::endl;
+    plastic_info.close();
+
+    // Trial state ENTER HERE
+    T p_trial = 100e4;
+    T q_trial = 200e4;
+
+    T trace_epsilon = -p_trial / K;
+    T norm_eps_hat = q_trial / mu_sqrt6;
+
+    std::ofstream steps; steps.open("dumps/" + sim_name + "/rma_steps.txt");
+    steps    << "0" << "\t" << p_trial << "\t" << q_trial << "\t" << "0" << std::endl;
+
+    bool outside = AnalQuadReturnMapping(p_trial, q_trial, exit, M, p0, beta);
+    // bool outside = QuadraticReturnMapping(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
+    // bool outside = CamClayReturnMapping(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
+
+    steps    << "1" << "\t" << p_trial << "\t" << q_trial << "\t" << "0" << std::endl;
+    steps.close();
+
+    std::cout << "outside  = " << outside << std::endl;
+    std::cout << "p_proj  = " << p_trial << std::endl;
+    std::cout << "q_proj  = " << q_trial << std::endl;
+
+    std::cout << "For this p, the correct q is " << 2.0*M / (2*beta+1.0) * (p0-p_trial)*(beta*p0+p_trial) / p0 << std::endl;
+    //std::cout << "For this p, the correct q is " << M * std::sqrt( (p0-p_trial)*(sbeta*p0+p_trial) / (2*beta+1.0) ) << std::endl;
+
+    std::cout << "---------------------------"  << std::endl;
+
+}
 
 
 // This function is to be used in explicitEulerUpdate after boundaryCollision
