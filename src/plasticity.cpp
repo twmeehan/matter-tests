@@ -54,9 +54,14 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // T p0_new = p0;
             T p0_new = p0 * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi));
 
+            T particle_beta = beta;
+            if (particles.eps_pl_dev[p] > 0){ // if this particle has at one point reached the yield surface
+                particle_beta = 0;
+            }
+
             // bool perform_rma =   CamClayReturnMapping(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, p0_new, beta, mu, K);
             // bool perform_rma = QuadraticReturnMapping(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, p0_new, beta, mu, K);
-            bool perform_rma = AnalQuadReturnMapping(p_stress, q_stress, exit, M, p0_new, beta); // p_stress, q_stress will now be the stress at n+1
+            bool perform_rma = AnalQuadReturnMapping(p_stress, q_stress, exit, M, p0_new, particle_beta); // p_stress, q_stress will now be the stress at n+1
 
             if (perform_rma) { // returns true if it performs a return mapping
                 plastic_count++;

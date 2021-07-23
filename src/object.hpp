@@ -6,20 +6,7 @@
 
 class InfinitePlate{
 public:
-  InfinitePlate() :
-                x_object(0.0),
-                y_object(0.0),
-                z_object(0.0),
-                vx_object(0.0),
-                vy_object(0.0),
-                vz_object(0.0),
-                vx_object_original(0.0),
-                vy_object_original(0.0),
-                vz_object_original(0.0),
-                plate_type(bottom),
-                bc(STICKY),
-                name("noname") {}
-  InfinitePlate(T x_object, T y_object, T z_object, T vx_object, T vy_object, T vz_object, PlateType plate_type, BoundaryCondition bc, std::string name) :
+  InfinitePlate(T x_object, T y_object, T z_object, T vx_object, T vy_object, T vz_object, T vmin_factor, T load_factor, PlateType plate_type, BoundaryCondition bc, std::string name) :
                 x_object(x_object),
                 y_object(y_object),
                 z_object(z_object),
@@ -29,6 +16,8 @@ public:
                 vx_object_original(vx_object),
                 vy_object_original(vy_object),
                 vz_object_original(vz_object),
+                vmin_factor(vmin_factor),
+                load_factor(load_factor),
                 plate_type(plate_type),
                 bc(bc),
                 name(name) {}
@@ -54,10 +43,11 @@ public:
 
   void move(T dt, T frame_dt, T time){
 
-      if (time < frame_dt) {
-          vx_object = (vx_object_original / frame_dt) * time;
-          vy_object = (vy_object_original / frame_dt) * time;
-          vz_object = (vz_object_original / frame_dt) * time;
+      T load_time = load_factor * frame_dt;
+      if (time < load_time) {
+          vx_object = vx_object_original / vmin_factor;
+          vy_object = vy_object_original / vmin_factor;
+          vz_object = vz_object_original / vmin_factor;
       }
       else{
           vx_object = vx_object_original;
@@ -82,62 +72,40 @@ public:
   T vy_object_original;
   T vz_object_original;
 
+  T vmin_factor;
+  T load_factor;
+
   BoundaryCondition bc;
   PlateType plate_type;
   std::string name;
 
 };
 
-// class InfinitePlate{
-// public:
-//   InfinitePlate() : x_object(0.0), y_object(0.0), vx_object(0.0), vy_object(0.0), name("InfinitePlate") {}
-//   InfinitePlate(std::string name) : x_object(0.0), y_object(0.0), vx_object(0.0), vy_object(0.0), name(name) {}
-//   InfinitePlate(T x_object, T y_object, T vx_object, T vy_object, std::string name) : x_object(x_object), y_object(y_object), vx_object(vx_object), vy_object(vy_object), name(name) {}
-//
-//   bool inside(T x, T y){
-//         return distance(x, y) <= 0; // inside if dist is negative
-//   }
-//
-//   virtual T distance(T x, T y){ return nan(""); }
-//
-//   void move(T dt){
-//       x_object += dt * vx_object;
-//       y_object += dt * vy_object;
-//   }
-//
-//   T x_object;
-//   T y_object;
-//   T vx_object;
-//   T vy_object;
-//   std::string name;
-//
-// };
-//
-//
-//
-//
+
 // class TopPlate : public InfinitePlate{
 // public:
-//   TopPlate() : InfinitePlate("TopPlate") {}
-//   TopPlate(T y_object, T vy_object) : InfinitePlate(0, y_object, 0, vy_object, "TopPlate") {}
+//   TopPlate(T y_object, T vy_object, BoundaryCondition bc) : InfinitePlate(0, y_object, 0, 0, vy_object, 0, top, bc, "TopPlate") {}
 //
-//   T distance(T x, T y) override {
+//   bool inside(T x, T y, T z){
+//       return distance(x,y,z) <= 0; // inside if dist is negative
+//   }
+//
+//   T distance(T x, T y, T z) {
 //       return (y_object - y);
 //   }
 //
-// };
+//   void move(T dt, T frame_dt, T time) {
 //
-//
-//
-// class BottomPlate : public InfinitePlate{
-// public:
-//   BottomPlate() : InfinitePlate("BottomPlate") {}
-//   BottomPlate(T y_object, T vy_object) : InfinitePlate(0, y_object, 0, vy_object, "BottomPlate") {}
-//
-//   T distance(T x, T y) override {
-//       return (y - y_object);
+//       if (time < frame_dt) {
+//           vy_object = (vy_object_original / frame_dt) * time;
+//       }
+//       else{
+//           vy_object = vy_object_original;
+//       }
+//       y_object += dt * vy_object;
 //   }
 //
 // };
+
 
 #endif  // OBJECT_HPP

@@ -10,11 +10,12 @@
 int main(){
 
       Simulation sim;
-      sim.sim_name = "test_3d_ql";
-      sim.end_frame = 100;
-      sim.frame_dt = 1.0 / 100.0;
+      sim.sim_name = "3d_ql_anal_soft_rho300_xi0.3";
+      sim.directory = "/media/blatny/harddrive4/larsie/"; // "dumps/";
+      sim.end_frame = 800;
+      sim.frame_dt = 1.0 / 120.0;
       sim.gravity = TV::Zero(); sim.gravity[1] = 0;
-      sim.cfl = 0.4;
+      sim.cfl = 0.6;
       sim.dt_max_coeff = 0.4;
       sim.flip_ratio = 0.99;
       sim.n_threads = 24;
@@ -31,25 +32,29 @@ int main(){
 
       sim.dx = 2.0 * dxp;
 
-      const unsigned int ppc = 4;
       sim.Np = Npx * Npy * Npz;
 
-      T vel_top = -0.02;
+      T vel_top = -0.2;
       T vel_bot = 0.0;
       T vel_left = 0.0;
       T vel_right = 0.0;
       T vel_back = 0.0;
       T vel_front = 0.0;
 
+      T vmin_factor = 25;
+      T load_factor = 75;
+
+      T offset = 0.1 * dxp;
+
       std::string name;
-      name = "Compressor"; InfinitePlate compressor = InfinitePlate(0, sim.Ly, 0,    0, vel_top, 0,       top, SLIP, name);  sim.objects.push_back(compressor);
-      name = "Ground";     InfinitePlate ground     = InfinitePlate(0, 0,      0,    0, vel_bot, 0,    bottom, SLIP, name);  sim.objects.push_back(ground);
+      name = "Compressor"; InfinitePlate compressor = InfinitePlate(0, sim.Ly + offset, 0,    0, vel_top, 0,     vmin_factor, load_factor,    top, SLIP, name);  sim.objects.push_back(compressor);
+      name = "Ground";     InfinitePlate ground     = InfinitePlate(0, 0      - offset, 0,    0, vel_bot, 0,               1,           0, bottom, SLIP, name);  sim.objects.push_back(ground);
 
-      name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0,      0, 0,    vel_left,  0, 0,    left, SLIP, name);  sim.objects.push_back(side_left);
-      name = "SideRight";  InfinitePlate side_right = InfinitePlate(sim.Lx, 0, 0,    vel_right, 0, 0,   right, SLIP, name);  sim.objects.push_back(side_right);
+      name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0      - offset, 0, 0,    vel_left,  0, 0,             1,           0,   left, SLIP, name);  sim.objects.push_back(side_left);
+      name = "SideRight";  InfinitePlate side_right = InfinitePlate(sim.Lx + offset, 0, 0,    vel_right, 0, 0,             1,           0,  right, SLIP, name);  sim.objects.push_back(side_right);
 
-      name = "SideBack";   InfinitePlate side_back  = InfinitePlate(0, 0, 0,         0, 0, vel_back,    back, SLIP, name);   sim.objects.push_back(side_back);
-      name = "SideFront";  InfinitePlate side_front = InfinitePlate(0, 0, sim.Lz,    0, 0, vel_front,   front, SLIP, name);  sim.objects.push_back(side_front);
+      name = "SideBack";   InfinitePlate side_back  = InfinitePlate(0, 0, 0      - offset,    0, 0, vel_back,              1,           0,  back,  SLIP, name);  sim.objects.push_back(side_back);
+      name = "SideFront";  InfinitePlate side_front = InfinitePlate(0, 0, sim.Lz + offset,    0, 0, vel_front,             1,           0,  front, SLIP, name);  sim.objects.push_back(side_front);
 
       sim.friction = 0.0; // currently only support zero friction
 
@@ -62,7 +67,7 @@ int main(){
       sim.M = 1.35;
       sim.p0 = 50e3;
       T ys = 50e3;
-      sim.xi = 1e20; //0.01; // 1e20;
+      sim.xi = 0.3; // 1e20;
       sim.xi_nonloc = 0;
 
       sim.nonlocal_l = 0;

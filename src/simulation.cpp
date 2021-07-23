@@ -42,7 +42,18 @@ void Simulation::initialize(T E, T nu, T density){
 }
 
 
+void Simulation::createDirectory(){
 
+    if (mkdir(directory.c_str(), 0777) == -1)
+        std::cerr << "Directory " << directory << " has already been created:  " << strerror(errno) << std::endl;
+    else
+        std::cout << "Directory " << directory << " was created now"<< std::endl;
+    if (mkdir((directory + sim_name).c_str(), 0777) == -1)
+        std::cerr << "Simulation " << sim_name << " has already been created: " << strerror(errno) << std::endl;
+    else
+        std::cout << "Simulation " << sim_name << " was created now" << std::endl;
+
+}
 
 void Simulation::simulate(){
 
@@ -50,18 +61,10 @@ void Simulation::simulate(){
     std::cout << "---------------- This is Larsie ---------------- " << std::endl;
     std::cout << "------------------------------------------------ " << std::endl;
 
-    // Create Directories:
-    if (mkdir("dumps", 0777) == -1)
-        std::cerr << "Directory dumps already created:  " << strerror(errno) << std::endl;
-    else
-        std::cout << "directory dumps created" << std::endl;
-    if (mkdir(("dumps/" + sim_name).c_str(), 0777) == -1)
-        std::cerr << "Directory " << sim_name << " already created: " << strerror(errno) << std::endl;
-    else
-        std::cout << "Directory " << sim_name << " created" << std::endl;
+    createDirectory();
 
     // Write parameters to file for future reference
-    std::ofstream infoFile("dumps/" + sim_name + "/info.txt");
+    std::ofstream infoFile(directory + sim_name + "/info.txt");
     infoFile << end_frame           << "\n"  // 0
              << frame_dt            << "\n"  // 1
              << dx                  << "\n"  // 2
@@ -228,6 +231,8 @@ void Simulation::updateDt(){
         exit = 1;
         return;
     }
+
+    assert(std::isfinite(dt));
 } // end updateDt
 
 
@@ -259,7 +264,7 @@ void Simulation::positionUpdate(){
 
 
 void Simulation::saveParticleData(std::string extra){
-    std::ofstream outFile("dumps/" + sim_name + "/out_part_frame_" + extra + std::to_string(frame) + ".csv");
+    std::ofstream outFile(directory + sim_name + "/out_part_frame_" + extra + std::to_string(frame) + ".csv");
 
     outFile << "x"           << ","   // 0
             << "y"           << ","   // 1
@@ -331,14 +336,14 @@ void Simulation::saveParticleData(std::string extra){
     T volavg_pressure = -volavg_tau.trace() / dim;
     TM volavg_tau_dev = volavg_tau + volavg_pressure * I;
     T volavg_devstress = std::sqrt(3.0/2.0 * selfDoubleDot(volavg_tau_dev));
-    std::ofstream outFile2("dumps/" + sim_name + "/out_pq_frame_" + extra + std::to_string(frame) + ".csv");
+    std::ofstream outFile2(directory + sim_name + "/out_pq_frame_" + extra + std::to_string(frame) + ".csv");
     outFile2 << volavg_pressure    << ","
              << volavg_devstress   << "\n";
 
 }
 
 void Simulation::saveGridData(std::string extra){
-    std::ofstream outFile("dumps/" + sim_name + "/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
+    std::ofstream outFile(directory + sim_name + "/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
     outFile         << "x"       << ","
                     << "y"       << ","
                     << "z"       << ","
@@ -511,16 +516,9 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
 
 void Simulation::validateRMA(){
 
-    if (mkdir("dumps", 0777) == -1)
-        std::cerr << "Directory dumps already created:  " << strerror(errno) << std::endl;
-    else
-        std::cout << "directory dumps created" << std::endl;
-    if (mkdir(("dumps/" + sim_name).c_str(), 0777) == -1)
-        std::cerr << "Directory " << sim_name << " already created: " << strerror(errno) << std::endl;
-    else
-        std::cout << "Directory " << sim_name << " created" << std::endl;
+    createDirectory();
 
-    std::ofstream plastic_info; plastic_info.open("dumps/" + sim_name + "/plastic_info.txt");
+    std::ofstream plastic_info; plastic_info.open(directory + sim_name + "/plastic_info.txt");
     plastic_info << M << "\n" << p0 << "\n" << beta << std::endl;
     plastic_info.close();
 
@@ -531,7 +529,7 @@ void Simulation::validateRMA(){
     T trace_epsilon = -p_trial / K;
     T norm_eps_hat = q_trial / mu_sqrt6;
 
-    std::ofstream steps; steps.open("dumps/" + sim_name + "/rma_steps.txt");
+    std::ofstream steps; steps.open(directory + sim_name + "/rma_steps.txt");
     steps    << "0" << "\t" << p_trial << "\t" << q_trial << "\t" << "0" << std::endl;
 
     bool outside = AnalQuadReturnMapping(p_trial, q_trial, exit, M, p0, beta);

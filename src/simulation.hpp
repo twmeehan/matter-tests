@@ -25,6 +25,7 @@ public:
   void saveGridData(std::string extra = "");
 
   std::string sim_name;
+  std::string directory;
 
   unsigned int dim;
   unsigned int n_threads;
@@ -113,6 +114,8 @@ public:
   T mu_sqrt6;
 
   // Functions
+  void createDirectory();
+  
   void advanceStep();
   void updateDt();
   void remesh();
