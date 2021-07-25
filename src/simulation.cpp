@@ -208,31 +208,39 @@ void Simulation::updateDt(){
     // debug("max_speed (debug)    = ", max_speed);
     // /////////////////////////////////
 
-    T dt_cfl = cfl * dx / max_speed;
-    dt = std::min(dt_cfl, dt_max);
-    dt = std::min(dt, frame_dt*(frame+1) - time);
-    dt = std::min(dt, final_time         - time);
-    debug("               dt_cfl = ", dt_cfl);
-    debug("               dt_max = ", dt_max);
-    debug("               dt     = ", dt    );
-
-    if (dt > dt_cfl){
-        debug("TIME STEP IS TOO BIG COMPARED TO CFL!!!");
-        exit = 1;
-        return;
-    }
-    if (dt > dt_max){
-        debug("TIME STEP IS TOO BIG COMPARED TO ELASTIC WAVE SPEED!!!");
-        exit = 1;
-        return;
-    }
     if (max_speed >= wave_speed){
         debug("DETECTED SPEED LARGER THAN ELASTIC WAVE SPEED!!!");
         exit = 1;
         return;
     }
 
-    assert(std::isfinite(dt));
+    debug("               dt_max = ", dt_max);
+
+    if (std::abs(max_speed) > 1e-10){
+        T dt_cfl = cfl * dx / max_speed;
+        debug("               dt_cfl = ", dt_cfl);
+        dt = std::min(dt_cfl, dt_max);
+    } else {
+        dt = dt_max;
+        debug("               dt_cfl = not computed, max_speed too low");
+    }
+
+    dt = std::min(dt, frame_dt*(frame+1) - time);
+    dt = std::min(dt, final_time         - time);
+
+    debug("               dt     = ", dt    );
+
+    // if (dt > dt_cfl){
+    //     debug("TIME STEP IS TOO BIG COMPARED TO CFL!!!");
+    //     exit = 1;
+    //     return;
+    // }
+    // if (dt > dt_max){
+    //     debug("TIME STEP IS TOO BIG COMPARED TO ELASTIC WAVE SPEED!!!");
+    //     exit = 1;
+    //     return;
+    // }
+
 } // end updateDt
 
 

@@ -313,9 +313,15 @@ bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta)
         p = max(min(p, max_p), min_p);
         q = min(max(q, T(0)), max_q);
 
-        assert((q * (1 + 2 * beta) + 2 * M * (p + beta * p0) * (p - p0) / p0) <= T(1e-3)); // yield surface, do not use precomps here!
-        assert(std::isfinite(p));
-        assert(std::isfinite(q));
+        T yield_function = q * (1 + 2 * beta) + 2 * M * (p + beta * p0) * (p - p0) / p0; // yield surface, do not use precomps here!
+        if (yield_function > T(1e-1)) {
+            debug("AnalQuadReturnMapping: yield_function = ", yield_function);
+            exit = 1;
+        }
+        if (!std::isfinite(p) || !std::isfinite(q)){
+            debug("AnalQuadReturnMapping: p or q not finite");
+            exit = 1;
+        }
         return true;
     }
     return false;

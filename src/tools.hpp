@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <assert.h>
 
 //// PARAMETERS ////
 typedef float T;

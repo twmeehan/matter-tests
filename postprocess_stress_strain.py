@@ -8,14 +8,19 @@ dpi = 200
 figsize = (6, 6)
 #################################
 
-basename = "/media/blatny/harddrive4/larsie/3d_ql_anal_rho300_"
+basename = "/media/blatny/harddrive4/larsie/3d_ql_anal_"
 
 
-names = ["xi0.3"]
+names = ["rho300_xi0.3", "soft_rho300_xi0.3"]
 vel = -0.2
 Ly = 2.0
+vmin_factor = 25;
+load_factor = 75;
+
+v_min = vel / vmin_factor
 
 #################################
+
 
 eps_ax_list = []
 mean_p_list = []
@@ -23,15 +28,20 @@ mean_q_list = []
 for name in names:
 
     info = np.loadtxt(basename + name + "/info.txt")
-    Np = np.loadtxt(basename + name + "/out_part_frame_0.csv", delimiter=",", skiprows=1).shape[0]
 
-    end_frame = 400 # int(info[0])
+    end_frame = int(info[0])
     frame_dt  = float(info[1])
     final_time = frame_dt * end_frame
     dx = float(info[2])
-
     frames = np.arange(0, end_frame+1) # last argument not included
-    eps_ax = vel * frames*frame_dt / Ly
+
+    eps_ax = np.zeros_like(frames).astype(float)
+    for n in range(0,len(frames)):
+        if n < load_factor:
+            eps_ax[n] =   v_min * frame_dt*n                                     / Ly
+        else:
+            eps_ax[n] = ( v_min * frame_dt*load_factor + vel * (n-load_factor) ) / Ly
+    # print(eps_ax)
 
     mean_p = np.zeros(end_frame+1)
     mean_q = np.zeros(end_frame+1)

@@ -5,6 +5,8 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <cmath>
+#include <assert.h>
 
 #include <vector>
 #include <chrono>
@@ -115,7 +117,7 @@ public:
 
   // Functions
   void createDirectory();
-  
+
   void advanceStep();
   void updateDt();
   void remesh();
