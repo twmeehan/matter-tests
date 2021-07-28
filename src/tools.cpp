@@ -228,6 +228,7 @@ bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta)
         T max_q = M / (2 * beta + 1) * T(0.5) * p0 * (1 + beta) * (1 + beta);
 
         T scale = max(-min_p, max(max_p, max_q));
+        //T scale = 1.0;
         T scale_inverse = 1 / scale;
         p0 *= scale_inverse;
         p *= scale_inverse;
@@ -274,21 +275,24 @@ bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta)
             debug("                   ... with these values: p0    = ", p0, ", p0*scale = ", p0 * scale, " Pa");
             debug("                   ... with these values: p     = ", p, ", p*scale  = ", p * scale, " Pa");
             debug("                   ... with these values: q     = ", q, ", q*scale  = ", q * scale, " Pa");
-            debug("Compare to: ");
-            debug("13.5*tmp12_over_tmp13 = ", 13.5 * tmp12_over_tmp13);
-            debug("4.5*tmp11*tmp91410    = ", 4.5 * tmp11 * tmp91410);
-            debug("tmp4_over_tmp3        = ", tmp4_over_tmp3);
+            debug("          Compare to: ");
+            debug("                  13.5*tmp12_over_tmp13 = ", 13.5 * tmp12_over_tmp13);
+            debug("                  4.5*tmp11*tmp91410    = ", 4.5 * tmp11 * tmp91410);
+            debug("                  tmp4_over_tmp3        = ", tmp4_over_tmp3);
             if (tmp2_inside < -1e-15) {
-                debug("AnalQuadReturnMapping: Square root of negative number, tmp2_inside = ", tmp2_inside);
+                debug("          tmp2_inside = ", tmp2_inside);
                 T assumption_1 =                          13.5 * tmp12_over_tmp13 - 4.5 * tmp11 * tmp91410 + tmp4_over_tmp3;
                 T assumption_2 = 0.5*sqrt(-tmp2_inside) + 13.5 * tmp12_over_tmp13 - 4.5 * tmp11 * tmp91410 + tmp4_over_tmp3;
-                if ( abs(assumption_1-assumption_2)/abs(assumption_1) < 1e-2 ){ // The relative mistake by neglecting tmp2 is less than 1 percent
+                if ( abs(assumption_1-assumption_2)/abs(assumption_1) < 1e-2 ){
                     tmp2_inside = 0;
+                    debug("                  The relative mistake by neglecting tmp2 is less than 1 percent");
                 } else {
-                exit = 1;
+                    debug("                  The relative mistake by neglecting tmp2 is NOT less than 1 percent");
+                    exit = 1;
                 }
             } else {
                 tmp2_inside = 0;
+                debug("                  Even though the inside of the square root is negative, it is so small, on the order of machine precision");
             }
         }
         T tmp2 = sqrt(tmp2_inside);
@@ -314,7 +318,7 @@ bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta)
         q = min(max(q, T(0)), max_q);
 
         T yield_function = q * (1 + 2 * beta) + 2 * M * (p + beta * p0) * (p - p0) / p0; // yield surface, do not use precomps here!
-        if (yield_function > T(1e-1)) {
+        if (yield_function > T(1)) {
             debug("AnalQuadReturnMapping: yield_function = ", yield_function);
             exit = 1;
         }

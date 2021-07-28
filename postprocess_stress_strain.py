@@ -5,11 +5,10 @@ plt.rcParams.update({'font.size': 12})
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 dpi = 200
-figsize = (6, 6)
+figsize = (5, 5.4)
 #################################
 
 basename = "/media/blatny/harddrive4/larsie/3d_ql_anal_"
-
 
 names = ["rho300_xi0.3", "soft_rho300_xi0.3"]
 vel = -0.2
@@ -30,7 +29,7 @@ for name in names:
     info = np.loadtxt(basename + name + "/info.txt")
 
     end_frame = int(info[0])
-    frame_dt  = float(info[1])
+    frame_dt  = 1.0 / float(info[1])
     final_time = frame_dt * end_frame
     dx = float(info[2])
     frames = np.arange(0, end_frame+1) # last argument not included
@@ -40,8 +39,8 @@ for name in names:
         if n < load_factor:
             eps_ax[n] =   v_min * frame_dt*n                                     / Ly
         else:
-            eps_ax[n] = ( v_min * frame_dt*load_factor + vel * (n-load_factor) ) / Ly
-    # print(eps_ax)
+            eps_ax[n] = ( v_min * frame_dt*load_factor + vel * frame_dt*(n-load_factor) ) / Ly
+    print(eps_ax)
 
     mean_p = np.zeros(end_frame+1)
     mean_q = np.zeros(end_frame+1)

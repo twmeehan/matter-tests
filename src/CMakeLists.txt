@@ -26,6 +26,7 @@ if (USE_OMP)
 				   g2p_nonlocal.cpp
 				   plasticity_projection.cpp
 				   remesh.cpp
+				   validate_rma.cpp
 			       )
 	find_package(OpenMP REQUIRED)
 	target_link_libraries (mpm OpenMP::OpenMP_CXX Eigen3::Eigen ${ALEMBIC_LIBRARIES})
@@ -43,6 +44,7 @@ else (USE_OMP)
 				   g2p_nonlocal.cpp
 				   plasticity_projection.cpp
 				   remesh.cpp
+				   validate_rma.cpp
 			       )
 	target_link_libraries (mpm Eigen3::Eigen ${ALEMBIC_LIBRARIES})
 endif (USE_OMP)

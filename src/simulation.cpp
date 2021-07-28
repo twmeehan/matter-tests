@@ -22,6 +22,8 @@ Simulation::Simulation(){
 void Simulation::initialize(T E, T nu, T density){
     dim = 3;
 
+    frame_dt = 1.0 / fps;
+
     lambda = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
     mu     = E / (2.0*(1.0+nu));
     K = lambda + 2.0 * mu / dim;
@@ -66,7 +68,7 @@ void Simulation::simulate(){
     // Write parameters to file for future reference
     std::ofstream infoFile(directory + sim_name + "/info.txt");
     infoFile << end_frame           << "\n"  // 0
-             << frame_dt            << "\n"  // 1
+             << fps                 << "\n"  // 1
              << dx                  << "\n"  // 2
              << mu                  << "\n"  // 3
              << lambda              << "\n"  // 4
@@ -522,41 +524,6 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
 // } // end boundaryCorrection
 
 
-void Simulation::validateRMA(){
-
-    createDirectory();
-
-    std::ofstream plastic_info; plastic_info.open(directory + sim_name + "/plastic_info.txt");
-    plastic_info << M << "\n" << p0 << "\n" << beta << std::endl;
-    plastic_info.close();
-
-    // Trial state ENTER HERE
-    T p_trial = 100e4;
-    T q_trial = 200e4;
-
-    T trace_epsilon = -p_trial / K;
-    T norm_eps_hat = q_trial / mu_sqrt6;
-
-    std::ofstream steps; steps.open(directory + sim_name + "/rma_steps.txt");
-    steps    << "0" << "\t" << p_trial << "\t" << q_trial << "\t" << "0" << std::endl;
-
-    bool outside = AnalQuadReturnMapping(p_trial, q_trial, exit, M, p0, beta);
-    // bool outside = QuadraticReturnMapping(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
-    // bool outside = CamClayReturnMapping(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
-
-    steps    << "1" << "\t" << p_trial << "\t" << q_trial << "\t" << "0" << std::endl;
-    steps.close();
-
-    std::cout << "outside  = " << outside << std::endl;
-    std::cout << "p_proj  = " << p_trial << std::endl;
-    std::cout << "q_proj  = " << q_trial << std::endl;
-
-    std::cout << "For this p, the correct q is " << 2.0*M / (2*beta+1.0) * (p0-p_trial)*(beta*p0+p_trial) / p0 << std::endl;
-    //std::cout << "For this p, the correct q is " << M * std::sqrt( (p0-p_trial)*(sbeta*p0+p_trial) / (2*beta+1.0) ) << std::endl;
-
-    std::cout << "---------------------------"  << std::endl;
-
-}
 
 
 // This function is to be used in explicitEulerUpdate after boundaryCollision

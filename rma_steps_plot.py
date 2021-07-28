@@ -11,8 +11,10 @@ elif int(sys.argv[1]) == 2: # MCC
 else:
     print("Unknown model")
 
-steps = np.loadtxt("dumps/" + name + "/rma_steps.txt")
-info = np.loadtxt("dumps/" + name + "/plastic_info.txt")
+directory = "/media/blatny/harddrive4/larsie/"
+
+steps = np.loadtxt(directory + name + "/rma_steps.txt")
+info = np.loadtxt(directory + name + "/plastic_info.txt")
 
 M    = info[0]
 p0   = info[1]
@@ -60,4 +62,8 @@ elif int(sys.argv[1]) == 1: # MCC
     plt.title("Quad Iter")
 elif int(sys.argv[1]) == 2: # MCC
     plt.title("MCC")
+
+plt.xlim([-1,1])
+plt.ylim([-0.1,10])
+
 plt.show()

@@ -11,9 +11,11 @@ int main(){
 
       Simulation sim;
       sim.sim_name = "3d_ql_anal_soft_rho300_xi0.3";
+      // sim.sim_name = "3d_elastic";
+      // sim.sim_name = "test_rma_quad_anal";
       sim.directory = "/media/blatny/harddrive4/larsie/"; // "dumps/";
       sim.end_frame = 800;
-      sim.frame_dt = 1.0 / 120.0;
+      sim.fps = 120;
       sim.gravity = TV::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
       sim.dt_max_coeff = 0.4;
@@ -66,11 +68,14 @@ int main(){
       sim.beta = 0.43-0.40*0.3;
       sim.M = 1.35;
       sim.p0 = 50e3;
-      T ys = 50e3;
-      sim.xi = 0.3; // 1e20;
-      sim.xi_nonloc = 0;
 
+      sim.xi = 0.3; // 1e20;
+
+      sim.xi_nonloc = 0;
       sim.nonlocal_l = 0;
+
+      T ys = 50e3;
+
 
 
       sim.initialize(/* E */ 3e8, /* nu */ 0.3, /* rho */ 300);

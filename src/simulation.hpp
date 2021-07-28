@@ -37,6 +37,7 @@ public:
   int exit;
   T time;
   T final_time;
+  T fps;
   T frame_dt;
   T dt;
   T dt_max;
