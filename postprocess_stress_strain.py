@@ -10,7 +10,7 @@ figsize = (5, 5.4)
 
 basename = "/media/blatny/harddrive4/larsie/3d_ql_anal_"
 
-names = ["rho300_xi0.3", "soft_rho300_xi0.3"]
+names = ["rho300_xi0.3", "soft_rho300_xi0.3", "soft_monforte", "soft_monforte_v3"]
 vel = -0.2
 Ly = 2.0
 vmin_factor = 25;
@@ -27,8 +27,9 @@ mean_q_list = []
 for name in names:
 
     info = np.loadtxt(basename + name + "/info.txt")
+    last_written = np.loadtxt(basename + name + "/last_written.txt").astype(int)
 
-    end_frame = int(info[0])
+    end_frame = last_written
     frame_dt  = 1.0 / float(info[1])
     final_time = frame_dt * end_frame
     dx = float(info[2])
@@ -37,10 +38,10 @@ for name in names:
     eps_ax = np.zeros_like(frames).astype(float)
     for n in range(0,len(frames)):
         if n < load_factor:
-            eps_ax[n] =   v_min * frame_dt*n                                     / Ly
+            eps_ax[n] =   v_min * frame_dt*n                                              / Ly
         else:
             eps_ax[n] = ( v_min * frame_dt*load_factor + vel * frame_dt*(n-load_factor) ) / Ly
-    print(eps_ax)
+    # print(eps_ax)
 
     mean_p = np.zeros(end_frame+1)
     mean_q = np.zeros(end_frame+1)
@@ -65,6 +66,9 @@ plt.ylabel(r'$\langle p \rangle$ [kPa]')
 plt.legend()
 plt.grid()
 
+plt.xlim([-0.0001,0.008])
+plt.ylim([-1,70])
+
 plt.subplot(212)
 for n in range(0, len(names)):
     plt.plot(-eps_ax_list[n], mean_q_list[n]/1e3, '.-', label = names[n].replace("_", " "))
@@ -72,5 +76,8 @@ plt.xlabel(r'$\epsilon_y$ [-]')
 plt.ylabel(r'$\langle q \rangle$ [kPa]')
 plt.legend()
 plt.grid()
+
+plt.xlim([-0.0001,0.008])
+plt.ylim([-1,70])
 
 plt.show()

@@ -341,6 +341,7 @@ void Simulation::saveParticleData(std::string extra){
                 // << Fe(1,0)                    << ","    // 19
                 // << Fe(1,1)                    << "\n";  // 20
     } // end loop over particles
+    outFile.close();
 
     volavg_tau /= Jsum;
     T volavg_pressure = -volavg_tau.trace() / dim;
@@ -349,8 +350,13 @@ void Simulation::saveParticleData(std::string extra){
     std::ofstream outFile2(directory + sim_name + "/out_pq_frame_" + extra + std::to_string(frame) + ".csv");
     outFile2 << volavg_pressure    << ","
              << volavg_devstress   << "\n";
+    outFile2.close();
 
-}
+    std::ofstream outFile3(directory + sim_name + "/last_written.txt");
+    outFile3 << std::to_string(frame) << "\n";
+    outFile3.close();
+
+} // end saveParticleData()
 
 void Simulation::saveGridData(std::string extra){
     std::ofstream outFile(directory + sim_name + "/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
@@ -374,10 +380,11 @@ void Simulation::saveGridData(std::string extra){
                         << grid.v[ind(i,j,k)](2) << "," // 5
                         << grid.mass[ind(i,j,k)] << "," // 6
                         << grid.delta_gamma[ind(i,j,k)] << "\n"; // 7
-            }
-        }
-    }
-}
+            } // end for k
+        } // end for j
+    } // end for i
+    outFile.close();
+} // end saveGridData()
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -270,7 +270,7 @@ bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta)
 
         T tmp2_inside = -4 * tmp8 + tmp6;
         if (tmp2_inside < 0) {
-            debug("AnalQuadReturnMapping: Square root of negative number, tmp2_inside = ", tmp2_inside);
+            debug("AnalQuadReturnMapping: WARNING Square root of negative number, tmp2_inside = ", tmp2_inside);
             debug("                   ... with these values: scale = ", scale);
             debug("                   ... with these values: p0    = ", p0, ", p0*scale = ", p0 * scale, " Pa");
             debug("                   ... with these values: p     = ", p, ", p*scale  = ", p * scale, " Pa");
@@ -287,7 +287,7 @@ bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta)
                     tmp2_inside = 0;
                     debug("                  The relative mistake by neglecting tmp2 is less than 1 percent");
                 } else {
-                    debug("                  The relative mistake by neglecting tmp2 is NOT less than 1 percent");
+                    debug("                  FATAL The relative mistake by neglecting tmp2 is NOT less than 1 percent");
                     exit = 1;
                 }
             } else {
@@ -299,7 +299,7 @@ bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta)
         T tmp1 = cbrt(0.5 * tmp2 + 13.5 * tmp12_over_tmp13 - 4.5 * tmp11 * tmp91410 + tmp4_over_tmp3);
 
         if (tmp1 < 1e-15){
-            debug("AnalQuadReturnMapping: tmp1 = ", tmp1);
+            debug("AnalQuadReturnMapping: FATAL tmp1 = ", tmp1);
             exit = 1;
         }
 
@@ -318,12 +318,15 @@ bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta)
         q = min(max(q, T(0)), max_q);
 
         T yield_function = q * (1 + 2 * beta) + 2 * M * (p + beta * p0) * (p - p0) / p0; // yield surface, do not use precomps here!
-        if (yield_function > T(1)) {
-            debug("AnalQuadReturnMapping: yield_function = ", yield_function);
-            exit = 1;
+        if (std::abs(yield_function) > T(5)) {
+            debug("AnalQuadReturnMapping: WARNING y(p,q) = ", yield_function, " at p = ", p, " and q = ", q);
+            if (yield_function*yield_function > T(1e-4)*(p*p+q*q)) {
+                debug("AnalQuadReturnMapping: FATAL y(p,q) = ", yield_function, " at p = ", p, " and q = ", q);
+                exit = 1;
+            }
         }
         if (!std::isfinite(p) || !std::isfinite(q)){
-            debug("AnalQuadReturnMapping: p or q not finite");
+            debug("AnalQuadReturnMapping: FATAL p or q not finite");
             exit = 1;
         }
         return true;

@@ -50,21 +50,48 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = p_stress;
             T q_trial = q_stress;
 
-            T particle_beta;
-            T particle_p0_hard;
-            if (particles.fail_crit[p]){ // if particle has failed
+            ////// ALT 1
+            // T particle_beta;
+            // T particle_p0_hard;
+            // if (particles.fail_crit[p]){ // if particle has failed
+            //     particle_beta = 0;
+            //     particle_p0_hard = 100 * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi));
+            // } else{
+            //     if (particles.eps_pl_vol[p] > 0){ //  if particle has not failed in the past, but fails now
+            //         particle_beta = 0;
+            //         particle_p0_hard = 100 * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi));
+            //         particles.fail_crit[p] = true;
+            //     } else{ // if particle still elastic
+            //         particle_beta = beta;
+            //         particle_p0_hard = p0  * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi));
+            //     }
+            // }
+
+            ////// ALT 2
+            // T particle_p0_hard = std::max(T(100), (T)(p0  * std::exp(0.0001 * xi * particles.eps_pl_vol[p])));
+            // T particle_pt_hard =              (beta * p0) * std::exp(      xi * particles.eps_pl_vol_abs[p]);
+            // T particle_beta = particle_pt_hard / particle_p0_hard;
+
+            ////// ALT 3
+            T p0_limit = 2e3;
+            T p0_min = 100;
+            T particle_p0_hard = p0;
+            T particle_beta = beta;
+            if (particles.eps_pl_dev[p] > 0){ // if plastic
+
                 particle_beta = 0;
-                particle_p0_hard = 100 * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi));
-            } else{
-                if (particles.eps_pl_vol[p] > 0){ //  if particle has not failed in the past, but fails now
-                    particle_beta = 0;
-                    particle_p0_hard = 100 * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi));
-                    particles.fail_crit[p] = true;
-                } else{ // if particle still elastic
-                    particle_beta = beta;
-                    particle_p0_hard = p0  * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi));
+
+                if (particles.fail_crit[p]){ // if finished with softening phase
+                    particle_p0_hard = std::max(p0_min, (T)(p0 * std::exp(-xi * particles.eps_pl_vol[p])));
+                } else { // softening continues
+                    particle_p0_hard = p0 * std::exp(-xi * particles.eps_pl_vol[p] - xi_nonloc * particles.eps_pl_dev[p]);
+                    if (particle_p0_hard < p0_limit){ // softening should stop
+                        particle_p0_hard = std::max(p0_min, (T)(p0 * std::exp(-xi * particles.eps_pl_vol[p])));
+                        particles.fail_crit[p] = true;
+                    }
                 }
-            }
+
+            } // end if plastic
 
             // bool perform_rma =   CamClayReturnMapping(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, p0_hard, beta, mu, K);
             // bool perform_rma = QuadraticReturnMapping(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, p0_hard, beta, mu, K);
@@ -81,6 +108,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 T ep = p_stress / (K*dim);
                 T eps_pl_vol_inst = hencky_trace + dim * ep;
                 particles.eps_pl_vol[p] += eps_pl_vol_inst;
+                particles.eps_pl_vol_abs[p] += std::abs(eps_pl_vol_inst);
 
                 hencky = q_stress / mu_sqrt6 * hencky_deviatoric - ep*TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();

@@ -16,6 +16,8 @@ public:
       eps_pl_dev.resize(Np);     std::fill( eps_pl_dev.begin(),     eps_pl_dev.end(),     0.0 );
       eps_pl_vol.resize(Np);     std::fill( eps_pl_vol.begin(),     eps_pl_vol.end(),     0.0 );
 
+      eps_pl_vol_abs.resize(Np);     std::fill( eps_pl_vol_abs.begin(),     eps_pl_vol_abs.end(),     0.0 );
+
       yield_stress_orig.resize(Np); std::fill( yield_stress_orig.begin(), yield_stress_orig.end(), 0.0 );
 
       fail_crit.resize(Np); std::fill( fail_crit.begin(), fail_crit.end(), false );
@@ -37,6 +39,8 @@ public:
 
   std::vector<T> eps_pl_dev;
   std::vector<T> eps_pl_vol;
+  std::vector<T> eps_pl_vol_abs;
+
 
   std::vector<T> yield_stress_orig;
 
