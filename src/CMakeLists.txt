@@ -13,20 +13,17 @@ if (USE_OMP)
 				   mpm.cpp
 			   	   simulation.cpp
 				   tools.cpp
-			       deformation_update.cpp
+				   remesh.cpp
 			       deformation_update_omp.cpp
 				   plasticity.cpp
-			       p2g.cpp
 			       p2g_omp.cpp
-			       g2p.cpp
 			       g2p_omp.cpp
-			       explicit_euler_update.cpp
 				   explicit_euler_update_omp.cpp
+				   boundary_collision.cpp
+				   validate_rma.cpp
+				   plasticity_projection.cpp
 				   p2g_nonlocal.cpp
 				   g2p_nonlocal.cpp
-				   plasticity_projection.cpp
-				   remesh.cpp
-				   validate_rma.cpp
 			       )
 	find_package(OpenMP REQUIRED)
 	target_link_libraries (mpm OpenMP::OpenMP_CXX Eigen3::Eigen ${ALEMBIC_LIBRARIES})
@@ -40,11 +37,10 @@ else (USE_OMP)
 			       p2g.cpp
 			       g2p.cpp
 			       explicit_euler_update.cpp
-				   p2g_nonlocal.cpp
-				   g2p_nonlocal.cpp
 				   plasticity_projection.cpp
 				   remesh.cpp
 				   validate_rma.cpp
+				   boundary_collision.cpp
 			       )
 	target_link_libraries (mpm Eigen3::Eigen ${ALEMBIC_LIBRARIES})
 endif (USE_OMP)

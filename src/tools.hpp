@@ -13,13 +13,23 @@
 //// PARAMETERS ////
 typedef float T;
 #define CUBICSPLINES
+// #define THREEDIM // Uncomment for 2D
+#define DIMENSION 2 // Needed for OMP collapse
 ////////////////////////
 
-typedef Eigen::Matrix<T, 3, 3> TM;
-typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> TMX;
-typedef Eigen::Matrix<T, 3, 1> TV;
-typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TVX;
-typedef Eigen::Array<T,3,1> TA;
+#ifdef THREEDIM
+    typedef Eigen::Matrix<T, 3, 3> TM;
+    typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> TMX;
+    typedef Eigen::Matrix<T, 3, 1> TV;
+    typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TVX;
+    typedef Eigen::Array<T,3,1> TA;
+#else
+    typedef Eigen::Matrix<T, 2, 2> TM;
+    typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> TMX;
+    typedef Eigen::Matrix<T, 2, 1> TV;
+    typedef Eigen::Matrix<T, Eigen::Dynamic, 1> TVX;
+    typedef Eigen::Array<T,2,1> TA;
+#endif
 ////////////////////////
 
 enum PlateType { top, bottom, left, right, front, back};
@@ -63,9 +73,16 @@ inline int sgn(T val) {
 }
 
 inline T selfDoubleDot(TM& A){
+
+    #ifdef THREEDIM
     T out = A(0,0)*A(0,0) + A(0,1)*A(0,1) + A(0,2)*A(0,2)
           + A(1,0)*A(1,0) + A(1,1)*A(1,1) + A(1,2)*A(1,2)
           + A(2,0)*A(2,0) + A(2,1)*A(2,1) + A(2,2)*A(2,2);
+    #else
+    T out = A(0,0)*A(0,0) + A(0,1)*A(0,1)
+          + A(1,0)*A(1,0) + A(1,1)*A(1,1);
+    #endif
+
     return out;
 }
 
@@ -162,24 +179,46 @@ bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta);
 #endif
 
 
+#ifdef THREEDIM
 
-inline T wip(T xp, T yp, T zp, T xi, T yi, T zi, T one_over_h){
-    return N( (xp - xi) * one_over_h ) * N( (yp - yi) * one_over_h ) * N( (zp - zi) * one_over_h );
-}
+    inline T wip(T xp, T yp, T zp, T xi, T yi, T zi, T one_over_h){
+        return N( (xp - xi) * one_over_h ) * N( (yp - yi) * one_over_h ) * N( (zp - zi) * one_over_h );
+    }
 
-inline TV grad_wip(T xp, T yp, T zp, T xi, T yi, T zi, T one_over_h){
-    TV out;
-    out << dNdu((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) * N((zp - zi) * one_over_h) * one_over_h,
-           dNdu((yp - yi) * one_over_h) * N((xp - xi) * one_over_h) * N((zp - zi) * one_over_h) * one_over_h,
-           dNdu((zp - zi) * one_over_h) * N((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) * one_over_h;
-    return out;
-}
+    inline TV grad_wip(T xp, T yp, T zp, T xi, T yi, T zi, T one_over_h){
+        TV out;
+        out << dNdu((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) * N((zp - zi) * one_over_h) * one_over_h,
+               dNdu((yp - yi) * one_over_h) * N((xp - xi) * one_over_h) * N((zp - zi) * one_over_h) * one_over_h,
+               dNdu((zp - zi) * one_over_h) * N((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) * one_over_h;
+        return out;
+    }
 
-inline T laplace_wip(T xp, T yp, T zp, T xi, T yi, T zi, T one_over_h, T one_over_h_square){
-    T term1 = d2Ndu2((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) *  N((zp - zi) * one_over_h);
-    T term2 = d2Ndu2((yp - yi) * one_over_h) * N((xp - xi) * one_over_h) *  N((zp - zi) * one_over_h);
-    T term3 = d2Ndu2((zp - zi) * one_over_h) * N((xp - xi) * one_over_h) *  N((yp - yi) * one_over_h);
-    return ( term1 + term2 + term3 ) * one_over_h_square;
-}
+    inline T laplace_wip(T xp, T yp, T zp, T xi, T yi, T zi, T one_over_h, T one_over_h_square){
+        T term1 = d2Ndu2((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) *  N((zp - zi) * one_over_h);
+        T term2 = d2Ndu2((yp - yi) * one_over_h) * N((xp - xi) * one_over_h) *  N((zp - zi) * one_over_h);
+        T term3 = d2Ndu2((zp - zi) * one_over_h) * N((xp - xi) * one_over_h) *  N((yp - yi) * one_over_h);
+        return ( term1 + term2 + term3 ) * one_over_h_square;
+    }
+
+#else // TWODIM
+
+    inline T wip(T xp, T yp, T xi, T yi, T one_over_h){
+        return N( (xp - xi) * one_over_h ) * N( (yp - yi) * one_over_h );
+    }
+
+    inline TV grad_wip(T xp, T yp, T xi, T yi, T one_over_h){
+        TV out;
+        out << dNdu((xp - xi) * one_over_h) * N((yp - yi) * one_over_h) * one_over_h,
+               dNdu((yp - yi) * one_over_h) * N((xp - xi) * one_over_h) * one_over_h;
+        return out;
+    }
+
+    inline T laplace_wip(T xp, T yp, T xi, T yi, T one_over_h, T one_over_h_square){
+        T term1 = d2Ndu2((xp - xi) * one_over_h) * N((yp - yi) * one_over_h);
+        T term2 = d2Ndu2((yp - yi) * one_over_h) * N((xp - xi) * one_over_h);
+        return ( term1 + term2 ) * one_over_h_square;
+    }
+
+#endif
 
 #endif  // TOOLS_HPP

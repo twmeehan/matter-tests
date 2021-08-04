@@ -3,34 +3,43 @@
 
 void Simulation::P2G_Optimized_Parallel(){
 
-    grid.v.resize(Nx*Ny*Nz); std::fill( grid.v.begin(), grid.v.end(), TV::Zero() );
-    grid.mass.resize(Nx*Ny*Nz); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
+    grid.v.resize(grid_nodes); std::fill( grid.v.begin(), grid.v.end(), TV::Zero() );
+    grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
 
     #pragma omp parallel num_threads(n_threads)
     {
-        std::vector<TV> grid_v_local(Nx*Ny*Nz, TV::Zero() );
-        std::vector<T> grid_mass_local(Nx*Ny*Nz);
+        std::vector<TV> grid_v_local(grid_nodes, TV::Zero() );
+        std::vector<T> grid_mass_local(grid_nodes);
 
         #pragma omp for
         for(int p = 0; p < Np; p++){
             TV xp = particles.x[p];
             unsigned int i_base = std::floor((xp(0)-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
             unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1;
+        #ifdef THREEDIM
             unsigned int k_base = std::floor((xp(2)-grid.zc)*one_over_dx) - 1;
+        #endif
 
             for(int i = i_base; i < i_base+4; i++){
                 T xi = grid.x[i];
                 for(int j = j_base; j < j_base+4; j++){
                     T yi = grid.y[j];
+        #ifdef THREEDIM
                     for(int k = k_base; k < k_base+4; k++){
                         T zi = grid.z[k];
                         T weight = wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
-
                         if (weight > 1e-25){
                             grid_mass_local[ind(i,j,k)] += weight;
                             grid_v_local[ind(i,j,k)]    += particles.v[p] * weight;
                         }
                     } // end for k
+        #else
+                    T weight = wip(xp(0), xp(1), xi, yi, one_over_dx);
+                    if (weight > 1e-25){
+                        grid_mass_local[ind(i,j)] += weight;
+                        grid_v_local[ind(i,j)]    += particles.v[p] * weight;
+                    }
+        #endif
                 } // end for j
             } // end for i
         } // end for p
@@ -38,7 +47,7 @@ void Simulation::P2G_Optimized_Parallel(){
 
         #pragma omp critical
         {
-            for (int l = 0; l<Nx*Ny*Nz; l++){
+            for (int l = 0; l<grid_nodes; l++){
                 grid.mass[l]          += grid_mass_local[l];
                 grid.v[l]             += grid_v_local[l];
             } // end for l
@@ -50,7 +59,7 @@ void Simulation::P2G_Optimized_Parallel(){
     // At this point in time grid.mass is equal to m_i / m_p //
     ///////////////////////////////////////////////////////////
 
-    for (int l = 0; l<Nx*Ny*Nz; l++){
+    for (int l = 0; l<grid_nodes; l++){
         T mi = grid.mass[l];
         if (mi > 0)
             grid.v[l] /= mi;

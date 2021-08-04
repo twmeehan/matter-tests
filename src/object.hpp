@@ -6,40 +6,76 @@
 
 class InfinitePlate{
 public:
-  InfinitePlate(T x_object, T y_object, T z_object, T vx_object, T vy_object, T vz_object, T vmin_factor, T load_factor, PlateType plate_type, BoundaryCondition bc, std::string name) :
-                x_object(x_object),
-                y_object(y_object),
-                z_object(z_object),
-                vx_object(vx_object),
-                vy_object(vy_object),
-                vz_object(vz_object),
-                vx_object_original(vx_object),
-                vy_object_original(vy_object),
-                vz_object_original(vz_object),
-                vmin_factor(vmin_factor),
-                load_factor(load_factor),
-                plate_type(plate_type),
-                bc(bc),
-                name(name) {}
 
-  bool inside(T x, T y, T z){
-      return distance(x, y, z) <= 0; // inside if dist is negative
-  }
+#ifdef THREEDIM
 
-  T distance(T x, T y, T z){
-      if (plate_type == bottom)
-        return (y - y_object);
-      else if (plate_type == top)
-          return (y_object - y);
-      else if (plate_type == left)
-          return (x - x_object);
-      else if (plate_type == right)
-          return (x_object - x);
-      else if (plate_type == back)
-          return (z - z_object);
-      else if (plate_type == front)
-          return (z_object - z);
-  }
+    InfinitePlate(T x_object, T y_object, T z_object, T vx_object, T vy_object, T vz_object, T vmin_factor, T load_factor, PlateType plate_type, BoundaryCondition bc, std::string name) :
+              x_object(x_object),
+              y_object(y_object),
+              z_object(z_object),
+              vx_object(vx_object),
+              vy_object(vy_object),
+              vz_object(vz_object),
+              vx_object_original(vx_object),
+              vy_object_original(vy_object),
+              vz_object_original(vz_object),
+              vmin_factor(vmin_factor),
+              load_factor(load_factor),
+              plate_type(plate_type),
+              bc(bc),
+              name(name) {}
+
+    bool inside(T x, T y, T z){
+        return distance(x, y, z) <= 0; // inside if dist is negative
+    }
+
+    T distance(T x, T y, T z){
+        if (plate_type == bottom)
+          return (y - y_object);
+        else if (plate_type == top)
+            return (y_object - y);
+        else if (plate_type == left)
+            return (x - x_object);
+        else if (plate_type == right)
+            return (x_object - x);
+        else if (plate_type == back)
+            return (z - z_object);
+        else if (plate_type == front)
+            return (z_object - z);
+    }
+
+#else // TWODIM
+
+    InfinitePlate(T x_object, T y_object, T vx_object, T vy_object, T vmin_factor, T load_factor, PlateType plate_type, BoundaryCondition bc, std::string name) :
+              x_object(x_object),
+              y_object(y_object),
+              vx_object(vx_object),
+              vy_object(vy_object),
+              vx_object_original(vx_object),
+              vy_object_original(vy_object),
+              vmin_factor(vmin_factor),
+              load_factor(load_factor),
+              plate_type(plate_type),
+              bc(bc),
+              name(name) {}
+
+    bool inside(T x, T y){
+        return distance(x, y) <= 0; // inside if dist is negative
+    }
+
+    T distance(T x, T y){
+        if (plate_type == bottom)
+          return (y - y_object);
+        else if (plate_type == top)
+            return (y_object - y);
+        else if (plate_type == left)
+            return (x - x_object);
+        else if (plate_type == right)
+            return (x_object - x);
+    }
+
+#endif
+
 
   void move(T dt, T frame_dt, T time){
 
@@ -47,30 +83,42 @@ public:
       if (time < load_time) {
           vx_object = vx_object_original / vmin_factor;
           vy_object = vy_object_original / vmin_factor;
+          #ifdef THREEDIM
           vz_object = vz_object_original / vmin_factor;
+          #endif
       }
       else{
           vx_object = vx_object_original;
           vy_object = vy_object_original;
+          #ifdef THREEDIM
           vz_object = vz_object_original;
+          #endif
       }
 
       x_object += dt * vx_object;
       y_object += dt * vy_object;
+      #ifdef THREEDIM
       z_object += dt * vz_object;
+      #endif
   }
 
   T x_object;
   T y_object;
-  T z_object;
+  #ifdef THREEDIM
+    T z_object;
+  #endif
 
   T vx_object;
   T vy_object;
-  T vz_object;
+  #ifdef THREEDIM
+    T vz_object;
+  #endif
 
   T vx_object_original;
   T vy_object_original;
-  T vz_object_original;
+  #ifdef THREEDIM
+    T vz_object_original;
+  #endif
 
   T vmin_factor;
   T load_factor;
@@ -80,6 +128,13 @@ public:
   std::string name;
 
 };
+
+
+#endif  // OBJECT_HPP
+
+
+
+
 
 
 // class TopPlate : public InfinitePlate{
@@ -106,6 +161,3 @@ public:
 //   }
 //
 // };
-
-
-#endif  // OBJECT_HPP

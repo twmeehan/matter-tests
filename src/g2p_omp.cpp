@@ -19,18 +19,26 @@ void Simulation::G2P_Optimized_Parallel(){
             TV flipp = TV::Zero();
             unsigned int i_base = std::floor((xp(0)-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
             unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1;
+        #ifdef THREEDIM
             unsigned int k_base = std::floor((xp(2)-grid.zc)*one_over_dx) - 1;
+        #endif
 
             for(int i = i_base; i < i_base+4; i++){
                 T xi = grid.x[i];
                 for(int j = j_base; j < j_base+4; j++){
                     T yi = grid.y[j];
+        #ifdef THREEDIM
                     for(int k = k_base; k < k_base+4; k++){
                         T zi = grid.z[k];
                         T weight = wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
                         vp               += grid.v[ind(i,j,k)]    * weight;
                         flipp            += grid.flip[ind(i,j,k)] * weight;
                     } // end loop k
+        #else
+                    T weight = wip(xp(0), xp(1), xi, yi, one_over_dx);
+                    vp               += grid.v[ind(i,j)]    * weight;
+                    flipp            += grid.flip[ind(i,j)] * weight;
+        #endif
                 } // end loop j
             } // end loop i
             particles_pic_local[p]  = vp;

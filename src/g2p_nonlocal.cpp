@@ -19,12 +19,15 @@ void Simulation::G2P_nonlocal(){
             T divisor_p = 0;
             unsigned int i_base = std::floor((xp(0)-grid.xc)*one_over_dx) - (nonlocal_support-1); // the subtraction of one is valid for both quadratic and cubic splines
             unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - (nonlocal_support-1);
+#ifdef THREEDIM
             unsigned int k_base = std::floor((xp(2)-grid.zc)*one_over_dx) - (nonlocal_support-1);
+#endif
 
             for(int i = i_base; i < i_base+(2*nonlocal_support); i++){
                 T xi = grid.x[i];
                 for(int j = j_base; j < j_base+(2*nonlocal_support); j++){
                     T yi = grid.y[j];
+#ifdef THREEDIM
                     for(int k = k_base; k < k_base+(2*nonlocal_support); k++){
                         T zi = grid.z[j];
                         T dist_norm_sq = (xp(0)-xi)*(xp(0)-xi) + (xp(1)-yi)*(xp(1)-yi) + (xp(2)-zi)*(xp(2)-zi);
@@ -35,6 +38,15 @@ void Simulation::G2P_nonlocal(){
                             divisor_p     += kernel * mi;
                         } // end if
                     } // end loop k
+#else
+                    T dist_norm_sq = (xp(0)-xi)*(xp(0)-xi) + (xp(1)-yi)*(xp(1)-yi);
+                    if (dist_norm_sq <= nonlocal_l_sq){
+                        T kernel = std::exp(-4 * dist_norm_sq / nonlocal_l_sq);
+                        T mi = grid.mass[ind(i,j)];
+                        delta_gamma_p += grid.delta_gamma[ind(i,j)] * kernel * mi;
+                        divisor_p     += kernel * mi;
+                    } // end if
+#endif
                 } // end loop j
             } // end loop i
 

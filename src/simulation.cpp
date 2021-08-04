@@ -11,17 +11,12 @@ Simulation::Simulation(){
     runtime_euler = 0;
     runtime_defgrad = 0;
 
-    // Default values
-    Nx = 3;
-    Ny = 3;
-    Nz = 3;
-    grid = Grid(Nx, Ny, Nz);
+    // create grid
+    grid = Grid();
 }
 
 
 void Simulation::initialize(T E, T nu, T density){
-    dim = 3;
-
     frame_dt = 1.0 / fps;
 
     lambda = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
@@ -32,15 +27,20 @@ void Simulation::initialize(T E, T nu, T density){
     wave_speed = std::sqrt(E/rho);
     dt_max = dt_max_coeff * dx / wave_speed;
 
-    particle_volume = Lx*Ly*Lz / Np; // INITIAL particle volume V^0
-    particle_mass = rho * particle_volume;
-
     particles = Particles(Np);
 
-    mu_sqrt6 = mu * std::sqrt((T)6);
+#ifdef THREEDIM
+    particle_volume = Lx*Ly*Lz / Np; // INITIAL particle volume V^0
+#else
+    particle_volume = Lx*Ly / Np;
+#endif
+    particle_mass = rho * particle_volume;
 
     nonlocal_l_sq = nonlocal_l * nonlocal_l;
     nonlocal_support = std::ceil(nonlocal_l / dx);
+
+    mu_sqrt6 = mu * std::sqrt((T)6);
+
 }
 
 
@@ -96,7 +96,7 @@ void Simulation::simulate(){
     frame = 0;
     final_time = end_frame * frame_dt;
     saveParticleData();
-    saveGridData();
+    // saveGridData();
     while (frame < end_frame){
         std::cout << "Step: " << current_time_step << "    Time: " << time << std::endl;
         advanceStep();
@@ -108,15 +108,15 @@ void Simulation::simulate(){
             frame++;
             std::cout << "Saving frame " << frame << std::endl;
             saveParticleData();
-            saveGridData();
+            // saveGridData();
         }
         if (std::abs(final_time-time) < 1e-15 || final_time < time){
             std::cout << "The simulation ended successfully at time = " << time << std::endl;
+            saveParticleData();
+            // saveGridData();
             break;
         }
     }
-    saveParticleData();
-    saveGridData();
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "Simulation took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " milliseconds" << std::endl;
@@ -321,16 +321,24 @@ void Simulation::saveParticleData(std::string extra){
 
         outFile << particles.x[p](0)          << ","   // 0
                 << particles.x[p](1)          << ","   // 1
+            #ifdef THREEDIM
                 << particles.x[p](2)          << ","   // 2
+            #else
+                << 0                          << ","
+            #endif
                 << particles.v[p](0)          << ","   // 3
                 << particles.v[p](1)          << ","   // 4
+            #ifdef THREEDIM
                 << particles.v[p](2)          << ","   // 5
+            #else
+                << 0                          << ","
+            #endif
                 << pressure                   << ","   // 6
                 << devstress                  << ","   // 7
                 << particles.eps_pl_vol[p]    << ","   // 8
                 << particles.eps_pl_dev[p]    << ","   // 9
-                << particles.eps_pl_dev_nonloc[p]   << ","   // 10
-                << particles.delta_gamma[p]         << ","   // 11
+                << particles.eps_pl_dev_nonloc[p]   << ","     // 10
+                << particles.delta_gamma[p]         << ","     // 11
                 << particles.delta_gamma_nonloc[p]  << "\n";   // 12
                 // << tau(0,0)                   << ","   // 13
                 // << tau(0,1)                   << ","   // 14
@@ -371,16 +379,30 @@ void Simulation::saveGridData(std::string extra){
 
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
+            unsigned int index = ind(i,j);
+#ifdef THREEDIM
             for(int k=0; k<Nz; k++){
+                unsigned int index = ind(i,j,k);
+#endif
                 outFile << grid.x[i]             << "," // 0
                         << grid.y[j]             << "," // 1
+                    #ifdef THREEDIM
                         << grid.z[k]             << "," // 2
-                        << grid.v[ind(i,j,k)](0) << "," // 3
-                        << grid.v[ind(i,j,k)](1) << "," // 4
-                        << grid.v[ind(i,j,k)](2) << "," // 5
-                        << grid.mass[ind(i,j,k)] << "," // 6
-                        << grid.delta_gamma[ind(i,j,k)] << "\n"; // 7
+                    #else
+                        << 0             << ","
+                    #endif
+                        << grid.v[index](0) << "," // 3
+                        << grid.v[index](1) << "," // 4
+                    #ifdef THREEDIM
+                        << grid.v[index](2) << "," // 5
+                    #else
+                        << 0 << ","
+                    #endif
+                        << grid.mass[index]        << ","   // 6
+                        << grid.delta_gamma[index] << "\n"; // 7
+#ifdef THREEDIM
             } // end for k
+#endif
         } // end for j
     } // end for i
     outFile.close();
@@ -390,117 +412,6 @@ void Simulation::saveGridData(std::string extra){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////// EXTRA FUNCTIONS //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
-
-    // TODO: Make this a vector-based function
-
-    // Reference to velocity components
-    T& vxi = vi(0);
-    T& vyi = vi(1);
-    T& vzi = vi(2);
-
-    // New positions
-    xi += dt * vxi;
-    yi += dt * vyi;
-    zi += dt * vzi;
-
-    for (InfinitePlate &obj : objects) {
-        bool colliding = obj.inside(xi, yi, zi);
-        if (colliding) {
-            T vx_rel = vxi - obj.vx_object;
-            T vy_rel = vyi - obj.vy_object;
-            T vz_rel = vzi - obj.vz_object;
-
-            if (obj.bc == STICKY) {
-                vx_rel = 0;
-                vy_rel = 0;
-                vz_rel = 0;
-            } // end STICKY
-
-            else if (obj.bc == SLIP) {
-                if (obj.plate_type == top || obj.plate_type == bottom){
-                    // tangential velocity is the (x,z) components
-                    // normal component (y) must be set to zero
-                    vy_rel = 0;
-                    if (friction == 0){
-                        // Do nothing
-                    }
-                    else if ( std::sqrt(vx_rel*vx_rel + vz_rel*vz_rel) < friction * std::abs(vy_rel) ){
-                        vx_rel = 0; // tangential component also set to zero
-                        vz_rel = 0;
-                    }
-                    else { // just reduce tangential component
-                        if (vx_rel > 0)
-                            vx_rel -= friction * std::abs(vy_rel);
-                        else
-                            vx_rel += friction * std::abs(vy_rel);
-                        if (vz_rel > 0)
-                            vz_rel -= friction * std::abs(vy_rel);
-                        else
-                            vz_rel += friction * std::abs(vy_rel);
-                    }
-                } // end top and bottom plate
-                else if (obj.plate_type == left || obj.plate_type == right){
-                    // tangential velocity is the (y,z) components
-                    // normal component (x) must be set to zero
-                    vx_rel = 0;
-                    if (friction == 0){
-                        // Do nothing
-                    }
-                    else if ( std::sqrt(vy_rel*vy_rel + vz_rel*vz_rel) < friction * std::abs(vx_rel) ){
-                        vy_rel = 0; // tangential component also set to zero
-                        vz_rel = 0;
-                    }
-                    else { // just reduce tangential component
-                        if (vy_rel > 0)
-                            vy_rel -= friction * std::abs(vx_rel);
-                        else
-                            vy_rel += friction * std::abs(vx_rel);
-                        if (vz_rel > 0)
-                            vz_rel -= friction * std::abs(vx_rel);
-                        else
-                            vz_rel += friction * std::abs(vx_rel);
-                    }
-                } // end left or right plate
-                else if (obj.plate_type == front || obj.plate_type == back){
-                    // tangential velocity is the (x,y) components
-                    // normal component (z) must be set to zero
-                    vz_rel = 0;
-                    if (friction == 0){
-                        // Do nothing
-                    }
-                    else if ( std::sqrt(vx_rel*vx_rel + vy_rel*vy_rel) < friction * std::abs(vx_rel) ){
-                        vx_rel = 0; // tangential component also set to zero
-                        vy_rel = 0;
-                    }
-                    else { // just reduce tangential component
-                        if (vx_rel > 0)
-                            vx_rel -= friction * std::abs(vz_rel);
-                        else
-                            vx_rel += friction * std::abs(vz_rel);
-                        if (vy_rel > 0)
-                            vy_rel -= friction * std::abs(vz_rel);
-                        else
-                            vy_rel += friction * std::abs(vz_rel);
-                    }
-                } // end front or back plate
-            } // end SLIP
-
-            else {
-                debug("INVALID BOUNDARY CONDITION!!!");
-                exit = 1;
-                return;
-            }
-
-            vxi = vx_rel + obj.vx_object;
-            vyi = vy_rel + obj.vy_object;
-            vzi = vz_rel + obj.vz_object;
-        } // end if colliding
-
-    } // end iterator over objects
-
-} // end boundaryCollision
-
 
 // // Currently not working!!
 // void Simulation::boundaryCorrection(T xi, T yi, T& vxi, T& vyi){
@@ -534,7 +445,11 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
 
 
 // This function is to be used in explicitEulerUpdate after boundaryCollision
-void Simulation::overwriteGridVelocity(T xi, T yi, T zi, TV& vi){
+#ifdef THREEDIM
+    void Simulation::overwriteGridVelocity(T xi, T yi, T zi, TV& vi){
+#else
+    void Simulation::overwriteGridVelocity(T xi, T yi, TV& vi){
+#endif
     T y_start = Ly - 0.25*dx;
     T width = 2*dx;
     T v_imp = 0.1; // positive value means tension
@@ -567,8 +482,13 @@ void Simulation::calculateMomentumOnGrid(){
     TV momentum = TV::Zero();
     for(int i=0; i<Nx; i++)
         for(int j=0; j<Ny; j++)
+        #ifdef THREEDIM
             for(int k=0; k<Nz; k++)
                 momentum += grid.mass[ind(i,j,k)] * grid.v[ind(i,j,k)];
+        #else
+            momentum += grid.mass[ind(i,j)] * grid.v[ind(i,j)];
+        #endif
+
     debug("               total grid momentum = ", momentum.norm());
 }
 

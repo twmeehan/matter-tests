@@ -22,7 +22,7 @@ Implementing other elastic or plastic models is easy due to the general framewor
 
 `cd build`
 
-`cmake -DCMAKE_BUILD_TYPE=Release ..`
+`cmake -DCMAKE_BUILD_TYPE=Release -DUSE_OMP=True ..`
 
 Set up your simulation parameters and initial state in the `mpm.cpp` file.   
 

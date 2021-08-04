@@ -19,17 +19,17 @@
 
 class Simulation{
 public:
-  //Simulation() : current_time_step(0), exit(0) {};
   Simulation();
-  void initialize(T E, T nu, T density);
-  void simulate();
-  void saveParticleData(std::string extra = "");
-  void saveGridData(std::string extra = "");
+
+#ifdef THREEDIM
+  const unsigned int dim = 3;
+#else
+  const unsigned int dim = 2;
+#endif
 
   std::string sim_name;
   std::string directory;
 
-  unsigned int dim;
   unsigned int n_threads;
   unsigned int current_time_step;
   unsigned int frame;
@@ -48,7 +48,11 @@ public:
   T dx;
   T Lx;
   T Ly;
+
+#ifdef THREEDIM
   T Lz;
+#endif
+
   T rho;
   TV gravity;
 
@@ -61,11 +65,23 @@ public:
   Particles particles;
 
   // Grid data
-  unsigned int Nx, Ny, Nz;
+  unsigned int Nx, Ny;
+#ifdef THREEDIM
+  unsigned int Nz;
+#endif
+
+  unsigned int grid_nodes;
   Grid grid;
-  inline unsigned int ind(unsigned int i, unsigned int j, unsigned int k){
+
+#ifdef THREEDIM
+    inline unsigned int ind(unsigned int i, unsigned int j, unsigned int k){
       return (i*Ny + j) * Nz + k; // 3D
-  }
+    }
+#else
+    inline unsigned int ind(unsigned int i, unsigned int j){
+        return (i*Ny + j); // 3D
+    }
+#endif
 
   // Remeshing Fixed Grid
   T max_y_init;
@@ -117,6 +133,11 @@ public:
   T mu_sqrt6;
 
   // Functions
+  void initialize(T E, T nu, T density);
+  void simulate();
+  void saveParticleData(std::string extra = "");
+  void saveGridData(std::string extra = "");
+
   void createDirectory();
 
   void advanceStep();
@@ -126,21 +147,11 @@ public:
   void remeshFixedCont();
 
   void P2G();
-  void P2G_Baseline();
-  void P2G_Optimized();
-
   void explicitEulerUpdate();
-  void explicitEulerUpdate_Baseline();
-  void explicitEulerUpdate_Optimized();
-
   void G2P();
-  void G2P_Baseline();
-  void G2P_Optimized();
-
   void deformationUpdate();
-  void deformationUpdate_Baseline();
 
-  #ifdef OMP
+#ifdef OMP
       void P2G_Optimized_Parallel();
       void G2P_Optimized_Parallel();
       void deformationUpdate_Parallel();
@@ -148,7 +159,18 @@ public:
       void plasticity_projection();
       void G2P_nonlocal();
       void P2G_nonlocal();
-  #endif
+#else
+    void P2G_Baseline();
+    void P2G_Optimized();
+
+    void explicitEulerUpdate_Baseline();
+    void explicitEulerUpdate_Optimized();
+
+    void G2P_Baseline();
+    void G2P_Optimized();
+
+    void deformationUpdate_Baseline();
+#endif
 
   void positionUpdate();
 
@@ -157,9 +179,15 @@ public:
   void plasticity(unsigned int p, unsigned int & plastic_count, TM & Fe_trial);
 
   void moveObjects();
+
+#ifdef THREEDIM
   void boundaryCollision(T xi, T yi, T zi, TV& vi);
-  // void boundaryCorrection(T xi, T yi, T& vxi, T& vyi);
   void overwriteGridVelocity(T xi, T yi, T zi, TV& vi);
+#else
+  void boundaryCollision(T xi, T yi, TV& vi);
+  void overwriteGridVelocity(T xi, T yi, TV& vi);
+#endif
+
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();
   void calculateMassConservation();
