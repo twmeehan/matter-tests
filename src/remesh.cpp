@@ -154,7 +154,7 @@ void Simulation::remeshFixedInit(){
 #endif
 
     // safety_factor = 2 means we have a grid which has a grid point 2*dx from the boundary particle
-    // Assuming local approach, the grid point 2dx away will not be be given a nonzero value
+    // Assuming a local approach, a grid point 2dx away from a particle will not influence this particle
     unsigned int safety_factor = std::max((unsigned int)2, nonlocal_support);
 
     Nx = std::ceil(Lx * one_over_dx) + 1 + 2*safety_factor;

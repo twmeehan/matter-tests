@@ -6,11 +6,15 @@ plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 dpi = 200
 figsize = (5, 5.4)
+legendsize = 5
 #################################
 
-basename = "/media/blatny/harddrive4/larsie/3d_ql_anal_"
+#basename = "/media/blatny/harddrive4/larsie/3d_ql_anal_"
+#names = ["rho300_xi0.3", "soft_rho300_xi0.3", "soft_monforte", "soft_monforte_v3"]
 
-names = ["rho300_xi0.3", "soft_rho300_xi0.3", "soft_monforte", "soft_monforte_v3"]
+basename = "/media/blatny/harddrive4/larsie/2d_ql_anal_soft_alt"
+names = ["0", "1", "3", "3_m100", "3_m100_xisoft0.1", "3_m100_xisoft0.3"]
+
 vel = -0.2
 Ly = 2.0
 vmin_factor = 25;
@@ -20,6 +24,7 @@ v_min = vel / vmin_factor
 
 #################################
 
+# while(True):
 
 eps_ax_list = []
 mean_p_list = []
@@ -63,21 +68,25 @@ plt.title(basename.replace("_", " "))
 for n in range(0, len(names)):
     plt.plot(-eps_ax_list[n], mean_p_list[n]/1e3, '.-',  label = names[n].replace("_", " "))
 plt.ylabel(r'$\langle p \rangle$ [kPa]')
-plt.legend()
+plt.legend(prop={'size': legendsize})
 plt.grid()
 
-plt.xlim([-0.0001,0.008])
-plt.ylim([-1,70])
+# plt.xlim([-0.0001,0.008])
+# plt.ylim([-1,70])
 
 plt.subplot(212)
 for n in range(0, len(names)):
     plt.plot(-eps_ax_list[n], mean_q_list[n]/1e3, '.-', label = names[n].replace("_", " "))
 plt.xlabel(r'$\epsilon_y$ [-]')
 plt.ylabel(r'$\langle q \rangle$ [kPa]')
-plt.legend()
+plt.legend(prop={'size': legendsize})
 plt.grid()
 
-plt.xlim([-0.0001,0.008])
-plt.ylim([-1,70])
+# plt.xlim([-0.0001,0.008])
+# plt.ylim([-1,70])
 
 plt.show()
+
+# plt.show(block=False)
+# plt.pause(5)
+# plt.close()

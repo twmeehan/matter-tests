@@ -12,7 +12,7 @@
 int main(){
 
       Simulation sim;
-      sim.sim_name = "2d_elastic";
+      sim.sim_name = "2d_ql_anal_soft_alt3_m100_xisoft0.1";
       // sim.sim_name = "3d_elastic";
       // sim.sim_name = "test_rma_quad_anal";
       sim.directory = "/media/blatny/harddrive4/larsie/"; // "dumps/";
@@ -22,15 +22,17 @@ int main(){
       sim.cfl = 0.6;
       sim.dt_max_coeff = 0.4;
       sim.flip_ratio = 0.99;
-      sim.n_threads = 24;
+      sim.n_threads = 16;
 
       sim.Lx = 1.0;
       sim.Ly = 2.0;
      // sim.Lz = sim.Lx;
 
-      int Npx = 30+1;
-      int Npy = 60+1;
-     // int Npz = Npx;
+      // int Npx = 30+1;
+      // int Npy = 60+1;
+
+      int Npx = 100+1;
+      int Npy = 200+1;
 
       T dxp = sim.Lx / (Npx-1.0);
 
@@ -48,7 +50,7 @@ int main(){
       T vmin_factor = 25;
       T load_factor = 75;
 
-      T offset = 0.1 * dxp;
+      T offset = 0.0001 * dxp;
 
       std::string name;
       // name = "Compressor"; InfinitePlate compressor = InfinitePlate(0, sim.Ly + offset, 0,    0, vel_top, 0,     vmin_factor, load_factor,    top, SLIP, name);  sim.objects.push_back(compressor);
@@ -71,14 +73,14 @@ int main(){
       // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
       // sim.plastic_model = VonMises;
-      // sim.plastic_model = QuadraticLars;
-      sim.plastic_model = NoPlasticity;
+      sim.plastic_model = QuadraticLars;
+      // sim.plastic_model = NoPlasticity;
       sim.beta = 0.43-0.40*0.4;
       sim.M = 1.35;
       sim.p0 = 200e3;
 
       sim.xi = 0.3;
-      sim.xi_nonloc = 0.05;
+      sim.xi_nonloc = 0.1;
 
       sim.nonlocal_l = 0;
 

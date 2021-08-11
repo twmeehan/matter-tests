@@ -96,7 +96,6 @@ void Simulation::simulate(){
     frame = 0;
     final_time = end_frame * frame_dt;
     saveParticleData();
-    // saveGridData();
     while (frame < end_frame){
         std::cout << "Step: " << current_time_step << "    Time: " << time << std::endl;
         advanceStep();
@@ -108,12 +107,12 @@ void Simulation::simulate(){
             frame++;
             std::cout << "Saving frame " << frame << std::endl;
             saveParticleData();
-            // saveGridData();
+            saveGridData();
         }
         if (std::abs(final_time-time) < 1e-15 || final_time < time){
             std::cout << "The simulation ended successfully at time = " << time << std::endl;
             saveParticleData();
-            // saveGridData();
+            saveGridData();
             break;
         }
     }
@@ -374,38 +373,43 @@ void Simulation::saveGridData(std::string extra){
                     << "vx"      << ","
                     << "vy"      << ","
                     << "vz"      << ","
-                    << "mass"    << ","
-                    << "delta_gamma" << "\n";
+                    << "mass"    << "\n";
+                //    << "delta_gamma" << ","; // OBS: Only if nonlocal strategy
 
+#ifdef THREEDIM
     for(int i=0; i<Nx; i++){
         for(int j=0; j<Ny; j++){
-            unsigned int index = ind(i,j);
-#ifdef THREEDIM
             for(int k=0; k<Nz; k++){
                 unsigned int index = ind(i,j,k);
-#endif
-                outFile << grid.x[i]             << "," // 0
-                        << grid.y[j]             << "," // 1
-                    #ifdef THREEDIM
-                        << grid.z[k]             << "," // 2
-                    #else
-                        << 0             << ","
-                    #endif
-                        << grid.v[index](0) << "," // 3
-                        << grid.v[index](1) << "," // 4
-                    #ifdef THREEDIM
-                        << grid.v[index](2) << "," // 5
-                    #else
-                        << 0 << ","
-                    #endif
-                        << grid.mass[index]        << ","   // 6
-                        << grid.delta_gamma[index] << "\n"; // 7
-#ifdef THREEDIM
+                outFile << grid.x[i]               << "," // 0
+                        << grid.y[j]               << "," // 1
+                        << grid.z[k]               << "," // 2
+                        << grid.v[index](0)        << "," // 3
+                        << grid.v[index](1)        << "," // 4
+                        << grid.v[index](2)        << "," // 5
+                        << grid.mass[index]        << "\n";   // 6
+                    //    << grid.delta_gamma[index] << ",";
             } // end for k
-#endif
         } // end for j
     } // end for i
     outFile.close();
+#else
+    for(int i=0; i<Nx; i++){
+        for(int j=0; j<Ny; j++){
+            unsigned int index = ind(i,j);
+            outFile << grid.x[i]               << "," // 0
+                    << grid.y[j]               << "," // 1
+                    << 0                       << ","
+                    << grid.v[index](0)        << "," // 3
+                    << grid.v[index](1)        << "," // 4
+                    << 0                       << ","
+                    << grid.mass[index]        << "\n";  // 6
+                //    << grid.delta_gamma[index] << ","; // 7
+        } // end for j
+    } // end for i
+    outFile.close();
+#endif
+
 } // end saveGridData()
 
 

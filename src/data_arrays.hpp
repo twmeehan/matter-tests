@@ -7,7 +7,7 @@
 
 class Particles{
 public:
-  Particles(unsigned int Np = 400){
+  Particles(unsigned int Np = 1){
       x.resize(Np);    std::fill( x.begin(),    x.end(),    TV::Zero() );
       v.resize(Np);    std::fill( v.begin(),    v.end(),    TV::Zero() );
       pic.resize(Np);  std::fill( pic.begin(),  pic.end(),  TV::Zero() );
@@ -16,7 +16,7 @@ public:
       eps_pl_dev.resize(Np);     std::fill( eps_pl_dev.begin(),     eps_pl_dev.end(),     0.0 );
       eps_pl_vol.resize(Np);     std::fill( eps_pl_vol.begin(),     eps_pl_vol.end(),     0.0 );
 
-      eps_pl_vol_abs.resize(Np);     std::fill( eps_pl_vol_abs.begin(),     eps_pl_vol_abs.end(),     0.0 );
+      eps_pl_vol_2.resize(Np);     std::fill( eps_pl_vol_2.begin(),     eps_pl_vol_2.end(),     0.0 );
 
       yield_stress_orig.resize(Np); std::fill( yield_stress_orig.begin(), yield_stress_orig.end(), 0.0 );
 
@@ -39,7 +39,7 @@ public:
 
   std::vector<T> eps_pl_dev;
   std::vector<T> eps_pl_vol;
-  std::vector<T> eps_pl_vol_abs;
+  std::vector<T> eps_pl_vol_2;
 
 
   std::vector<T> yield_stress_orig;
