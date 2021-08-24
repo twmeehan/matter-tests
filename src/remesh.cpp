@@ -74,10 +74,12 @@ void Simulation::remesh(){
     T high_z = max_z + dx * safety_factor;
 #endif
 
-#ifdef THREEDIM
-    debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
-#else
-    debug("               grid   = (", Nx, ", ", Ny, ")"  );
+#ifdef WARNINGS
+    #ifdef THREEDIM
+        debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
+    #else
+        debug("               grid   = (", Nx, ", ", Ny, ")"  );
+    #endif
 #endif
 
     // Eigen:  LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
@@ -178,10 +180,12 @@ void Simulation::remeshFixedInit(){
     T high_z_init = max_z + dx * safety_factor;
 #endif
 
-#ifdef THREEDIM
-    debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
-#else
-    debug("               grid   = (", Nx, ", ", Ny, ")"  );
+#ifdef WARNINGS
+    #ifdef THREEDIM
+        debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
+    #else
+        debug("               grid   = (", Nx, ", ", Ny, ")"  );
+    #endif
 #endif
 
     // Eigen:  LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
@@ -222,10 +226,16 @@ void Simulation::remeshFixedCont(){
 
 #ifdef THREEDIM
     grid_nodes = Nx*Ny*Nz;
-    debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
 #else
     grid_nodes = Nx*Ny;
-    debug("               grid   = (", Nx, ", ", Ny, ")"  );
+#endif
+
+#ifdef WARNINGS
+    #ifdef THREEDIM
+        debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
+    #else
+        debug("               grid   = (", Nx, ", ", Ny, ")"  );
+    #endif
 #endif
 
     // Eigen:  LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]

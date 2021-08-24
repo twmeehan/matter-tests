@@ -83,6 +83,9 @@ public:
     }
 #endif
 
+  unsigned int vmin_factor;
+  unsigned int load_factor;
+
   // Remeshing Fixed Grid
   T max_y_init;
   T Ny_init;

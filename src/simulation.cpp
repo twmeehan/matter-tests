@@ -67,13 +67,13 @@ void Simulation::simulate(){
 
     // Write parameters to file for future reference
     std::ofstream infoFile(directory + sim_name + "/info.txt");
-    infoFile << end_frame           << "\n"  // 0
-             << fps                 << "\n"  // 1
-             << dx                  << "\n"  // 2
-             << mu                  << "\n"  // 3
-             << lambda              << "\n"  // 4
-             << friction_angle      << "\n"  // 5
-             << nonlocal_l_sq       << "\n";  // 6
+    infoFile << end_frame           << "\n"   // 0
+             << fps                 << "\n"   // 1
+             << dx                  << "\n"   // 2
+             << mu                  << "\n"   // 3
+             << lambda              << "\n"   // 4
+             << vmin_factor         << "\n"   // 5
+             << load_factor         << "\n";  // 6
     infoFile.close();
 
     // Total runtime of simulation
@@ -97,7 +97,9 @@ void Simulation::simulate(){
     final_time = end_frame * frame_dt;
     saveParticleData();
     while (frame < end_frame){
-        std::cout << "Step: " << current_time_step << "    Time: " << time << std::endl;
+        std::cout << "Frame: " << frame << std::endl;
+        std::cout << "               Step: " << current_time_step  << std::endl;
+        std::cout << "               Time: " << time               << std::endl;
         advanceStep();
         if (exit == 1)
             return;
@@ -215,21 +217,29 @@ void Simulation::updateDt(){
         return;
     }
 
+#ifdef WARNINGS
     debug("               dt_max = ", dt_max);
+#endif
 
     if (std::abs(max_speed) > 1e-10){
         T dt_cfl = cfl * dx / max_speed;
+#ifdef WARNINGS
         debug("               dt_cfl = ", dt_cfl);
+#endif
         dt = std::min(dt_cfl, dt_max);
     } else {
         dt = dt_max;
+#ifdef WARNINGS
         debug("               dt_cfl = not computed, max_speed too low");
+#endif
     }
 
     dt = std::min(dt, frame_dt*(frame+1) - time);
     dt = std::min(dt, final_time         - time);
 
+#ifdef WARNINGS
     debug("               dt     = ", dt    );
+#endif
 
     // if (dt > dt_cfl){
     //     debug("TIME STEP IS TOO BIG COMPARED TO CFL!!!");

@@ -1,11 +1,16 @@
 import numpy as np
+import sys
 import matplotlib.pyplot as plt
 from bridson import poisson_disc_samples
 
 w = 1
-h = 1
-r = 0.017
-samples = poisson_disc_samples(width=w, height=h, r=r)
+h = 2
+r = float(sys.argv[1]) # smaller r means more samples!
+k = 50
+
+seed = 42
+np.random.seed(seed=seed)
+samples = poisson_disc_samples(width=w, height=h, r=r, k=k, random=np.random.random)
 
 Np = len(samples)
 print("Number of particles created: ", Np)
@@ -17,12 +22,14 @@ for i in range(0, len(samples)):
     y[i] = samples[i][1]
 
 filename = "samples/sample_w" + str(w) + "_h" + str(h) + "_r" + str(r)
-np.savetxt(filename + "_x.txt", x )
-np.savetxt(filename + "_y.txt", y )
+np.savetxt(filename + "_pos.txt", samples )
+np.savetxt(filename + "_num.txt", np.array([Np]).astype(int), fmt='%i')
 
 plt.figure()
 plt.title("Number of particles: " + str(Np))
 plt.xlabel("x")
 plt.ylabel("y")
-plt.plot(x, y,'k.')
+plt.plot(x,y,'k.')
+plt.axis('scaled')
+
 plt.show()

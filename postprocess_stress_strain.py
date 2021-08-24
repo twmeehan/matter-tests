@@ -13,14 +13,13 @@ legendsize = 5
 #names = ["rho300_xi0.3", "soft_rho300_xi0.3", "soft_monforte", "soft_monforte_v3"]
 
 basename = "/media/blatny/harddrive4/larsie/2d_ql_anal_soft_alt"
-names = ["0", "1", "3", "3_m100", "3_m100_xisoft0.1", "3_m100_xisoft0.3"]
+# names = ["0", "1", "3", "3_m100", "3_N20000_xisoft0.1"]
+# names = ["3_N20000_xisoft0.05_xi0.1", "3_N20000_xisoft0.02_xi0.3", "3_N20000_xisoft0.02_xi0.3_constvel", "3_N20000_xisoft0.02_xi0.6", "3_N20000_xisoft0.02_xi0.6_abs"]
+names = ["3_N10000_2", "3_N10000_3", "3_N10000_4", "3_N10000_5"]
+
 
 vel = -0.2
 Ly = 2.0
-vmin_factor = 25;
-load_factor = 75;
-
-v_min = vel / vmin_factor
 
 #################################
 
@@ -34,13 +33,17 @@ for name in names:
     info = np.loadtxt(basename + name + "/info.txt")
     last_written = np.loadtxt(basename + name + "/last_written.txt").astype(int)
 
-    end_frame = last_written
     frame_dt  = 1.0 / float(info[1])
-    final_time = frame_dt * end_frame
     dx = float(info[2])
-    frames = np.arange(0, end_frame+1) # last argument not included
+    vmin_factor = int(info[5])
+    load_factor = int(info[6])
 
+    v_min = vel / vmin_factor
+
+    end_frame = last_written
+    frames = np.arange(0, end_frame+1) # last argument not included
     eps_ax = np.zeros_like(frames).astype(float)
+
     for n in range(0,len(frames)):
         if n < load_factor:
             eps_ax[n] =   v_min * frame_dt*n                                              / Ly
