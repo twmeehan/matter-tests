@@ -33,6 +33,6 @@ void Simulation::deformationUpdate_Baseline(){
 
     } // end loop over particles
 
-    debug("               projected particles = ", plastic_count, " / ", Np);
+    debug("               proj particles = ", plastic_count, " / ", Np);
 
 } // end deformationUpdate_Baseline

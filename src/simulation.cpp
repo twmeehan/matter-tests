@@ -84,10 +84,10 @@ void Simulation::simulate(){
     one_over_dx_square = one_over_dx * one_over_dx;
 
     // Precomputations for Drucker Prager
-    T sin_phi = std::sin(friction_angle / 180.0 * M_PI);
-    T alpha = std::sqrt(2.0/3.0) * 2.0 * sin_phi / (3.0 - sin_phi);
-    alpha_K_d_over_2mu = alpha * K * dim / (2*mu); // = alpha * bulk_modulus * dimension / (2*mu)
-    particles.cohesion_proj.resize(Np);  std::fill( particles.cohesion_proj.begin(),  particles.cohesion_proj.end(),  cohesion );
+    // T sin_phi = std::sin(friction_angle / 180.0 * M_PI);
+    // T alpha = std::sqrt(2.0/3.0) * 2.0 * sin_phi / (3.0 - sin_phi);
+    // alpha_K_d_over_2mu = alpha * K * dim / (2*mu); // = alpha * bulk_modulus * dimension / (2*mu)
+    // particles.cohesion_proj.resize(Np);  std::fill( particles.cohesion_proj.begin(),  particles.cohesion_proj.end(),  cohesion );
 
     // Lagrangian coordinates. Using assignment operator to copy
     particles.x0 = particles.x;

@@ -40,6 +40,98 @@ std::vector<T> linspace(T a, T b, size_t N) {
     return xs;
 }
 
+
+
+
+
+
+bool PerzynaCamClayReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T perzyna_exp, T perzyna_visc)
+{
+
+    // T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+    T y = q * (1 + 2 * beta) + 2 * M * (p + beta * p0) * (p - p0) / p0;
+
+    if (y > 0) {
+
+        T max_p = p0;
+        T min_p = -beta * max_p;
+        T max_q = M / (2 * beta + 1) * T(0.5) * p0 * (1 + beta) * (1 + beta); // do not use precomps here!
+
+        // debug("                start:  p = ", p, ", q = ", q);
+
+        T delta_gamma = 0; // initial guess
+
+        int max_iter = 60;
+        for (int iter = 0; iter < max_iter; iter++) {
+            if (iter == max_iter - 1){ // did not break loop
+                // debug("PerzynaCamClayReturnMapping: FATAL did not exit loop at iter = ", iter, " with trial p = ", p, " and q = ", q);
+                // exit = 1;
+            }
+
+            if (delta_gamma < 0){ // not possible and can also lead to division by zero
+                // debug("PerzynaCamClayReturnMapping: WARNING negative delta_gamma = ", delta_gamma);
+                delta_gamma = 1e-10;
+            }
+
+            T tm = perzyna_visc * delta_gamma + dt;
+            T tmp = dt / tm;
+            T tmp1 = std::pow(tmp, perzyna_exp);
+
+            // T p_new = (p0*M*M*(beta-1)*K * delta_gamma - p) / (1 + 2*M*M*K*delta_gamma);
+            // T q_y = M * std::sqrt( (p0-p_new)*(beta*p0+p_new) / (1+2*beta) );
+            T p_new = ( p - delta_gamma * 2*M*K*(beta-1) ) / ( 1 + delta_gamma * 4*M*K/p0 );
+            T q_y = std::max( T(1e-3), 2*M / (p0*(1+2*beta)) * (p0 - p_new) * (beta*p0 + p_new) );
+
+            // T residual = q - delta_gamma * 6*mu*(1+2*beta) * q_y * tmp1 - q_y; // WRONG!!!!
+            T residual = ( q - delta_gamma * 3*mu*(1+2*beta) ) * tmp1 - q_y;
+
+            if (std::abs(residual) < 1e-1) {
+                break;
+            }
+
+            // THIS IS WRONG !!!!
+            // T dqy_dpnew  = M*M * (p0*(1-beta) - 2*p_new) / ( 2*q_y * (1+2*beta) );
+            // T dpnew_dgamma = ( p0*M*M*(beta-1)*K * (1+2*M*M*K * delta_gamma) - (p0*M*M*(beta-1)*K * delta_gamma - p)*(2*M*M*K)  ) / ( (1+2*M*M*K * delta_gamma) * (1+2*M*M*K * delta_gamma) );
+            // T term2        = dqy_dpnew * dpnew_dgamma;
+            // T dtmp1_dgamma = perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
+            // T term1        = 6*mu*(1+2*beta) * q_y * tmp1 + delta_gamma * 6*mu*(1+2*beta) * (term2*tmp1 + q_y * dtmp1_dgamma);
+            // T residual_diff = -term1 - term2;
+
+            T dtmp1_dgamma = perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
+            T residual_diff = -3*mu*(1+2*beta) * tmp1 + (q-delta_gamma*3*mu*(1+2*beta)) * dtmp1_dgamma;
+
+            if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
+                debug("PerzynaCamClayReturnMapping: residual_diff too small in abs value = ", residual_diff);
+                exit = 1;
+            }
+
+            // debug("                iter", iter, "   p_new = ", p_new, ", q_y = ", q_y);
+            // debug("                iter", iter, "   residual = ", residual);
+            // debug("                iter", iter, "   dt = ", dt);
+            // debug("                iter", iter, "   dtmp1_dgamma = ", dtmp1_dgamma);
+            // debug("                iter", iter, "   delta_gamma = ", delta_gamma);
+
+            delta_gamma -= residual / residual_diff;
+        } // end N-R iterations
+
+        // p = (p0*M*M*(beta-1)*K * delta_gamma - p) / (1 - 2*M*M*K*delta_gamma); // = p_new
+        // q = q / (1+delta_gamma*6*mu*(1+2*beta));
+
+        p = ( p - delta_gamma * 2*M*K*(beta-1) ) / (1 + delta_gamma * 4*M*K/p0 ) ; // = p_new
+        q = q - delta_gamma * 3*mu*(1+2*beta);
+
+        // p = std::max(std::min(p, max_p), min_p);
+        // q = std::min(std::abs(q), max_q);
+
+        return true; // if plastic, i.e., y > 0
+    }
+    return false;
+}
+
+
+
+
+
 bool CamClayReturnMapping(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus)
 {
     typedef Eigen::Matrix<T, 3, 1> TV3; // 3 dim vector regardless of dim of problem
@@ -170,7 +262,7 @@ bool QuadraticReturnMapping(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_h
 
         T gamma = 0;
         TV3 r;
-        for (int iter = 0; iter < 400; iter++) {
+        for (int iter = 0; iter < 40; iter++) {
 
             T tmp = beta_p0 + 2 * p - p0; // NB contains p
             T tmp_sq = tmp * tmp;
@@ -194,6 +286,13 @@ bool QuadraticReturnMapping(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_h
             p += step(0);
             q += step(1);
             gamma += step(2);
+
+            if (  (q * (1 + 2 * beta) + 2 * M * (p + beta * p0) * (p - p0) / p0) <= T(1e-3)  ){ // NB: Unit scaled yield surface, this is thus a relative error
+                break; // exit for loop
+            }
+            if (iter == 39){
+                debug("QuadraticReturnMapping: FATAL did not exit loop at iter = ", iter);
+            }
         }
         p0 *= scale;
         p *= scale;
@@ -201,7 +300,7 @@ bool QuadraticReturnMapping(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_h
 
         p = max(min(p, max_p), min_p);
         q = min(abs(q), max_q);
-        assert((q * (1 + 2 * beta) + 2 * M * (p + beta * p0) * (p - p0) / p0) <= T(1e-3)); // yield surface, do not use precomps here!
+        assert((q * (1 + 2 * beta) + 2 * M * (p + beta * p0) * (p - p0) / p0) <= T(1e-3)); // yield surface, do not use precomps here! NB this is the unscaled yield surface!
         assert(std::isfinite(p));
         assert(std::isfinite(q));
         return true;

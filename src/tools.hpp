@@ -37,7 +37,7 @@ typedef float T;
 
 enum PlateType { top, bottom, left, right, front, back};
 enum ElasticModel { StvkWithHencky, NeoHookean };
-enum PlasticModel { NoPlasticity, VonMises, DPSimpleSoft, QuadraticLars };
+enum PlasticModel { NoPlasticity, VonMises, DPSimpleSoft, Curved, PerzynaVM, PerzynaDP };
 enum BoundaryCondition { STICKY, SLIP };
 
 ///////////////////// TOOLS ////////////////////////
@@ -93,6 +93,7 @@ unsigned int load_array(std::vector<TV>& array, std::string file_name);
 
 std::vector<T> linspace(T a, T b, size_t N);
 
+bool PerzynaCamClayReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T perzyna_exp, T perzyna_visc);
 bool CamClayReturnMapping(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus);
 bool QuadraticReturnMapping(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus);
 bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta);

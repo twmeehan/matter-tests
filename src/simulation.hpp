@@ -87,6 +87,11 @@ public:
   unsigned int load_factor;
 
   // Remeshing Fixed Grid
+  T max_x_init;
+  T Nx_init;
+  T low_x_init;
+  T high_x_init;
+
   T max_y_init;
   T Ny_init;
   T low_y_init;
@@ -103,11 +108,15 @@ public:
 
   // Von Mises:
   T yield_stress_orig;
+  T yield_stress_min;
 
-  // DPSimpleSoft
-  T friction_angle;
-  T alpha_K_d_over_2mu;
-  T cohesion;
+  // Drucker Prager
+  T dp_slope;
+  T dp_cohesion;
+
+  // Perzyna
+  T perzyna_exp;
+  T perzyna_visc;
 
  // QuadraticLars
  T M;

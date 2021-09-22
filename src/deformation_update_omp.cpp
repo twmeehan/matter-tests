@@ -41,6 +41,6 @@ void Simulation::deformationUpdate_Parallel(){
 
     } // end loop over particles
 
-    debug("               projected particles = ", plastic_count, " / ", Np);
+    debug("               proj particles = ", plastic_count, " / ", Np);
 
 } // end deformationUpdate_Parallel
