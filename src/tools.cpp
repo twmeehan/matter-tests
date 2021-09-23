@@ -45,83 +45,74 @@ std::vector<T> linspace(T a, T b, size_t N) {
 
 
 
-bool PerzynaCamClayReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T perzyna_exp, T perzyna_visc)
+bool PerzynaQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc)
 {
 
-    // T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+    typedef Eigen::Matrix<T, 2, 1> TV2; // 3 dim vector regardless of dim of problem
+    using std::sqrt;
+    using std::pow;
+
     T y = q * (1 + 2 * beta) + 2 * M * (p + beta * p0) * (p - p0) / p0;
 
     if (y > 0) {
 
-        T max_p = p0;
-        T min_p = -beta * max_p;
-        T max_q = M / (2 * beta + 1) * T(0.5) * p0 * (1 + beta) * (1 + beta); // do not use precomps here!
+        T pt = p;
+        T qt = q;
+        T v = perzyna_visc;
 
-        // debug("                start:  p = ", p, ", q = ", q);
+        TV2 r;
+        T max_iter = 60;
+        for (int iter = 0; iter < 60; iter++) {
 
-        T delta_gamma = 0; // initial guess
+            // if (iter == max_iter - 1){ // did not break loop
+            //     debug("PerzynaNA: FATAL did not exit loop at iter = ", iter);
+            //     exit = 1;
+            // }
 
-        int max_iter = 60;
-        for (int iter = 0; iter < max_iter; iter++) {
-            if (iter == max_iter - 1){ // did not break loop
-                // debug("PerzynaCamClayReturnMapping: FATAL did not exit loop at iter = ", iter, " with trial p = ", p, " and q = ", q);
-                // exit = 1;
-            }
+            T dydp = 2*M/p0 * (beta*p0 + 2*p - p0);
+            T dydq = 2*beta+1;
+            T normalization = p0;
+            T prefactor = (dt/v) * (y/normalization) / sqrt(dydp*dydp/d + 3/2*dydq*dydq);
+            T r0 = pt - p -    K*prefactor*dydp;
+            T r1 = qt - q - 3*mu*prefactor*dydq;
 
-            if (delta_gamma < 0){ // not possible and can also lead to division by zero
-                // debug("PerzynaCamClayReturnMapping: WARNING negative delta_gamma = ", delta_gamma);
-                delta_gamma = 1e-10;
-            }
+            r = TV2( r0 , r1 );
 
-            T tm = perzyna_visc * delta_gamma + dt;
-            T tmp = dt / tm;
-            T tmp1 = std::pow(tmp, perzyna_exp);
+            // ORIGINAL
+            // T neg_det = -(12*K*pow(M, 2)*d*pow(dt, 2)*mu*pow(2*beta + 1, 2)*(4*M*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*sqrt(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + 6.0*pow(beta, 2)*d*pow(p0, 2) + 6.0*beta*d*pow(p0, 2) + 1.5*d*pow(p0, 2)) - pow(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5), 3.0L/2.0L))*pow(beta*p0 + 2*p - p0, 2) + (3*sqrt(d)*dt*mu*pow(2*beta + 1, 2) + v*sqrt(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5)))*(-16*K*pow(M, 3)*sqrt(d)*dt*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*pow(beta*p0 + 2*p - p0, 2)*sqrt(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + 6.0*pow(beta, 2)*d*pow(p0, 2) + 6.0*beta*d*pow(p0, 2) + 1.5*d*pow(p0, 2)) + 4*K*M*sqrt(d)*dt*pow(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5), 3.0L/2.0L)*(2*M*(p - p0)*(beta*p0 + p) + M*pow(beta*p0 + 2*p - p0, 2) + p0*q*(2*beta + 1)) + pow(p0, 2)*v*pow(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5), 2)))/(pow(p0, 2)*pow(v, 2)*pow(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5), 5.0L/2.0L));
+            //
+            // T step0 = (-2*K*M*sqrt(d)*dt*(2*beta + 1)*(3*sqrt(d)*dt*mu*(2*beta + 1)*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1)) + p0*v*(q - qt)*sqrt(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5)))*(beta*p0 + 2*p - p0) + (3*sqrt(d)*dt*mu*pow(2*beta + 1, 2) + v*sqrt(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5)))*(2*K*M*sqrt(d)*dt*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*(beta*p0 + 2*p - p0) + pow(p0, 2)*v*(p - pt)*sqrt(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5))))/(pow(p0, 2)*pow(v, 2)*(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5)));
+            //
+            // T step1 = (6*M*sqrt(d)*dt*mu*(2*beta + 1)*(4*M*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*sqrt(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + 6.0*pow(beta, 2)*d*pow(p0, 2) + 6.0*beta*d*pow(p0, 2) + 1.5*d*pow(p0, 2)) - pow(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5), 3.0L/2.0L))*(2*K*M*sqrt(d)*dt*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*(beta*p0 + 2*p - p0) + pow(p0, 2)*v*(p - pt)*sqrt(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5)))*(beta*p0 + 2*p - p0) + (3*sqrt(d)*dt*mu*(2*beta + 1)*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1)) + p0*v*(q - qt)*sqrt(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5)))*(-16*K*pow(M, 3)*sqrt(d)*dt*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*pow(beta*p0 + 2*p - p0, 2)*sqrt(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + 6.0*pow(beta, 2)*d*pow(p0, 2) + 6.0*beta*d*pow(p0, 2) + 1.5*d*pow(p0, 2)) + 4*K*M*sqrt(d)*dt*pow(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5), 3.0L/2.0L)*(2*M*(p - p0)*(beta*p0 + p) + M*pow(beta*p0 + 2*p - p0, 2) + p0*q*(2*beta + 1)) + pow(p0, 2)*v*pow(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5), 2)))/(pow(p0, 3)*pow(v, 2)*pow(4*pow(M, 2)*pow(beta*p0 + 2*p - p0, 2) + d*pow(p0, 2)*(2*beta + 1)*(3.0*beta + 1.5), 5.0L/2.0L));
 
-            // T p_new = (p0*M*M*(beta-1)*K * delta_gamma - p) / (1 + 2*M*M*K*delta_gamma);
-            // T q_y = M * std::sqrt( (p0-p_new)*(beta*p0+p_new) / (1+2*beta) );
-            T p_new = ( p - delta_gamma * 2*M*K*(beta-1) ) / ( 1 + delta_gamma * 4*M*K/p0 );
-            T q_y = std::max( T(1e-3), 2*M / (p0*(1+2*beta)) * (p0 - p_new) * (beta*p0 + p_new) );
+            // OPTIMIZED
+            T tmp1 = pow(beta*p0 + 2*p - p0, 2);
+            T tmp = 4*M*M*tmp1 + d*p0*p0*(2*beta + 1)*(3.0*beta + 1.5);
+            T tmp2 = pow(tmp, 3.0/2.0);
+            T tmp3 = pow(tmp, 5.0/2.0);
+            T tmp4 = tmp*tmp;
+            T tmp5 = pow(2*beta + 1, 2);
 
-            // T residual = q - delta_gamma * 6*mu*(1+2*beta) * q_y * tmp1 - q_y; // WRONG!!!!
-            T residual = ( q - delta_gamma * 3*mu*(1+2*beta) ) * tmp1 - q_y;
+            T neg_det = -(12*K*M*M*d*dt*dt*mu*tmp5*(4*M*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*sqrt(4*M*M*tmp1 + 6.0*beta*beta*d*p0*p0 + 6.0*beta*d*p0*p0 + 1.5*d*p0*p0) - tmp2)*tmp1 + (3*sqrt(d)*dt*mu*tmp5 + v*sqrt(tmp))*(-16*K*M*M*M*sqrt(d)*dt*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*tmp1*sqrt(4*M*M*tmp1 + 6.0*beta*beta*d*p0*p0 + 6.0*beta*d*p0*p0 + 1.5*d*p0*p0) + 4*K*M*sqrt(d)*dt*tmp2*(2*M*(p - p0)*(beta*p0 + p) + M*tmp1 + p0*q*(2*beta + 1)) + p0*p0*v*tmp4))/(p0*p0*v*v*tmp3);
 
-            if (std::abs(residual) < 1e-1) {
-                break;
-            }
+            T step0 = (-2*K*M*sqrt(d)*dt*(2*beta + 1)*(3*sqrt(d)*dt*mu*(2*beta + 1)*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1)) + p0*v*(q - qt)*sqrt(tmp))*(beta*p0 + 2*p - p0) + (3*sqrt(d)*dt*mu*tmp5 + v*sqrt(tmp))*(2*K*M*sqrt(d)*dt*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*(beta*p0 + 2*p - p0) + p0*p0*v*(p - pt)*sqrt(tmp)))/(p0*p0*v*v*(tmp));
+            
+            T step1 = (6*M*sqrt(d)*dt*mu*(2*beta + 1)*(4*M*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*sqrt(4*M*M*tmp1 + 6.0*beta*beta*d*p0*p0 + 6.0*beta*d*p0*p0 + 1.5*d*p0*p0) - tmp2)*(2*K*M*sqrt(d)*dt*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*(beta*p0 + 2*p - p0) + p0*p0*v*(p - pt)*sqrt(tmp))*(beta*p0 + 2*p - p0) + (3*sqrt(d)*dt*mu*(2*beta + 1)*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1)) + p0*v*(q - qt)*sqrt(tmp))*(-16*K*M*M*M*sqrt(d)*dt*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*tmp1*sqrt(4*M*M*tmp1 + 6.0*beta*beta*d*p0*p0 + 6.0*beta*d*p0*p0 + 1.5*d*p0*p0) + 4*K*M*sqrt(d)*dt*tmp2*(2*M*(p - p0)*(beta*p0 + p) + M*tmp1 + p0*q*(2*beta + 1)) + p0*p0*v*tmp4))/(p0*p0*p0*v*v*tmp3);
 
-            // THIS IS WRONG !!!!
-            // T dqy_dpnew  = M*M * (p0*(1-beta) - 2*p_new) / ( 2*q_y * (1+2*beta) );
-            // T dpnew_dgamma = ( p0*M*M*(beta-1)*K * (1+2*M*M*K * delta_gamma) - (p0*M*M*(beta-1)*K * delta_gamma - p)*(2*M*M*K)  ) / ( (1+2*M*M*K * delta_gamma) * (1+2*M*M*K * delta_gamma) );
-            // T term2        = dqy_dpnew * dpnew_dgamma;
-            // T dtmp1_dgamma = perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
-            // T term1        = 6*mu*(1+2*beta) * q_y * tmp1 + delta_gamma * 6*mu*(1+2*beta) * (term2*tmp1 + q_y * dtmp1_dgamma);
-            // T residual_diff = -term1 - term2;
 
-            T dtmp1_dgamma = perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
-            T residual_diff = -3*mu*(1+2*beta) * tmp1 + (q-delta_gamma*3*mu*(1+2*beta)) * dtmp1_dgamma;
+            TV2 step( step0 , step1 );
 
-            if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
-                debug("PerzynaCamClayReturnMapping: residual_diff too small in abs value = ", residual_diff);
-                exit = 1;
-            }
+            if (abs(neg_det) <= T(1e-6))
+                step = T(-0.001) * r;
+            else
+                step = step / neg_det;
+            p += step(0);
+            q += step(1);
+        }
+        if (q < 1e-10){
+            q = 1e-10;
+        }
 
-            // debug("                iter", iter, "   p_new = ", p_new, ", q_y = ", q_y);
-            // debug("                iter", iter, "   residual = ", residual);
-            // debug("                iter", iter, "   dt = ", dt);
-            // debug("                iter", iter, "   dtmp1_dgamma = ", dtmp1_dgamma);
-            // debug("                iter", iter, "   delta_gamma = ", delta_gamma);
-
-            delta_gamma -= residual / residual_diff;
-        } // end N-R iterations
-
-        // p = (p0*M*M*(beta-1)*K * delta_gamma - p) / (1 - 2*M*M*K*delta_gamma); // = p_new
-        // q = q / (1+delta_gamma*6*mu*(1+2*beta));
-
-        p = ( p - delta_gamma * 2*M*K*(beta-1) ) / (1 + delta_gamma * 4*M*K/p0 ) ; // = p_new
-        q = q - delta_gamma * 3*mu*(1+2*beta);
-
-        // p = std::max(std::min(p, max_p), min_p);
-        // q = std::min(std::abs(q), max_q);
 
         return true; // if plastic, i.e., y > 0
     }
