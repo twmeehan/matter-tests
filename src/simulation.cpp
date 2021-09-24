@@ -55,6 +55,13 @@ void Simulation::createDirectory(){
     else
         std::cout << "Simulation " << sim_name << " was created now" << std::endl;
 
+    std::string in  = "../src/mpm.cpp";
+    std::string out = (directory + sim_name + "/initial_data.cpp");
+    bool check = copy_file(in, out);
+    if (!check){
+        std::cerr << "Initial data " << in << " was NOT successfully copied to " << out << std::endl;
+    }
+
 }
 
 void Simulation::simulate(){

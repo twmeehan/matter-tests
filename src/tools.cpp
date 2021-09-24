@@ -41,6 +41,12 @@ std::vector<T> linspace(T a, T b, size_t N) {
 }
 
 
+bool copy_file(std::string source, std::string destination){
+    std::ifstream in(source, std::ios::binary);
+    std::ofstream out(destination, std::ios::binary);
+    out << in.rdbuf();
+    return in && out;
+}
 
 
 
@@ -61,8 +67,8 @@ bool PerzynaQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T 
         T v = perzyna_visc;
 
         TV2 r;
-        T max_iter = 60;
-        for (int iter = 0; iter < 60; iter++) {
+        T max_iter = 40;
+        for (int iter = 0; iter < max_iter; iter++) {
 
             // if (iter == max_iter - 1){ // did not break loop
             //     debug("PerzynaNA: FATAL did not exit loop at iter = ", iter);
@@ -96,7 +102,7 @@ bool PerzynaQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T 
             T neg_det = -(12*K*M*M*d*dt*dt*mu*tmp5*(4*M*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*sqrt(4*M*M*tmp1 + 6.0*beta*beta*d*p0*p0 + 6.0*beta*d*p0*p0 + 1.5*d*p0*p0) - tmp2)*tmp1 + (3*sqrt(d)*dt*mu*tmp5 + v*sqrt(tmp))*(-16*K*M*M*M*sqrt(d)*dt*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*tmp1*sqrt(4*M*M*tmp1 + 6.0*beta*beta*d*p0*p0 + 6.0*beta*d*p0*p0 + 1.5*d*p0*p0) + 4*K*M*sqrt(d)*dt*tmp2*(2*M*(p - p0)*(beta*p0 + p) + M*tmp1 + p0*q*(2*beta + 1)) + p0*p0*v*tmp4))/(p0*p0*v*v*tmp3);
 
             T step0 = (-2*K*M*sqrt(d)*dt*(2*beta + 1)*(3*sqrt(d)*dt*mu*(2*beta + 1)*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1)) + p0*v*(q - qt)*sqrt(tmp))*(beta*p0 + 2*p - p0) + (3*sqrt(d)*dt*mu*tmp5 + v*sqrt(tmp))*(2*K*M*sqrt(d)*dt*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*(beta*p0 + 2*p - p0) + p0*p0*v*(p - pt)*sqrt(tmp)))/(p0*p0*v*v*(tmp));
-            
+
             T step1 = (6*M*sqrt(d)*dt*mu*(2*beta + 1)*(4*M*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*sqrt(4*M*M*tmp1 + 6.0*beta*beta*d*p0*p0 + 6.0*beta*d*p0*p0 + 1.5*d*p0*p0) - tmp2)*(2*K*M*sqrt(d)*dt*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*(beta*p0 + 2*p - p0) + p0*p0*v*(p - pt)*sqrt(tmp))*(beta*p0 + 2*p - p0) + (3*sqrt(d)*dt*mu*(2*beta + 1)*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1)) + p0*v*(q - qt)*sqrt(tmp))*(-16*K*M*M*M*sqrt(d)*dt*(2*M*(p - p0)*(beta*p0 + p) + p0*q*(2*beta + 1))*tmp1*sqrt(4*M*M*tmp1 + 6.0*beta*beta*d*p0*p0 + 6.0*beta*d*p0*p0 + 1.5*d*p0*p0) + 4*K*M*sqrt(d)*dt*tmp2*(2*M*(p - p0)*(beta*p0 + p) + M*tmp1 + p0*q*(2*beta + 1)) + p0*p0*v*tmp4))/(p0*p0*p0*v*v*tmp3);
 
 
