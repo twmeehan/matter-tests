@@ -80,7 +80,7 @@ int main(){
       // sim.plastic_model = VonMises;
       // sim.plastic_model = DruckerPrager;
       // sim.plastic_model = PerzynaVM;
-      sim.plastic_model = PerzynaNA;
+      sim.plastic_model = PerzynaDP;
       // sim.plastic_model = Curved;
 
       sim.dp_slope = 1.02857; // 30 deg

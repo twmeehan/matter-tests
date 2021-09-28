@@ -99,6 +99,14 @@ public:
   T low_y_init;
   T high_y_init;
 
+#ifdef THREEDIM
+  T min_z_init;
+  T max_z_init;
+  T Nz_init;
+  T low_z_init;
+  T high_z_init;
+#endif
+
   // Elastoplasticity
   T mu;
   T lambda;

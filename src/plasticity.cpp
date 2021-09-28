@@ -6,7 +6,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == Curved || plastic_model == PerzynaVM || plastic_model == PerzynaNA){
+    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == Curved || plastic_model == PerzynaVM || plastic_model == PerzynaDP){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log(); // VonMises
@@ -133,16 +133,13 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             } // end plastic projection projection
         } // end PerzynaVM
 
-        else if (plastic_model == PerzynaNA){
+        else if (plastic_model == PerzynaDP){
 
             T mu_sqrt6 = mu * 2.44948974278317809819728407471;
 
             // trial stresses
             T p_trial = -K * hencky_trace;
             T q_trial = mu_sqrt6 * hencky_deviatoric_norm;
-
-            // If DP
-            T q_yield = std::max((T)1e-10, dp_slope * p_trial + dp_cohesion);
 
             // if Non Ass MCC
             // T q_yield;
@@ -154,7 +151,23 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             //     q_yield = M*std::sqrt( (p0-p_trial)*(beta*p0+p_trial) / (1+2*beta) );
             // }
 
-            if (q_trial > q_yield) {
+            // If DP
+            T q_yield = dp_slope * p_trial + dp_cohesion;
+
+            // if left of tip
+            if (q_yield < 1e-10){
+                T delta_gamma = hencky_deviatoric_norm;
+                T p_proj = -dp_cohesion/dp_slope; // larger than p_trial
+                plastic_count++;
+                hencky = -p_proj/(K*dim) * TV::Ones();
+                particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+                particles.delta_gamma[p] = delta_gamma;
+                particles.eps_pl_dev[p] += delta_gamma;
+                particles.eps_pl_vol[p] += (p_proj-p_trial)/K;
+            }
+
+            // right of tip AND above yield surface
+            else if (q_trial > q_yield) {
 
                 plastic_count++;
 
@@ -163,7 +176,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 int max_iter = 60;
                 for (int iter = 0; iter < max_iter; iter++) {
                     if (iter == max_iter - 1){ // did not break loop
-                        debug("PerzynaNA: FATAL did not exit loop at iter = ", iter);
+                        debug("PerzynaDP: FATAL did not exit loop at iter = ", iter);
                         exit = 1;
                     }
 
@@ -182,7 +195,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     T residual_diff = -mu_sqrt6 * tmp1 + (q_trial - mu_sqrt6 * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
 
                     if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
-                        debug("PerzynaNA: residual_diff too small in abs value = ", residual_diff);
+                        debug("PerzynaDP: residual_diff too small in abs value = ", residual_diff);
                         exit = 1;
                     }
 

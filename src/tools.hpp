@@ -37,7 +37,7 @@ typedef float T;
 
 enum PlateType { top, bottom, left, right, front, back};
 enum ElasticModel { StvkWithHencky, NeoHookean };
-enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, Curved, PerzynaVM, PerzynaNA };
+enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, Curved, PerzynaVM, PerzynaDP };
 enum BoundaryCondition { STICKY, SLIP, SEPARATE };
 
 ///////////////////// TOOLS ////////////////////////

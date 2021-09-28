@@ -147,10 +147,16 @@ void Simulation::remeshFixedInit(){
 
     // Save for remeshFixedCont
     max_x_init = max_x;
-    max_y_init = max_y;
-
     min_x_init = min_x;
+
+    max_y_init = max_y;
     min_y_init = min_y;
+
+#ifdef THREEDIM
+    max_z_init = max_z;
+    min_z_init = min_z;
+#endif
+
 
     // ACTUAL (old) side lengths
     T Lx = max_x - min_x;
@@ -175,6 +181,9 @@ void Simulation::remeshFixedInit(){
     // save for remeshFixedCont
     Nx_init = Nx;
     Ny_init = Ny;
+#ifdef THREEDIM
+    Nz_init = Nz;
+#endif
 
     low_x_init    = min_x - dx * safety_factor;
     high_x_init   = max_x + dx * safety_factor;
@@ -239,6 +248,20 @@ void Simulation::remeshFixedCont(){
                                                  return x1(1) < x2(1);
                                              } );
     T min_y = (*min_y_it)(1);
+#ifdef THREEDIM
+    auto max_z_it = std::max_element( particles.x.begin(), particles.x.end(),
+                                             []( const TV &x1, const TV &x2 )
+                                             {
+                                                 return x1(2) < x2(2);
+                                             } );
+    T max_z = (*max_z_it)(2);
+    auto min_z_it = std::min_element( particles.x.begin(), particles.x.end(),
+                                             []( const TV &x1, const TV &x2 )
+                                             {
+                                                 return x1(2) < x2(2);
+                                             } );
+    T min_z = (*min_z_it)(2);
+#endif
 
     T high_x;
     if (max_x < max_x_init){
@@ -285,6 +308,53 @@ void Simulation::remeshFixedCont(){
         high_y = high_y_init + expansion_factor * dx;
     }
 
+    T low_y;
+    if (min_y > min_y_init){
+        unsigned int reduction_factor = std::floor( std::max(0.0,(min_y-min_y_init)/dx - 1e-8*dx) );
+        debug("               grid -y reduction = ", reduction_factor);
+
+        Ny    = Ny         - reduction_factor;
+        low_y = low_y_init + reduction_factor * dx;
+    } else{
+        unsigned int expansion_factor = std::floor( std::max(0.0,(min_y_init-min_y)/dx - 1e-8*dx) );
+        debug("               grid -y expansion = ", expansion_factor);
+
+        Ny    = Ny         + expansion_factor;
+        low_y = low_y_init - expansion_factor * dx;
+    }
+
+#ifdef THREEDIM
+    T high_z;
+    if (max_z < max_z_init){
+        unsigned int reduction_factor = std::floor( std::max(0.0,(max_z_init-max_z)/dx - 1e-8*dx) );
+        debug("               grid +z reduction = ", reduction_factor);
+
+        Nz     = Nz_init     - reduction_factor;
+        high_z = high_z_init - reduction_factor * dx;
+    } else{
+        unsigned int expansion_factor = std::floor( std::max(0.0,(max_z-max_z_init)/dx - 1e-8*dx) );
+        debug("               grid +z expansion = ", expansion_factor);
+
+        Nz     = Nz_init     + expansion_factor;
+        high_z = high_z_init + expansion_factor * dx;
+    }
+
+    T low_z;
+    if (min_z > min_z_init){
+        unsigned int reduction_factor = std::floor( std::max(0.0,(min_z-min_z_init)/dx - 1e-8*dx) );
+        debug("               grid -z reduction = ", reduction_factor);
+
+        Nz    = Nz         - reduction_factor;
+        low_z = low_z_init + reduction_factor * dx;
+    } else{
+        unsigned int expansion_factor = std::floor( std::max(0.0,(min_z_init-min_z)/dx - 1e-8*dx) );
+        debug("               grid -z expansion = ", expansion_factor);
+
+        Nz    = Nz         + expansion_factor;
+        low_z = low_z_init - expansion_factor * dx;
+    }
+#endif
+
 
 
 #ifdef THREEDIM
@@ -302,8 +372,8 @@ void Simulation::remeshFixedCont(){
 #endif
 
     // Eigen:  LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
-    grid.x = linspace(low_x,      high_x,   Nx);
-    grid.y = linspace(low_y_init, high_y,   Ny);
+    grid.x = linspace(low_x, high_x, Nx);
+    grid.y = linspace(low_y, high_y, Ny);
 
     grid.xc = grid.x[0];
     grid.yc = grid.y[0];
