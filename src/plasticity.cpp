@@ -310,13 +310,13 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 T ep = p_stress / (K*dim);
                 T eps_pl_vol_inst = hencky_trace + dim * ep;
                 particles.eps_pl_vol[p] += eps_pl_vol_inst;
-                particles.eps_pl_vol_2[p] += std::abs(eps_pl_vol_inst);
-
-                if (particles.fail_crit[p]){
-                    particles.eps_pl_vol_3[p] += -std::abs(eps_pl_vol_inst);
-                }else{
-                    particles.eps_pl_vol_3[p] += xi_nonloc * std::abs(eps_pl_vol_inst);
-                }
+                // particles.eps_pl_vol_2[p] += std::abs(eps_pl_vol_inst);
+                //
+                // if (particles.fail_crit[p]){
+                //     particles.eps_pl_vol_3[p] += -std::abs(eps_pl_vol_inst);
+                // }else{
+                //     particles.eps_pl_vol_3[p] += xi_nonloc * std::abs(eps_pl_vol_inst);
+                // }
 
                 hencky = q_stress / mu_sqrt6 * hencky_deviatoric - ep*TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();

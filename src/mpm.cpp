@@ -12,7 +12,7 @@
 int main(){
 
       Simulation sim;
-      sim.sim_name = "perzyna_dp_wieckowski_visc1";
+      sim.sim_name = "test_larsie_2"; // "perzyna_dp_wieckowski_visc1";
       sim.directory = "/media/blatny/harddrive4/larsie/"; // "dumps/";
       sim.end_frame = 500;
       sim.fps = 100;
@@ -90,7 +90,7 @@ int main(){
       sim.yield_stress_min = 1e2;
 
       sim.perzyna_exp = 1;
-      sim.perzyna_visc = 1.0; // 50 s^-1
+      sim.perzyna_visc = 1.0 / 50; // 50 s^-1
 
       sim.beta = 0.2;
       sim.M = 0.1;
@@ -108,8 +108,8 @@ int main(){
       debug("particle_mass    = ", sim.particle_mass);
       debug("Np               = ", sim.Np);
 
-      T eps_pl_vol_init = -std::asinh(sim.p0/sim.K) / sim.xi;
-      sim.particles.eps_pl_vol_3.resize(sim.Np); std::fill( sim.particles.eps_pl_vol_3.begin(), sim.particles.eps_pl_vol_3.end(), eps_pl_vol_init );
+      // T eps_pl_vol_init = -std::asinh(sim.p0/sim.K) / sim.xi;
+      // sim.particles.eps_pl_vol_3.resize(sim.Np); std::fill( sim.particles.eps_pl_vol_3.begin(), sim.particles.eps_pl_vol_3.end(), eps_pl_vol_init );
 
       ////////////////////////////////////////////////////
       ///////////// PARTICLES FROM FILE //////////////////
