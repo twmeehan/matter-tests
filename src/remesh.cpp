@@ -149,6 +149,9 @@ void Simulation::remeshFixedInit(){
     max_x_init = max_x;
     max_y_init = max_y;
 
+    min_x_init = min_x;
+    min_y_init = min_y;
+
     // ACTUAL (old) side lengths
     T Lx = max_x - min_x;
     T Ly = max_y - min_y;
@@ -217,6 +220,12 @@ void Simulation::remeshFixedCont(){
                                                  return x1(0) < x2(0);
                                              } );
     T max_x = (*max_x_it)(0);
+    auto min_x_it = std::min_element( particles.x.begin(), particles.x.end(),
+                                             []( const TV &x1, const TV &x2 )
+                                             {
+                                                 return x1(0) < x2(0);
+                                             } );
+    T min_x = (*min_x_it)(0);
 
     auto max_y_it = std::max_element( particles.x.begin(), particles.x.end(),
                                              []( const TV &x1, const TV &x2 )
@@ -224,35 +233,58 @@ void Simulation::remeshFixedCont(){
                                                  return x1(1) < x2(1);
                                              } );
     T max_y = (*max_y_it)(1);
+    auto min_y_it = std::min_element( particles.x.begin(), particles.x.end(),
+                                             []( const TV &x1, const TV &x2 )
+                                             {
+                                                 return x1(1) < x2(1);
+                                             } );
+    T min_y = (*min_y_it)(1);
 
-    T high_x, high_y;
+    T high_x;
     if (max_x < max_x_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(max_x_init-max_x)/dx - 1e-8*dx) );
-        debug("               grid x reduction = ", reduction_factor);
+        debug("               grid +x reduction = ", reduction_factor);
 
         Nx     = Nx_init     - reduction_factor;
         high_x = high_x_init - reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(max_x-max_x_init)/dx - 1e-8*dx) );
-        debug("               grid x expansion = ", expansion_factor);
+        debug("               grid +x expansion = ", expansion_factor);
 
         Nx     = Nx_init     + expansion_factor;
         high_x = high_x_init + expansion_factor * dx;
     }
 
+    T low_x;
+    if (min_x > min_x_init){
+        unsigned int reduction_factor = std::floor( std::max(0.0,(min_x-min_x_init)/dx - 1e-8*dx) );
+        debug("               grid -x reduction = ", reduction_factor);
+
+        Nx    = Nx         - reduction_factor;
+        low_x = low_x_init + reduction_factor * dx;
+    } else{
+        unsigned int expansion_factor = std::floor( std::max(0.0,(min_x_init-min_x)/dx - 1e-8*dx) );
+        debug("               grid -x expansion = ", expansion_factor);
+
+        Nx    = Nx         + expansion_factor;
+        low_x = low_x_init - expansion_factor * dx;
+    }
+
+    T high_y;
     if (max_y < max_y_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(max_y_init-max_y)/dx - 1e-8*dx) );
-        debug("               grid y reduction = ", reduction_factor);
+        debug("               grid +y reduction = ", reduction_factor);
 
         Ny     = Ny_init     - reduction_factor;
         high_y = high_y_init - reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(max_y-max_y_init)/dx - 1e-8*dx) );
-        debug("               grid y expansion = ", expansion_factor);
+        debug("               grid +y expansion = ", expansion_factor);
 
         Ny     = Ny_init     + expansion_factor;
         high_y = high_y_init + expansion_factor * dx;
     }
+
 
 
 #ifdef THREEDIM
@@ -270,8 +302,14 @@ void Simulation::remeshFixedCont(){
 #endif
 
     // Eigen:  LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
-    grid.x = linspace(low_x_init, high_x, Nx);
-    grid.y = linspace(low_y_init, high_y, Ny);
+    grid.x = linspace(low_x,      high_x,   Nx);
+    grid.y = linspace(low_y_init, high_y,   Ny);
+
+    grid.xc = grid.x[0];
+    grid.yc = grid.y[0];
+#ifdef THREEDIM
+    grid.zc = grid.z[0];
+#endif
 
     grid.v.resize(grid_nodes);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
     grid.flip.resize(grid_nodes); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );

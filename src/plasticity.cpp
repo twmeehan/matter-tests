@@ -6,7 +6,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == Curved || plastic_model == PerzynaVM || plastic_model == PerzynaNA){
+    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == Curved || plastic_model == PerzynaVM || plastic_model == PerzynaNA){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log(); // VonMises
@@ -22,7 +22,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         if (plastic_model == VonMises){
 
-            // Linear Hardening/Softening
+            // NB: q-format. Linear Hardening/Softening
             T yield_stress = std::max( (T)1e-3, particles.yield_stress_orig[p] + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
 
             T delta_gamma = hencky_deviatoric_norm - yield_stress / mu_sqrt6;
@@ -40,7 +40,44 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         } // end VonMises
 
-        if (plastic_model == PerzynaVM){
+        else if (plastic_model == DruckerPrager){
+
+            T mu_sqrt6 = mu * 2.44948974278317809819728407471;
+
+            // trial stresses
+            T p_trial = -K * hencky_trace;
+            T q_trial = mu_sqrt6 * hencky_deviatoric_norm;
+
+            T q_yield = dp_slope * p_trial + dp_cohesion;
+
+            // if left of tip
+            if (q_yield < 1e-10){
+                T delta_gamma = hencky_deviatoric_norm;
+                T p_proj = -dp_cohesion/dp_slope; // larger than p_trial
+                plastic_count++;
+                hencky = -p_proj/(K*dim) * TV::Ones();
+                particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+                particles.delta_gamma[p] = delta_gamma;
+                particles.eps_pl_dev[p] += delta_gamma;
+                particles.eps_pl_vol[p] += (p_proj-p_trial)/K;
+            }
+            else{ // right of tipe
+                T delta_gamma = hencky_deviatoric_norm - q_yield / mu_sqrt6;
+
+                if (delta_gamma > 0){ // project to yield surface
+                    plastic_count++;
+                    particles.delta_gamma[p] = delta_gamma;
+
+                    // NB NB NB NB The following 3 lines should be commented out as this is done in plasticity_projection
+                    hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
+                    particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+                    particles.eps_pl_dev[p] += delta_gamma;
+                }
+            } // if else side of tip
+
+        } // end DruckerPrager
+
+        else if (plastic_model == PerzynaVM){
 
             T mu_sqrt6 = mu * 2.44948974278317809819728407471;
 
@@ -96,7 +133,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             } // end plastic projection projection
         } // end PerzynaVM
 
-        if (plastic_model == PerzynaNA){
+        else if (plastic_model == PerzynaNA){
 
             T mu_sqrt6 = mu * 2.44948974278317809819728407471;
 
@@ -105,17 +142,17 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T q_trial = mu_sqrt6 * hencky_deviatoric_norm;
 
             // If DP
-            // T q_yield = std::max((T)1e-10, dp_slope * p_trial + dp_cohesion);
+            T q_yield = std::max((T)1e-10, dp_slope * p_trial + dp_cohesion);
 
             // if Non Ass MCC
-            T q_yield;
-            if (p_trial <= -beta*p0){
-                q_yield = 1e-10;
-            } else if (p_trial >= p0){
-                q_yield = 1e-10;
-            } else{
-                q_yield = M*std::sqrt( (p0-p_trial)*(beta*p0+p_trial) / (1+2*beta) );
-            }
+            // T q_yield;
+            // if (p_trial <= -beta*p0){
+            //     q_yield = 1e-10;
+            // } else if (p_trial >= p0){
+            //     q_yield = 1e-10;
+            // } else{
+            //     q_yield = M*std::sqrt( (p0-p_trial)*(beta*p0+p_trial) / (1+2*beta) );
+            // }
 
             if (q_trial > q_yield) {
 

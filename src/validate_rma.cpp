@@ -9,8 +9,9 @@ void Simulation::validateRMA(){
     plastic_info.close();
 
     // Trial state ENTER HERE
-    T p_trial = 0.345086;
-    T q_trial = 0.720833;
+    T p_trial = -500; //87;
+    T q_trial = 500;
+    dt = 0.001;
 
     T trace_epsilon = -p_trial / K;
     T norm_eps_hat = q_trial / mu_sqrt6;
@@ -18,7 +19,8 @@ void Simulation::validateRMA(){
     std::ofstream steps; steps.open(directory + sim_name + "/rma_steps.txt");
     steps    << "0" << "\t" << p_trial << "\t" << q_trial << "\t" << "0" << std::endl;
 
-    bool outside = AnalQuadReturnMapping(p_trial, q_trial, exit, M, p0, beta);
+    bool outside = PerzynaQuadReturnMapping(p_trial, q_trial, exit, M, p0, beta, mu, K, dt, dim, perzyna_visc);
+    // bool outside = AnalQuadReturnMapping(p_trial, q_trial, exit, M, p0, beta);
     // bool outside = QuadraticReturnMapping(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
     // bool outside = CamClayReturnMapping(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
 

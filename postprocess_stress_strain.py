@@ -12,11 +12,12 @@ legendsize = 5
 #basename = "/media/blatny/harddrive4/larsie/3d_ql_anal_"
 #names = ["rho300_xi0.3", "soft_rho300_xi0.3", "soft_monforte", "soft_monforte_v3"]
 
-basename = "/media/blatny/harddrive4/larsie/2d_ql_anal_soft_alt"
+basename = "/media/blatny/harddrive4/larsie/2d_ql_anal_soft_altMCC_N10000_"
 # names = ["0", "1", "3", "3_m100", "3_N20000_xisoft0.1"]
 # names = ["3_N20000_xisoft0.05_xi0.1", "3_N20000_xisoft0.02_xi0.3", "3_N20000_xisoft0.02_xi0.3_constvel", "3_N20000_xisoft0.02_xi0.6", "3_N20000_xisoft0.02_xi0.6_abs"]
-names = ["3_N10000_2", "3_N10000_3", "3_N10000_4", "3_N10000_5"]
-
+# names = ["3_N10000_2", "3_N10000_3", "3_N10000_4", "3_N10000_5", "3_N10000_5"]
+names = ["1", "1_slow", "2", "2_fps", "3"]
+# names = ["natcomms", "natcomms_slow", "test"]
 
 vel = -0.2
 Ly = 2.0

@@ -37,7 +37,7 @@ typedef float T;
 
 enum PlateType { top, bottom, left, right, front, back};
 enum ElasticModel { StvkWithHencky, NeoHookean };
-enum PlasticModel { NoPlasticity, VonMises, DPSimpleSoft, Curved, PerzynaVM, PerzynaNA };
+enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, Curved, PerzynaVM, PerzynaNA };
 enum BoundaryCondition { STICKY, SLIP, SEPARATE };
 
 ///////////////////// TOOLS ////////////////////////
@@ -96,7 +96,7 @@ bool copy_file(std::string source, std::string destination);
 bool PerzynaQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc);
 bool CamClayReturnMapping(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus);
 bool QuadraticReturnMapping(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus);
-bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta);
+bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta); //  // DO NOT USE - WRONG PROJECTION
 
 #ifdef CUBICSPLINES
 

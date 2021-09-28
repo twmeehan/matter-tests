@@ -306,7 +306,7 @@ bool QuadraticReturnMapping(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_h
 }
 
 
-
+ // DO NOT USE - WRONG PROJECTION
 bool AnalQuadReturnMapping(T& p, T& q, int& exit, T M, T p0, T beta)
 {
     using std::abs;

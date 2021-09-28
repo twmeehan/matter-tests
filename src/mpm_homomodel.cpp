@@ -12,22 +12,24 @@
 int main(){
 
       Simulation sim;
-      sim.sim_name = "perzyna_dp_wieckowski_visc1";
+      sim.sim_name = "2d_ql_anal_soft_altMCC_N10000_test";
+      // sim.sim_name = "3d_elastic";
+      // sim.sim_name = "test_rma_quad_anal";
       sim.directory = "/media/blatny/harddrive4/larsie/"; // "dumps/";
-      sim.end_frame = 500;
-      sim.fps = 100;
-      sim.gravity = TV::Zero(); sim.gravity[1] = -9.81;
+      sim.end_frame = 800;
+      sim.fps = 120;
+      sim.gravity = TV::Zero(); sim.gravity[1] = 0;
       sim.cfl = 0.6;
       sim.dt_max_coeff = 0.4;
       sim.flip_ratio = 0.99;
       sim.n_threads = 16;
 
-      sim.Lx = 2.0;
+      sim.Lx = 1.0;
       sim.Ly = 2.0;
       // sim.Lz = sim.Lx;
 
       ///////////// PARTICLES FROM FILE //////////////////
-      std::string sample = "samples/sample_w2_h2_r0.011_";
+      std::string sample = "samples/sample_w1_h2_r0.011_";
       std::ifstream file(sample + "num.txt");
       file >> sim.Np;
       file.close();
@@ -43,9 +45,9 @@ int main(){
       // sim.Np = Npx * Npy;// * Npz;
       ///////////////////////////////////////////////////
 
-      T vel_top   = 0.0;
-      T vel_bot   = 0.0;
-      T vel_left  = 0.0;
+      T vel_top = -0.2;
+      T vel_bot = 0.0;
+      T vel_left = 0.0;
       T vel_right = 0.0;
      // T vel_back = 0.0;
      // T vel_front = 0.0;
@@ -56,7 +58,7 @@ int main(){
       T offset = -0.01 * sim.dx/2.0; // When the grid is aligned with the boundary, it is important that the object overlap a bit into the particle domain
 
       std::string name;
-      ///////// 3D /////////
+      // 3D
       // name = "Compressor"; InfinitePlate compressor = InfinitePlate(0, sim.Ly + offset, 0,    0, vel_top, 0, sim.vmin_factor, sim.load_factor,    top, SLIP, name);  sim.objects.push_back(compressor);
       // name = "Ground";     InfinitePlate ground     = InfinitePlate(0, 0      - offset, 0,    0, vel_bot, 0,               1,               0, bottom, SLIP, name);  sim.objects.push_back(ground);
       //
@@ -66,42 +68,31 @@ int main(){
       // name = "SideBack";   InfinitePlate side_back  = InfinitePlate(0, 0, 0      - offset,    0, 0, vel_back,              1,               0,  back,  SLIP, name);  sim.objects.push_back(side_back);
       // name = "SideFront";  InfinitePlate side_front = InfinitePlate(0, 0, sim.Lz + offset,    0, 0, vel_front,             1,               0,  front, SLIP, name);  sim.objects.push_back(side_front);
 
-      ///////// 2D /////////
-      // name = "Compressor"; InfinitePlate compressor = InfinitePlate(0,               sim.Ly + offset,  0,         vel_top,   sim.vmin_factor, sim.load_factor, top,    SLIP, name);  sim.objects.push_back(compressor);
-      name = "Ground";     InfinitePlate ground     = InfinitePlate(0,               0 - offset,       0,         vel_bot,   1,               0,               bottom, STICKY, name);  sim.objects.push_back(ground);
-      // name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0 - offset,      0,                vel_left,  0,         1,               0,               left,   SLIP, name);  sim.objects.push_back(side_left);
-      // name = "SideRight";  InfinitePlate side_right = InfinitePlate(sim.Lx + offset, 0,                vel_right, 0,         1,               0,               right,  SLIP, name);  sim.objects.push_back(side_right);
+      // 2D
+      name = "Compressor"; InfinitePlate compressor = InfinitePlate(0, sim.Ly + offset,    0, vel_top, sim.vmin_factor, sim.load_factor,    top, SLIP, name);  sim.objects.push_back(compressor);
+      name = "Ground";     InfinitePlate ground     = InfinitePlate(0, 0      - offset,    0, vel_bot,               1,               0, bottom, SLIP, name);  sim.objects.push_back(ground);
+
+      name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0      - offset, 0,    vel_left,  0,             1,              0,   left, SLIP, name);  sim.objects.push_back(side_left);
+      name = "SideRight";  InfinitePlate side_right = InfinitePlate(sim.Lx + offset, 0,    vel_right, 0,             1,              0,  right, SLIP, name);  sim.objects.push_back(side_right);
 
       sim.friction = 0.0; // currently only support zero friction
 
       // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
-      // sim.plastic_model = NoPlasticity;
       // sim.plastic_model = VonMises;
-      // sim.plastic_model = DruckerPrager;
-      // sim.plastic_model = PerzynaVM;
-      sim.plastic_model = PerzynaNA;
-      // sim.plastic_model = Curved;
+      sim.plastic_model = QuadraticLars;
+      // sim.plastic_model = NoPlasticity;
+      sim.beta = 0.2; // 0.43-0.40*0.3;
+      sim.M = 0.5; // 1.35;
+      sim.p0 = 11e3; // 200e3;
 
-      sim.dp_slope = 1.02857; // 30 deg
-      sim.dp_cohesion = 0;
-
-      sim.yield_stress_orig = 1e2;
-      sim.yield_stress_min = 1e2;
-
-      sim.perzyna_exp = 1;
-      sim.perzyna_visc = 1.0; // 50 s^-1
-
-      sim.beta = 0.2;
-      sim.M = 0.1;
-      sim.p0 = 1e3;
-
-      sim.xi = 0;
-      sim.xi_nonloc = 0;
+      sim.xi = 0.25; //0.005;
+      sim.xi_nonloc = 15; //0.5;
 
       sim.nonlocal_l = 0;
 
-      sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1500);
+      // sim.initialize(/* E */ 3e8, /* nu */ 0.3, /* rho */ 300);
+      sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 100);
       debug("Wave speed       = ", sim.wave_speed);
       debug("dt_max           = ", sim.dt_max);
       debug("particle_volume  = ", sim.particle_volume);
@@ -118,10 +109,6 @@ int main(){
       if (Np_check != sim.Np){
           debug("Particle number mismatch!!!");
           return 0;
-      }
-
-      for(int p = 0; p < sim.Np; p++){
-          sim.particles.x[p][0] -= 1.0;
       }
 
       //////////////////////////////////////////////////
@@ -160,7 +147,7 @@ int main(){
       /////////////////////////////////////////////////////
 
       sim.simulate();
-      // sim.validateRMA();
+      // sim.validateRMA();\
 
 
 	return 0;

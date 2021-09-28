@@ -87,11 +87,13 @@ public:
   unsigned int load_factor;
 
   // Remeshing Fixed Grid
+  T min_x_init;
   T max_x_init;
   T Nx_init;
   T low_x_init;
   T high_x_init;
 
+  T min_y_init;
   T max_y_init;
   T Ny_init;
   T low_y_init;

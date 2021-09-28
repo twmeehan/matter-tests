@@ -8,6 +8,8 @@ elif int(sys.argv[1]) == 1: # QUAD ITER
     name = "test_rma_quad_iter"
 elif int(sys.argv[1]) == 2: # MCC
     name = "test_rma_mcc"
+elif int(sys.argv[1]) == 3: # QUAD PERZYNA
+    name = "perzyna_testrma"
 else:
     print("Unknown model")
 
@@ -31,7 +33,7 @@ p_true = np.linspace(-beta*p0+tol, p0-tol, 1000000)
 
 p_equi = np.linspace(0.9*p_final, 1.1*p_final, 100)
 
-if int(sys.argv[1]) == 0 or int(sys.argv[1]) == 1: # QUAD
+if int(sys.argv[1]) == 0 or int(sys.argv[1]) == 1 or int(sys.argv[1]) == 3: # QUAD
     q_true = 2.0*M / (2*beta+1.0) * (p0-p_true)*(beta*p0+p_true) / p0
     dqdp = 2.0*M / (2*beta+1.0) * (1-beta-2*p_final/p0)
 elif int(sys.argv[1]) == 2: # MCC
@@ -62,8 +64,10 @@ elif int(sys.argv[1]) == 1: # MCC
     plt.title("Quad Iter")
 elif int(sys.argv[1]) == 2: # MCC
     plt.title("MCC")
+elif int(sys.argv[1]) == 3: # QUAD PERZYNA
+    plt.title("Perzyna")
 
-plt.xlim([-1,1])
-plt.ylim([-0.1,10])
+#plt.xlim([-1,1])
+#plt.ylim([-0.1,10])
 
 plt.show()
