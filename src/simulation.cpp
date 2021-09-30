@@ -158,6 +158,8 @@ void Simulation::advanceStep(){
     deformationUpdate();
     // plasticity_projection();
     positionUpdate();
+
+    periodicBoundaryConditions();
 }
 
 
@@ -462,7 +464,21 @@ void Simulation::saveGridData(std::string extra){
 //
 // } // end boundaryCorrection
 
+void Simulation::periodicBoundaryConditions(){
+    T min_x_boundary = 0;
+    T max_x_boundary = Lx;
+    for(int p=0; p<Np; p++){
+        T part_x = particles.x[p](0);
+        if (part_x > max_x_boundary){
+            part_x = min_x_boundary + (part_x-max_x_boundary);
+        }
+        else if(part_x < min_x_boundary){
+            part_x = max_x_boundary - (min_x_boundary-part_x);
+        }
 
+        particles.x[p](0) = part_x;
+    }
+} // end periodicBoundaryConditions
 
 
 // This function is to be used in explicitEulerUpdate after boundaryCollision

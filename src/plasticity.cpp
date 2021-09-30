@@ -23,7 +23,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         if (plastic_model == VonMises){
 
             // NB: q-format. Linear Hardening/Softening
-            T yield_stress = std::max( (T)1e-3, particles.yield_stress_orig[p] + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
+            // T yield_stress = std::max( (T)1e-3, particles.yield_stress_orig[p] + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
+
+            T yield_stress = std::max( (T)1e-3, yield_stress_orig + xi * particles.eps_pl_dev[p]);
 
             T delta_gamma = hencky_deviatoric_norm - yield_stress / mu_sqrt6;
 

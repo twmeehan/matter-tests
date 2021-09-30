@@ -216,6 +216,7 @@ public:
 
   void validateRMA();
 
+  void periodicBoundaryConditions();
   void addExternalParticleGravity();
   std::pair<TMX, TMX> createExternalGridGravity();
 

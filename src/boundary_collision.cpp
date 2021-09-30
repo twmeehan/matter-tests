@@ -32,8 +32,6 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
             else if (obj.bc == SLIP) {
                 if (obj.plate_type == top || obj.plate_type == bottom){
                     // tangential velocity is the (x,z) components
-                    // normal component (y) must be set to zero
-                    vy_rel = 0;
                     if (friction == 0){
                         // Do nothing
                     }
@@ -51,11 +49,13 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
                         else
                             vz_rel += friction * std::abs(vy_rel);
                     }
+
+                    // normal component (y) must be set to zero
+                    vy_rel = 0;
+
                 } // end top and bottom plate
                 else if (obj.plate_type == left || obj.plate_type == right){
                     // tangential velocity is the (y,z) components
-                    // normal component (x) must be set to zero
-                    vx_rel = 0;
                     if (friction == 0){
                         // Do nothing
                     }
@@ -73,11 +73,13 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
                         else
                             vz_rel += friction * std::abs(vx_rel);
                     }
+
+                    // normal component (x) must be set to zero
+                    vx_rel = 0;
+
                 } // end left or right plate
                 else if (obj.plate_type == front || obj.plate_type == back){
                     // tangential velocity is the (x,y) components
-                    // normal component (z) must be set to zero
-                    vz_rel = 0;
                     if (friction == 0){
                         // Do nothing
                     }
@@ -95,6 +97,10 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
                         else
                             vy_rel += friction * std::abs(vz_rel);
                     }
+
+                    // normal component (z) must be set to zero
+                    vz_rel = 0;
+
                 } // end front or back plate
             } // end SLIP
 
@@ -103,8 +109,6 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
             else if (obj.bc == SEPARATE) {
                 if ((obj.plate_type == top && vy_rel > 0) || (obj.plate_type == bottom && vy_rel < 0)){
                     // tangential velocity is the (x,z) components
-                    // normal component (y) must be set to zero
-                    vy_rel = 0;
                     if (friction == 0){
                         // Do nothing
                     }
@@ -122,11 +126,13 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
                         else
                             vz_rel += friction * std::abs(vy_rel);
                     }
+
+                    // normal component (y) must be set to zero
+                    vy_rel = 0;
+
                 } // end top and bottom plate
                 else if ((obj.plate_type == left && vx_rel < 0) || (obj.plate_type == right && vx_rel > 0)){
                     // tangential velocity is the (y,z) components
-                    // normal component (x) must be set to zero
-                    vx_rel = 0;
                     if (friction == 0){
                         // Do nothing
                     }
@@ -144,11 +150,13 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
                         else
                             vz_rel += friction * std::abs(vx_rel);
                     }
+
+                    // normal component (x) must be set to zero
+                    vx_rel = 0;
+
                 } // end left or right plate
                 else if ((obj.plate_type == front && vz_rel > 0) || (obj.plate_type == back && vz_rel < 0 )){
                     // tangential velocity is the (x,y) components
-                    // normal component (z) must be set to zero
-                    vz_rel = 0;
                     if (friction == 0){
                         // Do nothing
                     }
@@ -166,6 +174,10 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
                         else
                             vy_rel += friction * std::abs(vz_rel);
                     }
+
+                    // normal component (z) must be set to zero
+                    vz_rel = 0;
+
                 } // end front or back plate
             } // end SEPARATE
 
@@ -213,9 +225,7 @@ void Simulation::boundaryCollision(T xi, T yi, TV& vi){
 
             else if (obj.bc == SLIP) {
                 if (obj.plate_type == top || obj.plate_type == bottom){
-                    // tangential velocity is the (x) component
-                    // normal component (y) must be set to zero
-                    vy_rel = 0;
+                    // tangential velocity is the (x) component and must be changed
                     if (friction == 0){
                         // Do nothing
                     }
@@ -228,11 +238,14 @@ void Simulation::boundaryCollision(T xi, T yi, TV& vi){
                         else
                             vx_rel += friction * std::abs(vy_rel);
                     }
+
+                    // normal component (y) must be set to zero
+                    vy_rel = 0;
+
                 } // end top and bottom plate
                 else if (obj.plate_type == left || obj.plate_type == right){
-                    // tangential velocity is the (y) component
-                    // normal component (x) must be set to zero
-                    vx_rel = 0;
+                    // tangential velocity is the (y) component and must be changed
+
                     if (friction == 0){
                         // Do nothing
                     }
@@ -245,7 +258,12 @@ void Simulation::boundaryCollision(T xi, T yi, TV& vi){
                         else
                             vy_rel += friction * std::abs(vx_rel);
                     }
+
+                    // normal component (x) must be set to zero
+                    vx_rel = 0;
+
                 } // end left or right plate
+
             } // end SLIP
 
 
@@ -253,9 +271,7 @@ void Simulation::boundaryCollision(T xi, T yi, TV& vi){
             else if (obj.bc == SEPARATE) {
 
                 if ((obj.plate_type == top && vy_rel > 0) || (obj.plate_type == bottom && vy_rel < 0)){
-                    // tangential velocity is the (x) component
-                    // normal component (y) must be set to zero IF MOVING TOWARDS THE PLATE
-                    vy_rel = 0;
+                    // tangential velocity is the (x) component and must be changed
                     if (friction == 0){
                         // Do nothing
                     }
@@ -268,11 +284,13 @@ void Simulation::boundaryCollision(T xi, T yi, TV& vi){
                         else
                             vx_rel += friction * std::abs(vy_rel);
                     }
+
+                    // normal component (y) must be set to zero IF MOVING TOWARDS THE PLATE
+                    vy_rel = 0;
+
                 } // end top and bottom plate
                 else if ((obj.plate_type == left && vx_rel < 0) || (obj.plate_type == right && vx_rel > 0)){
-                    // tangential velocity is the (y) component
-                    // normal component (x) must be set to zero IF MOVING TOWARDS THE PLATE
-                    vx_rel = 0;
+                    // tangential velocity is the (y) component and must be changed
                     if (friction == 0){
                         // Do nothing
                     }
@@ -285,6 +303,10 @@ void Simulation::boundaryCollision(T xi, T yi, TV& vi){
                         else
                             vy_rel += friction * std::abs(vx_rel);
                     }
+
+                    // normal component (x) must be set to zero IF MOVING TOWARDS THE PLATE
+                    vx_rel = 0;
+
                 } // end left or right plate
             } // end SEPARATE
 

@@ -3,9 +3,9 @@ import sys
 import matplotlib.pyplot as plt
 from bridson import poisson_disc_samples
 
-w = 1
-h = 2
-r = float(sys.argv[1]) # smaller r means more samples!
+w = float(sys.argv[1])
+h = float(sys.argv[2])
+r = float(sys.argv[3]) # smaller r means more samples!
 k = 50
 
 seed = 42

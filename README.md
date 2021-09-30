@@ -1,53 +1,63 @@
-# Larsie
+# LarsieMPM
 
-An implementation of the Material Point Method (MPM) in the finite-strain elastoplastic framework.
+A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C++.
 
-### Features and limitations
+### Features
 
-Supports **2D** and **3D**.
+* **2D** and **3D**
 
-Supports **quadratic and cubic B-splines**, and **PIC**, **FLIP** and **PIC-FLIP** for particle-grid interpolation.
+* Explicit Euler adaptive time stepping
 
-Supports **Neo-Hookean** and **St. Venant-Kirchhoff** elasticity.
+* Adaptive background grid extension/reduction to particle domain
 
-Supports **Von Mises** and **Drucker-Prager** plasticity, which are to be used with the St. Venant-Kirchhoff elastic model. Both the Von Mises model and Drucker-Prager model has an optional **strain-softening** feature.
+* Supports a linearly weighted combination of **PIC** and **FLIP** with **quadratic** and **cubic B-splines** for particle-grid interplation
 
-Implementing other elastic or plastic models is easy due to the general framework of the code.
+* A nonlocal plasticity scheme is available for regularizing problems involving strain localization
 
-**Analytic objects** (formulated as levelsets) are supported with **sticky** or **slipping** (with user-defined **friction**) boundary conditions. Currently, only infinite plate objects are implemented.
 
-### How to compile and run
+* The following **elasticity models** are currently available:
+    - Neo-Hookean
+    - Saint Venant-Kirchhoff with Hencky strain
 
-`mkdir build`
 
-`cd build`
+* The following **(visco)plastic models** are currently available and compatible with the SVK-Hencky model above:
+    - Von Mises
+    - Drucker-Prager
+    - Peric Von Mises
+    - Peric Drucker-Prager
+    - Modified/Cohesive Cam Clay
+    - Cohesive Quadratic
+    - Implementing other (visco)plastic models is easy due to the general framework of the code
 
-`cmake -DCMAKE_BUILD_TYPE=Release -DUSE_OMP=True ..`
 
-Set up your simulation parameters and initial state in the `mpm.cpp` file.   
+* Analytic objects formulated as levelsets are supported with 1) **sticky**, 2) **slipping** or 3) **separating** boundary conditions. Currently, only infinite plate objects are implemented
 
-Compile from the `build` directory with `make`.  
+* Supports parallelization on shared memory with **OpenMP**
 
-Run from the `build` directory with the following command:  
+* A Python script that generates initial particle positions distributed according to the Poisson disk sampling scheme by R. Bridson, ACM SIGGRAPH 2007 is provided
 
-`./src/mpm`
+### Get started
 
-### Output data
+1. Set up your simulation parameters and initial state in `mpm.cpp`   
 
-Assuming the code is run from the `build` directory, the output is saved in the directory `dumps/<sim_name>` where `sim_name` is specified in the setup. The data is saved as csv-files with the format (x, y, z, vx, vy, vz, ...) for both particles (`out_part_X.csv`) and grid (`out_grid_X.csv`) data where X represents the frame number (from 0 to `end_frame`).
+2. Create a build directory: `mkdir build`
 
-### Pre- and post processing
-Two python scripts are provided for preprocessing and postprocessing, respectively. The preprocessing script generates samples distributed according to the Poisson Disk Sampling by R. Bridson, ACM SIGGRAPH 2007.
+3. From the build directory (`cd build`), specify CMake options: `cmake -DCMAKE_BUILD_TYPE=Release -DUSE_OMP=True ..`
 
-### Validation
+4. Compile with `make -j <number of cores>`
 
-The code offers the possibility for a user-defined external force which may depend on the Lagrangian coordinates of the particles. This allows for the creation of manufactured solutions, which can be used to validate the code (at least in the pure elastic case). The plastic models can easily be validated by plotting *p* (pressure) and *q* (Mises equivalent stress) for each particle in time.
-
-### Performance
-
-Larsie is continously implemented according to the principle *premature optimization is the root of all evil*. Basic optimizations (precomputations, clever particle-grid loops, memory reads, etc...) are still being explored. Although still under development, Larsie also supports **parallelization** on shared memory with **OpenMP**.
+5. Run the executable: `./src/mpm`
 
 ### Dependencies
 
-Larsie only relies only on CMake and the linear algebra library Eigen.
-To use OpenMP, use the CMake option `-DUSE_OMP=True`, and make sure to select the appropriate parallelized functions you want to use in `simulation.cpp`.
+The only required dependencies are **CMake** and the linear algebra library **Eigen**.
+
+The parallelized version with **OpenMP** is optional. To use this version, make sure to set the CMake option `-DUSE_OMP=True`, and select the appropriate parallelized functions you want to use in `simulation.cpp`.
+
+### Output data
+
+The location of the output data is specified by the user. The data is by default saved as csv-files with the format (x, y, z, vx, vy, vz, ...) for both particles (`out_part_X.csv`) and grid (`out_grid_X.csv`) data where X represents the frame number (from 0 to `end_frame`).
+
+### Validation
+
+The code offers the possibility for a user-defined external force which may depend on the Lagrangian coordinates of the particles. This allows for the creation of manufactured solutions, which can be used to validate the code in the pure elastic case.
