@@ -19,10 +19,10 @@ void Simulation::validateRMA(){
     std::ofstream steps; steps.open(directory + sim_name + "/rma_steps.txt");
     steps    << "0" << "\t" << p_trial << "\t" << q_trial << "\t" << "0" << std::endl;
 
-    bool outside = PerzynaQuadReturnMapping(p_trial, q_trial, exit, M, p0, beta, mu, K, dt, dim, perzyna_visc);
-    // bool outside = AnalQuadReturnMapping(p_trial, q_trial, exit, M, p0, beta);
-    // bool outside = QuadraticReturnMapping(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
-    // bool outside = CamClayReturnMapping(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
+    bool outside = PerzynaQuadRMA(p_trial, q_trial, exit, M, p0, beta, mu, K, dt, dim, perzyna_visc);
+    // bool outside = QuadRMA(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
+    // bool outside = CamClayRMA(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
+
 
     if (exit == 1){
         std::cout << "RMA failed with exit  = " << exit << std::endl;

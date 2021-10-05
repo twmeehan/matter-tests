@@ -266,14 +266,16 @@ void Simulation::remeshFixedCont(){
     T high_x;
     if (max_x < max_x_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(max_x_init-max_x)/dx - 1e-8*dx) );
+#ifdef WARNINGS
         debug("               grid +x reduction = ", reduction_factor);
-
+#endif
         Nx     = Nx_init     - reduction_factor;
         high_x = high_x_init - reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(max_x-max_x_init)/dx - 1e-8*dx) );
+#ifdef WARNINGS
         debug("               grid +x expansion = ", expansion_factor);
-
+#endif
         Nx     = Nx_init     + expansion_factor;
         high_x = high_x_init + expansion_factor * dx;
     }
@@ -281,14 +283,16 @@ void Simulation::remeshFixedCont(){
     T low_x;
     if (min_x > min_x_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(min_x-min_x_init)/dx - 1e-8*dx) );
+#ifdef WARNINGS
         debug("               grid -x reduction = ", reduction_factor);
-
+#endif
         Nx    = Nx         - reduction_factor;
         low_x = low_x_init + reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(min_x_init-min_x)/dx - 1e-8*dx) );
+#ifdef WARNINGS
         debug("               grid -x expansion = ", expansion_factor);
-
+#endif
         Nx    = Nx         + expansion_factor;
         low_x = low_x_init - expansion_factor * dx;
     }
@@ -296,14 +300,16 @@ void Simulation::remeshFixedCont(){
     T high_y;
     if (max_y < max_y_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(max_y_init-max_y)/dx - 1e-8*dx) );
+#ifdef WARNINGS
         debug("               grid +y reduction = ", reduction_factor);
-
+#endif
         Ny     = Ny_init     - reduction_factor;
         high_y = high_y_init - reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(max_y-max_y_init)/dx - 1e-8*dx) );
+#ifdef WARNINGS
         debug("               grid +y expansion = ", expansion_factor);
-
+#endif
         Ny     = Ny_init     + expansion_factor;
         high_y = high_y_init + expansion_factor * dx;
     }
@@ -311,14 +317,16 @@ void Simulation::remeshFixedCont(){
     T low_y;
     if (min_y > min_y_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(min_y-min_y_init)/dx - 1e-8*dx) );
+#ifdef WARNINGS
         debug("               grid -y reduction = ", reduction_factor);
-
+#endif
         Ny    = Ny         - reduction_factor;
         low_y = low_y_init + reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(min_y_init-min_y)/dx - 1e-8*dx) );
+#ifdef WARNINGS
         debug("               grid -y expansion = ", expansion_factor);
-
+#endif
         Ny    = Ny         + expansion_factor;
         low_y = low_y_init - expansion_factor * dx;
     }
@@ -327,14 +335,16 @@ void Simulation::remeshFixedCont(){
     T high_z;
     if (max_z < max_z_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(max_z_init-max_z)/dx - 1e-8*dx) );
+#ifdef WARNINGS
         debug("               grid +z reduction = ", reduction_factor);
-
+#endif
         Nz     = Nz_init     - reduction_factor;
         high_z = high_z_init - reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(max_z-max_z_init)/dx - 1e-8*dx) );
+#ifdef WARNINGS
         debug("               grid +z expansion = ", expansion_factor);
-
+#endif
         Nz     = Nz_init     + expansion_factor;
         high_z = high_z_init + expansion_factor * dx;
     }
@@ -342,14 +352,16 @@ void Simulation::remeshFixedCont(){
     T low_z;
     if (min_z > min_z_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(min_z-min_z_init)/dx - 1e-8*dx) );
+#ifdef WARNINGS
         debug("               grid -z reduction = ", reduction_factor);
-
+#endif
         Nz    = Nz         - reduction_factor;
         low_z = low_z_init + reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(min_z_init-min_z)/dx - 1e-8*dx) );
+#ifdef WARNINGS
         debug("               grid -z expansion = ", expansion_factor);
-
+#endif
         Nz    = Nz         + expansion_factor;
         low_z = low_z_init - expansion_factor * dx;
     }

@@ -33,7 +33,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 plastic_count++;
                 particles.delta_gamma[p] = delta_gamma;
 
-                // NB NB NB NB The following 3 lines should be commented out as this is done in plasticity_projection
+                // NB! If using the NONLOCAL approach: The following 3 lines should be commented out as this is done in plasticity_projection
                 hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += delta_gamma;
@@ -127,11 +127,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     delta_gamma -= residual / residual_diff;
                 } // end N-R iterations
 
-                particles.delta_gamma[p] = delta_gamma;
-
                 hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += delta_gamma;
+                particles.delta_gamma[p] = delta_gamma;
             } // end plastic projection projection
         } // end PerzynaVM
 
@@ -143,33 +142,33 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = -K * hencky_trace;
             T q_trial = mu_sqrt6 * hencky_deviatoric_norm;
 
-            // if Non Ass MCC
-            // T q_yield;
-            // if (p_trial <= -beta*p0){
-            //     q_yield = 1e-10;
-            // } else if (p_trial >= p0){
-            //     q_yield = 1e-10;
-            // } else{
-            //     q_yield = M*std::sqrt( (p0-p_trial)*(beta*p0+p_trial) / (1+2*beta) );
-            // }
+            T p_tip   = -dp_cohesion/dp_slope;
+            T p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain!
 
-            // If DP
-            T q_yield = dp_slope * p_trial + dp_cohesion;
-
-            // if left of tip
-            if (q_yield < 1e-10){
-                T delta_gamma = hencky_deviatoric_norm;
-                T p_proj = -dp_cohesion/dp_slope; // larger than p_trial
+            // if left of shifted tip,
+            // => project to the original tip given by cohesion only (i.e., not the shifted tip)
+            if ((p_trial+p_shift) < p_tip){
+                T delta_gamma     = hencky_deviatoric_norm;
+                T p_proj          = p_tip; // > p_trial
+                T eps_pl_vol_inst = (p_proj-p_trial)/K;
                 plastic_count++;
                 hencky = -p_proj/(K*dim) * TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                particles.delta_gamma[p] = delta_gamma;
-                particles.eps_pl_dev[p] += delta_gamma;
-                particles.eps_pl_vol[p] += (p_proj-p_trial)/K;
+                particles.delta_gamma[p]          = eps_pl_vol_inst;
+                particles.eps_pl_dev[p]          += delta_gamma; // NB TEMPORARY
+                particles.eps_pl_vol[p]          += eps_pl_vol_inst;
+                particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
+            }
+            else{ // if right of shifted tip (incl elastic states)
+                particles.eps_pl_vol_pradhana[p] = 0; // reset pradhana volume accumulation
+                particles.delta_gamma[p] = 0; // NB TEMPORARY
             }
 
-            // right of tip AND above yield surface
-            else if (q_trial > q_yield) {
+            // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
+            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion;
+
+            // right of tip AND outside yield surface
+            if ((p_trial+p_shift) > p_tip && q_trial > q_yield) {
 
                 plastic_count++;
 
@@ -204,11 +203,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     delta_gamma -= residual / residual_diff;
                 } // end N-R iterations
 
-                particles.delta_gamma[p] = delta_gamma;
-
                 hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += delta_gamma;
+                particles.delta_gamma[p] = 0; // NB TEMPORARY
             } // end plastic projection projection
         } // end PerzynaDP
 
@@ -223,7 +221,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T q_trial = q_stress;
 
             T particle_beta = beta;
-            T particle_p0_hard = p0;
+            // T particle_p0_hard = p0;
+            T particle_p0_hard = std::max(T(10), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
 
             ////// HARDNING ALT 0
             // T particle_beta = beta;
@@ -309,28 +308,29 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // } // end if plastic
 
 
-            bool perform_rma =   PerzynaQuadReturnMapping(p_stress, q_stress, exit, M, p0, beta, mu, K, dt, dim, perzyna_visc);
-            // bool perform_rma = CamClayReturnMapping(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, particle_p0_hard, particle_beta, mu, K);
-            // bool perform_rma = QuadraticReturnMapping(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, p0_hard, beta, mu, K);
-            // bool perform_rma = AnalQuadReturnMapping(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta); // p_stress, q_stress will now be the stress at n+1
+            bool perform_rma = PerzynaCamClayRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta, mu, K, dt, dim, perzyna_visc);
+            // bool perform_rma = PerzynaQuadRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta, mu, K, dt, dim, perzyna_visc);
+            // bool perform_rma = CamClayRMA(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, particle_p0_hard, particle_beta, mu, K);
+            // bool perform_rma = QuadRMA(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, p0_hard, beta, mu, K);
+            // bool perform_rma = QuadAnalyticRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta); // p_stress, q_stress will now be the stress at n+1
 
             if (perform_rma) { // returns true if it performs a return mapping
                 plastic_count++;
 
                 T eps_pl_dev_instant = (q_trial - q_stress) / mu_sqrt6;
                 particles.eps_pl_dev[p] += eps_pl_dev_instant;
-
                 particles.delta_gamma[p] = eps_pl_dev_instant; // TEMPORARY FOR VIZ.
 
                 T ep = p_stress / (K*dim);
                 T eps_pl_vol_inst = hencky_trace + dim * ep;
-                particles.eps_pl_vol[p] += eps_pl_vol_inst;
-                // particles.eps_pl_vol_2[p] += std::abs(eps_pl_vol_inst);
+                particles.eps_pl_vol[p]     += eps_pl_vol_inst;
+                particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
+                // particles.eps_pl_vol_abs[p] += std::abs(eps_pl_vol_inst);
                 //
                 // if (particles.fail_crit[p]){
-                //     particles.eps_pl_vol_3[p] += -std::abs(eps_pl_vol_inst);
+                //     particles.eps_pl_vol_mcc[p] += -std::abs(eps_pl_vol_inst);
                 // }else{
-                //     particles.eps_pl_vol_3[p] += xi_nonloc * std::abs(eps_pl_vol_inst);
+                //     particles.eps_pl_vol_mcc[p] += xi_nonloc * std::abs(eps_pl_vol_inst);
                 // }
 
                 hencky = q_stress / mu_sqrt6 * hencky_deviatoric - ep*TV::Ones();

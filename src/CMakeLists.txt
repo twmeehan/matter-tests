@@ -12,6 +12,7 @@ if (USE_OMP)
 	add_executable(mpm
 				   mpm.cpp
 			   	   simulation.cpp
+				   save_data.cpp
 				   tools.cpp
 				   remesh.cpp
 			       deformation_update_omp.cpp
@@ -31,6 +32,7 @@ else (USE_OMP)
 	add_executable(mpm
 				   mpm.cpp
 			   	   simulation.cpp
+				   save_data.cpp
 				   tools.cpp
 			       deformation_update.cpp
 				   plasticity.cpp

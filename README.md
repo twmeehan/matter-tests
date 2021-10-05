@@ -16,18 +16,18 @@ A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C
 
 
 * The following **elasticity models** are currently available:
-    - Neo-Hookean
-    - Saint Venant-Kirchhoff with Hencky strain
+    * Neo-Hookean
+    * Saint Venant-Kirchhoff with Hencky strain
 
 
 * The following **(visco)plastic models** are currently available and compatible with the SVK-Hencky model above:
-    - Von Mises
-    - Drucker-Prager
-    - Peric Von Mises
-    - Peric Drucker-Prager
-    - Modified/Cohesive Cam Clay
-    - Cohesive Quadratic
-    - Implementing other (visco)plastic models is easy due to the general framework of the code
+    * Von Mises
+    * Drucker-Prager
+    * Peric Von Mises
+    * Peric Drucker-Prager
+    * Modified/Cohesive Cam Clay
+    * Cohesive Quadratic
+    * Implementing other (visco)plastic models is easy due to the general framework of the code
 
 
 * Analytic objects formulated as levelsets are supported with 1) **sticky**, 2) **slipping** or 3) **separating** boundary conditions. Currently, only infinite plate objects are implemented
