@@ -1,47 +1,54 @@
 #include "simulation.hpp"
-//#include "csv2abc.hpp"
 
 // TODO:
-//  * Complete doxygen
 //  * CUDA Parallilize
-//  * Position and def. grad update should be based on velocity before application of friction (but after collision). Problem for SLIP, not STICKY
 //////////////////////////////////////////////////////////////////
 
-// REMEMBER TO SPECIFY DIMENSION IN TOOLS!!!!!
+// REMEMBER TO SPECIFY DIMENSION AND SPLINE DEGREE IN TOOLS!!!!!
 
 int main(){
 
       Simulation sim;
-      sim.sim_name = "test_larsie_2"; // "perzyna_dp_wieckowski_visc1";
-      sim.directory = "/media/blatny/harddrive4/larsie/"; // "dumps/";
-      sim.end_frame = 500;
+      sim.sim_name = "dp_pradhana_xy_hard_novisc"; // "perzyna_dp_wieckowski_visc1";
+      sim.directory = "/media/blatny/harddrive4/larsie/";
+      sim.end_frame = 400;
       sim.fps = 100;
-      sim.gravity = TV::Zero(); sim.gravity[1] = -9.81;
+
+      T theta = 30 * M_PI / 180;
+      sim.gravity = TV::Zero();
+      sim.gravity[0] = +9.81 * std::sin(theta);
+      sim.gravity[1] = -9.81 * std::cos(theta);
+
       sim.cfl = 0.6;
       sim.dt_max_coeff = 0.4;
       sim.flip_ratio = 0.99;
-      sim.n_threads = 16;
+      sim.n_threads = 8;
 
-      sim.Lx = 2.0;
-      sim.Ly = 2.0;
-      // sim.Lz = sim.Lx;
+      sim.initialize(/* E */ 3e6, /* nu */ 0.3, /* rho */ 2500);
 
-      ///////////// PARTICLES FROM FILE //////////////////
-      std::string sample = "samples/sample_w2_h2_r0.011_";
-      std::ifstream file(sample + "num.txt");
-      file >> sim.Np;
-      file.close();
+      std::string sample = "samples/sample_Lx15.0_Ly3.0_r0.05/";
+      std::ifstream file1(sample + "num.txt"); file1 >> sim.Np; file1.close();
+      std::ifstream file2(sample + "Lx.txt");  file2 >> sim.Lx; file2.close();
+      std::ifstream file3(sample + "Ly.txt");  file3 >> sim.Ly; file3.close();
+      debug("Lx = ", sim.Lx);
+      debug("Ly = ", sim.Ly);
+
       unsigned int Npx = std::sqrt(sim.Lx/sim.Ly * sim.Np);
-      sim.dx = 2 * (sim.Lx / Npx);
+      T dx_p = (sim.Lx / Npx);
+      sim.dx = 2 * dx_p;
 
-      ///////////// PARTICLES ON GRID //////////////////
-      // int Npx = 30+1;
-      // int Npy = 60+1;
-      //
-      // T dxp = sim.Lx / (Npx-1.0);
-      // sim.dx = 2.0 * dxp;
-      // sim.Np = Npx * Npy;// * Npz;
-      ///////////////////////////////////////////////////
+      sim.particles = Particles(sim.Np);
+      unsigned int Np_check = load_array(sim.particles.x, sample + "pos.txt");
+      if (Np_check != sim.Np){
+          debug("Particle number mismatch!!!");
+          return 0;
+      }
+      // for(int p = 0; p < sim.Np; p++){
+      //     sim.particles.x[p][0] -= 1.0;
+      // }
+
+      sim.particle_volume = dx_p * dx_p;
+      sim.particle_mass = sim.rho * sim.particle_volume;
 
       T vel_top   = 0.0;
       T vel_bot   = 0.0;
@@ -51,9 +58,10 @@ int main(){
      // T vel_front = 0.0;
 
       sim.vmin_factor = 25;
-      sim.load_factor = 75; //75;
+      sim.load_factor = 75;
 
       T offset = -0.01 * sim.dx/2.0; // When the grid is aligned with the boundary, it is important that the object overlap a bit into the particle domain
+
 
       std::string name;
       ///////// 3D /////////
@@ -69,10 +77,10 @@ int main(){
       ///////// 2D /////////
       // name = "Compressor"; InfinitePlate compressor = InfinitePlate(0,               sim.Ly + offset,  0,         vel_top,   sim.vmin_factor, sim.load_factor, top,    SLIP, name);  sim.objects.push_back(compressor);
       name = "Ground";     InfinitePlate ground     = InfinitePlate(0,               0 - offset,       0,         vel_bot,   1,               0,               bottom, STICKY, name);  sim.objects.push_back(ground);
-      // name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0 - offset,      0,                vel_left,  0,         1,               0,               left,   SLIP, name);  sim.objects.push_back(side_left);
+      name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0 - offset,      0,                vel_left,  0,         1,               0,               left,   SEPARATE, name);  sim.objects.push_back(side_left);
       // name = "SideRight";  InfinitePlate side_right = InfinitePlate(sim.Lx + offset, 0,                vel_right, 0,         1,               0,               right,  SLIP, name);  sim.objects.push_back(side_right);
 
-      sim.friction = 0.0; // currently only support zero friction
+      sim.friction = 0.0; // in 3D currently only support zero friction, in 2D it's fine
 
       // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
@@ -80,84 +88,31 @@ int main(){
       // sim.plastic_model = VonMises;
       // sim.plastic_model = DruckerPrager;
       // sim.plastic_model = PerzynaVM;
-      sim.plastic_model = PerzynaDP;
+      // sim.plastic_model = PerzynaDP;
+      sim.plastic_model = PerzynaMuIDP;
       // sim.plastic_model = Curved;
 
-      sim.dp_slope = 1.02857; // 30 deg
+      sim.dp_slope = 0.5;
       sim.dp_cohesion = 0;
 
-      sim.yield_stress_orig = 1e2;
-      sim.yield_stress_min = 1e2;
+      sim.yield_stress_orig = 1e3;
+      sim.yield_stress_min = 1e3;
 
       sim.perzyna_exp = 1;
-      sim.perzyna_visc = 1.0 / 50; // 50 s^-1
+      sim.perzyna_visc = 0.0; // 50 s^-1
 
-      sim.beta = 0.2;
-      sim.M = 0.1;
-      sim.p0 = 1e3;
+      sim.beta = 0.0;
+      sim.M = 0.5;
+      sim.p0 = 3461;
 
-      sim.xi = 0;
+      sim.xi = 1;
       sim.xi_nonloc = 0;
 
       sim.nonlocal_l = 0;
 
-      sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1500);
-      debug("Wave speed       = ", sim.wave_speed);
-      debug("dt_max           = ", sim.dt_max);
-      debug("particle_volume  = ", sim.particle_volume);
-      debug("particle_mass    = ", sim.particle_mass);
-      debug("Np               = ", sim.Np);
-
+      // For MCC only:
       // T eps_pl_vol_init = -std::asinh(sim.p0/sim.K) / sim.xi;
-      // sim.particles.eps_pl_vol_3.resize(sim.Np); std::fill( sim.particles.eps_pl_vol_3.begin(), sim.particles.eps_pl_vol_3.end(), eps_pl_vol_init );
-
-      ////////////////////////////////////////////////////
-      ///////////// PARTICLES FROM FILE //////////////////
-      ////////////////////////////////////////////////////
-      unsigned int Np_check = load_array(sim.particles.x, sample + "pos.txt");
-      if (Np_check != sim.Np){
-          debug("Particle number mismatch!!!");
-          return 0;
-      }
-
-      for(int p = 0; p < sim.Np; p++){
-          sim.particles.x[p][0] -= 1.0;
-      }
-
-      //////////////////////////////////////////////////
-      ///////////// PARTICLES ON GRID //////////////////
-      //////////////////////////////////////////////////
-      // int p = -1;
-      // for(int i = 0; i < Npx; i++){
-      //     for(int j = 0; j < Npy; j++){
-      //       //  for(int k = 0; k < Npz; k++){
-      //             p++;
-      //
-      //             // T px = (i+disp_i[d])*sim.dx;
-      //             // T py = (j+disp_j[d])*sim.dx;
-      //             T px = (i)*dxp;
-      //             T py = (j)*dxp;
-      //            // T pz = (k)*dxp;
-      //
-      //             sim.particles.x[p](0) = px;
-      //             sim.particles.x[p](1) = py;
-      //           // sim.particles.x[p](2) = pz;
-      //
-      //             sim.particles.v[p](0) = 0;
-      //             sim.particles.v[p](1) = 0;
-      //            // sim.particles.v[p](2) = 0;
-      //
-      //             // sim.particles.yield_stress_orig[p] = ys;
-      //
-      //       //  } // end for k
-      //     } // end for j
-      // } // end for i
-      // debug("Added particles = ", p);
-      // if ((p+1) != sim.Np){
-      //     debug("Particle number mismatch!!!");
-      //     return 0;
-      // }
-      /////////////////////////////////////////////////////
+      // sim.particles.eps_pl_vol_mcc.resize(sim.Np); std::fill( sim.particles.eps_pl_vol_mcc.begin(), sim.particles.eps_pl_vol_mcc.end(), eps_pl_vol_init );
 
       sim.simulate();
       // sim.validateRMA();

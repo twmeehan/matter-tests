@@ -11,8 +11,9 @@
 #include <assert.h>
 
 //// PARAMETERS ////
-typedef float T;
-#define CUBICSPLINES
+// typedef float T;
+typedef double T;
+// #define CUBICSPLINES
 // #define THREEDIM // Uncomment for 2D
 // #define DIMENSION 3 // Needed for OMP collapse
 #define DIMENSION 2 // Needed for OMP collapse
@@ -37,7 +38,7 @@ typedef float T;
 
 enum PlateType { top, bottom, left, right, front, back};
 enum ElasticModel { StvkWithHencky, NeoHookean };
-enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, Curved, PerzynaVM, PerzynaDP };
+enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, Curved, PerzynaVM, PerzynaDP, PerzynaMuIDP};
 enum BoundaryCondition { STICKY, SLIP, SEPARATE };
 
 ///////////////////// TOOLS ////////////////////////

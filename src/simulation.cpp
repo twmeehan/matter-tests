@@ -17,29 +17,12 @@ Simulation::Simulation(){
 
 
 void Simulation::initialize(T E, T nu, T density){
-    frame_dt = 1.0 / fps;
 
     lambda = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
     mu     = E / (2.0*(1.0+nu));
     K = lambda + 2.0 * mu / dim;
     rho = density;
-
     wave_speed = std::sqrt(E/rho);
-    dt_max = dt_max_coeff * dx / wave_speed;
-
-    particles = Particles(Np);
-
-#ifdef THREEDIM
-    particle_volume = Lx*Ly*Lz / Np; // INITIAL particle volume V^0
-#else
-    particle_volume = Lx*Ly / Np;
-#endif
-    particle_mass = rho * particle_volume;
-
-    nonlocal_l_sq = nonlocal_l * nonlocal_l;
-    nonlocal_support = std::ceil(nonlocal_l / dx);
-
-    mu_sqrt6 = mu * std::sqrt((T)6);
 
 }
 
@@ -66,6 +49,26 @@ void Simulation::createDirectory(){
 
 void Simulation::simulate(){
 
+    // Precomputations
+    frame_dt = 1.0 / fps;
+
+    one_over_dx = 1.0 / dx;
+    one_over_dx_square = one_over_dx * one_over_dx;
+
+    nonlocal_l_sq = nonlocal_l * nonlocal_l;
+    nonlocal_support = std::ceil(nonlocal_l / dx);
+
+    mu_sqrt6 = mu * std::sqrt((T)6);
+
+    dt_max = dt_max_coeff * dx / wave_speed;
+
+    debug("Num of particles = ", Np);
+    debug("dx               = ", dx);
+    debug("Wave speed       = ", wave_speed);
+    debug("dt_max           = ", dt_max);
+    debug("particle_volume  = ", particle_volume);
+    debug("particle_mass    = ", particle_mass);
+
     std::cout << "------------------------------------------------ " << std::endl;
     std::cout << "---------------- This is Larsie ---------------- " << std::endl;
     std::cout << "------------------------------------------------ " << std::endl;
@@ -85,10 +88,6 @@ void Simulation::simulate(){
 
     // Total runtime of simulation
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
-    // Precomputations
-    one_over_dx = 1.0 / dx;
-    one_over_dx_square = one_over_dx * one_over_dx;
 
     // Lagrangian coordinates. Using assignment operator to copy
     particles.x0 = particles.x;
@@ -151,7 +150,7 @@ void Simulation::advanceStep(){
     // plasticity_projection();
     positionUpdate();
 
-    periodicBoundaryConditions();
+    // periodicBoundaryConditions();
 }
 
 
