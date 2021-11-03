@@ -44,8 +44,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == DruckerPrager){
 
-            T mu_sqrt6 = mu * 2.44948974278317809819728407471;
-
             // trial stresses
             T p_trial = -K * hencky_trace;
             T q_trial = mu_sqrt6 * hencky_deviatoric_norm;
@@ -80,8 +78,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end DruckerPrager
 
         else if (plastic_model == PerzynaVM){
-
-            T mu_sqrt6 = mu * 2.44948974278317809819728407471;
 
             // trial q-stress (in q format)
             T stress = mu_sqrt6 * hencky_deviatoric_norm;
@@ -135,8 +131,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaVM
 
         else if (plastic_model == PerzynaDP){
-
-            T mu_sqrt6 = mu * 2.44948974278317809819728407471;
 
             // trial stresses
             T p_trial = -K * hencky_trace;
@@ -213,7 +207,15 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == PerzynaMuIDP){
 
-            T mu_sqrt6 = mu * 2.44948974278317809819728407471;
+            /////////////  Mu(I) Rheology Params  ///////////////
+            T rho_s           = 2500;
+            T grain_diameter  = 7e-3;
+            T in_numb_ref     = 0.279;
+            T mu_1            = 0.48;
+            T mu_2            = 0.73;
+            //////////////////////////////////////////////
+            T fac_Q = in_numb_ref * dt / (2*grain_diameter*std::sqrt(rho_s));
+            //////////////////////////////////////////////
 
             // trial stresses
             T p_trial = -K * hencky_trace;
@@ -259,119 +261,41 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         // exit = 1;
                     }
 
-                    /////////////  Mu(I) Rheology Params  ///////////////
-                    // T grain_diameter  = 0.4e-3;
-                    // T in_numb_ref     = 2.65;
-                    // T mu_1            = 0.38;
-                    // T mu_2            = 0.68;
-                    // T p_ref           = 1e7;
-
-                    T grain_diameter  = 4;
-                    T in_numb_ref     = 2.65;
-                    T mu_1            = 0.0;
-                    T mu_2            = 0.9;
                     //////////////////////////////////////////////
-
-                    // Method 1
-
-                    // T in_numb = 2 * grain_diameter * delta_gamma / ( dt * std::sqrt(p_trial/rho) );
-                    // T mu_i = mu_1 + (mu_2-mu_1) / (in_numb_ref/in_numb+1);
-                    // perzyna_visc = mu_i * p_trial * dt / (2 * delta_gamma * p_ref);
-                    // // if (perzyna_visc > 10)
-                    //     //debug("Visc = ", perzyna_visc);
-
-                    // T tm = perzyna_visc * delta_gamma + dt;
-                    // T tmp = dt / tm;
-                    // T tmp1 = std::pow(tmp, perzyna_exp);
-
-                    // T residual = (q_trial - mu_sqrt6 * delta_gamma) * tmp1 - q_yield;
-                    // if (std::abs(residual) < 1e-1) {
-                    //     break;
-                    // }
-                    //
-                    // T d_mui_d_deltagamma  = (mu_2-mu_1) * in_numb_ref * 2*grain_diameter / ( (in_numb_ref+in_numb)*(in_numb_ref+in_numb) * dt * std::sqrt(p_trial/rho) );
-                    // T d_visc_d_deltagamma = p_trial * dt * (d_mui_d_deltagamma * delta_gamma - mu_i) / (2 * p_ref * delta_gamma*delta_gamma);
-                    // T d_tmp1_d_deltagamma = dt * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * ( perzyna_visc + d_visc_d_deltagamma * delta_gamma ) / ( tm*tm );
-                    // T residual_diff = -mu_sqrt6 * tmp1 + (q_trial - mu_sqrt6 * delta_gamma) * d_tmp1_d_deltagamma;
-
-                    // Method 2
-
-                    // T in_numb = 2 * grain_diameter * delta_gamma / ( dt * std::sqrt(p_trial/rho) );
-                    // T mu_i = mu_1 + (mu_2-mu_1) / (in_numb_ref/in_numb+1);
-                    // perzyna_visc = mu_i * p_trial * dt / (2 * delta_gamma * p_ref); // NOT USED
-                    //
-                    // T tmp = 2*p_ref / (mu_i*p_trial + 2*p_ref);
-                    // T tmp1 = std::pow(tmp, perzyna_exp);
-                    //
-                    // T residual = (q_trial - mu_sqrt6 * delta_gamma) * tmp1 - q_yield;
-                    // if (std::abs(residual) < 1e-1) {
-                    //     break;
-                    // }
-                    //
-                    // T half_dimlessp = 0.5*(p_trial/p_ref);
-                    // T d_tmp_d_deltagamma = -half_dimlessp * (mu_2-mu_1) / ( (half_dimlessp*mu_i+1) * (half_dimlessp*mu_i+1) ) * in_numb_ref*in_numb / ( (in_numb_ref+in_numb)*(in_numb_ref+in_numb) ) / delta_gamma;
-                    // T d_tmp1_d_deltagamma = perzyna_exp * std::pow(tmp, perzyna_exp-1) * d_tmp_d_deltagamma;
-                    // T residual_diff = -mu_sqrt6 * tmp1 + (q_trial - mu_sqrt6 * delta_gamma) * d_tmp1_d_deltagamma;
-
-                    // Method 3
-
-                    // T residual = -q_yield + std::pow(dt/(dt + 0.5*dt*p_trial*(mu_1 + (-mu_1 + mu_2)/(1 + 0.5*dt*in_numb_ref*std::sqrt(p_trial)/(delta_gamma*grain_diameter*std::sqrt(rho))))/p_ref), perzyna_exp)*(-delta_gamma*mu_sqrt6 + q_trial);
-                    // if (std::abs(residual) < 1e-1) {
-                    //     break;
-                    // }
-                    //
-                    // T residual_diff = -mu_sqrt6*std::pow(dt/(dt + 0.5*dt*p_trial*(mu_1 + (-mu_1 + mu_2)/(1 + 0.5*dt*in_numb_ref*std::sqrt(p_trial)/(delta_gamma*grain_diameter*std::sqrt(rho))))/p_ref), perzyna_exp) - 1.0L/4.0L*std::pow(dt, 2)*in_numb_ref*std::pow(p_trial, 3.0L/2.0L)*perzyna_exp*std::pow(dt/(dt + 0.5*dt*p_trial*(mu_1 + (-mu_1 + mu_2)/(1 + 0.5*dt*in_numb_ref*std::sqrt(p_trial)/(delta_gamma*grain_diameter*std::sqrt(rho))))/p_ref), perzyna_exp)*(-mu_1 + mu_2)*(-delta_gamma*mu_sqrt6 + q_trial)/(std::pow(delta_gamma, 2)*grain_diameter*p_ref*std::sqrt(rho)*std::pow(1 + 0.5*dt*in_numb_ref*std::sqrt(p_trial)/(delta_gamma*grain_diameter*std::sqrt(rho)), 2)*(dt + 0.5*dt*p_trial*(mu_1 + (-mu_1 + mu_2)/(1 + 0.5*dt*in_numb_ref*std::sqrt(p_trial)/(delta_gamma*grain_diameter*std::sqrt(rho))))/p_ref));
-
-
-                    // Method 4 - not peric, no mu_i, only exp=1
-
+                    // Method 1 - not peric, no mu_i, only exp=1
+                    //////////////////////////////////////////////
                     // delta_gamma = (q_trial - q_yield) / (perzyna_visc/dt + mu_sqrt6);
                     // T residual = 0;
                     // T residual_diff = 1;
                     // break;
 
-                    // Method 5 - not peric, with mu_i, only exp=1
+                    //////////////////////////////////////////////
+                    // Method 2 - not peric, with mu_i, only exp=1
+                    //////////////////////////////////////////////
+                    T fac_a = mu_sqrt6; // always positive
+                    T fac_b = 0.5*p_trial*(mu_2-mu_1) + mu_sqrt6*fac_Q*std::sqrt(p_trial) - (q_trial-q_yield);
+                    T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(p_trial); // always negative
 
-                    T fac_Q = in_numb_ref * dt / (2*grain_diameter*std::sqrt(rho));
+                    delta_gamma = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always psoitive because a>0 and c<0
 
-                    T fac_a = mu_sqrt6;
-                    // T fac_b = 0.5*p_trial*(mu_2-mu_1) + mu_sqrt6*fac_Q*std::sqrt(p_trial) - (q_trial-q_yield-0.5*p_trial*mu_1);
-                    T fac_b = 0.5*mu_2*p_trial + mu_sqrt6*fac_Q*std::sqrt(p_trial) - (q_trial-q_yield);
-                    T fac_c = -(q_trial-q_yield-0.5*p_trial*mu_1) * fac_Q * std::sqrt(p_trial);
-
-                    T delta_gamma_neg = (-fac_b - std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a);
-                    T delta_gamma_pos = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a);
-
-                    delta_gamma = std::max(delta_gamma_pos, delta_gamma_neg);
                     if (delta_gamma < 0){
-                        // debug("PerzynaMuIDP: delta_gamma = ", delta_gamma);
-                        // exit = 1;
-                        delta_gamma = 0;
+                        debug("PerzynaMuIDP: delta_gamma = ", delta_gamma);
+                        exit = 1;
+                        // delta_gamma = 0;
                     }
-
                     T residual = 0;
                     T residual_diff = 1;
                     break;
-
-                    // Method 6 - not Peric
-
-                    // T in_numb = 2 * grain_diameter * delta_gamma / ( dt * std::sqrt(p_trial/rho) );
-                    // T mu_i = mu_1 + in_numb * (mu_2-mu_1) / (in_numb_ref+in_numb);
-                    //
-                    // T tmp  = 0.5*p_trial*mu_i; // = visc * delta_gamma / dt
-                    // T residual = std::pow(tmp, perzyna_exp) - q_trial + mu_sqrt6*delta_gamma + q_yield;
-                    //
+                    //////////////////////////////////////////////
+                    // Method 3 - not Peric, with mu_i and any exponent. NB: result looks weird for exponent != 1
+                    //////////////////////////////////////////////
+                    // T tmp = 0.5*p_trial*(mu_2-mu_1) / (fac_Q*std::sqrt(p_trial)/delta_gamma+1);
+                    // T residual = std::pow(tmp, perzyna_exp) - (q_trial - mu_sqrt6*delta_gamma) + q_yield;
                     // if (std::abs(residual) < 1e-1) {
                     //     break;
                     // }
-                    //
-                    // T upper = p_trial*(mu_2-mu_1) * in_numb_ref * dt * std::sqrt(p_trial/rho);
-                    // T lower = 4*grain_diameter * std::pow( in_numb_ref * dt * std::sqrt(p_trial/rho) / (2*grain_diameter) + delta_gamma, 2);
-                    // T d_tmp_d_deltagamma = upper / lower;
+                    // T d_tmp_d_deltagamma = 0.5 * fac_Q * p_trial * std::sqrt(p_trial) * (mu_2-mu_1) / std::pow(fac_Q * std::sqrt(p) + delta_gamma, 2);
                     // T residual_diff = perzyna_exp * std::pow(tmp, perzyna_exp-1) * d_tmp_d_deltagamma + mu_sqrt6;
-                    //
-                    // perzyna_visc = tmp*dt/delta_gamma; // for viz. only
-
 
                     ////  End Methods ////
 
@@ -391,7 +315,12 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += delta_gamma;
                 particles.delta_gamma[p] = delta_gamma;
+
+                particles.viscosity[p] = 0.5*p_trial*dt*(mu_2-mu_1) / (fac_Q*std::sqrt(p_trial) + delta_gamma);
             } // end plastic projection projection
+            else{
+                particles.viscosity[p] = 0;
+            }
         } // end PerzynaMuIDP
 
 

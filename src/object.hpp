@@ -9,7 +9,7 @@ public:
 
 #ifdef THREEDIM
 
-    InfinitePlate(T x_object, T y_object, T z_object, T vx_object, T vy_object, T vz_object, T vmin_factor, T load_factor, PlateType plate_type, BoundaryCondition bc, std::string name) :
+    InfinitePlate(T x_object, T y_object, T z_object, T vx_object, T vy_object, T vz_object, T vmin_factor, T load_factor, PlateType plate_type, BoundaryCondition bc, T friction, std::string name) :
               x_object(x_object),
               y_object(y_object),
               z_object(z_object),
@@ -23,6 +23,7 @@ public:
               load_factor(load_factor),
               plate_type(plate_type),
               bc(bc),
+              friction(friction),
               name(name) {}
 
     bool inside(T x, T y, T z){
@@ -46,7 +47,7 @@ public:
 
 #else // TWODIM
 
-    InfinitePlate(T x_object, T y_object, T vx_object, T vy_object, T vmin_factor, T load_factor, PlateType plate_type, BoundaryCondition bc, std::string name) :
+    InfinitePlate(T x_object, T y_object, T vx_object, T vy_object, T vmin_factor, T load_factor, PlateType plate_type, BoundaryCondition bc, T friction, std::string name) :
               x_object(x_object),
               y_object(y_object),
               vx_object(vx_object),
@@ -57,6 +58,7 @@ public:
               load_factor(load_factor),
               plate_type(plate_type),
               bc(bc),
+              friction(friction),
               name(name) {}
 
     bool inside(T x, T y){
@@ -124,6 +126,7 @@ public:
   T load_factor;
 
   BoundaryCondition bc;
+  T friction;
   PlateType plate_type;
   std::string name;
 

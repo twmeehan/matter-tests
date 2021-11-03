@@ -139,7 +139,6 @@ public:
   unsigned int nonlocal_support;
 
   // Objects
-  T friction;
   std::vector<InfinitePlate> objects;
 
   // Runtime measurements

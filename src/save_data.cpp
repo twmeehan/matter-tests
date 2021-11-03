@@ -13,8 +13,9 @@ void Simulation::saveParticleData(std::string extra){
             << "devstress"   << ","   // 7
             << "eps_pl_vol"  << ","   // 8
             << "eps_pl_dev"  << ","   // 9
-            << "delta_gamma"         << ","   // 10
-            << "eps_pl_vol_pradhana" << "\n";   // 11
+            << "delta_gamma" << ","   // 10
+            << "viscosity"   << ","   // 11
+            << "eps_pl_vol_pradhana" << "\n";   // 12
             // << "tau_xx"      << ","   // 13
             // << "tau_xy"      << ","   // 14
             // << "tau_yx"      << ","   // 15
@@ -63,8 +64,9 @@ void Simulation::saveParticleData(std::string extra){
                 << devstress                  << ","   // 7
                 << particles.eps_pl_vol[p]    << ","   // 8
                 << particles.eps_pl_dev[p]    << ","   // 9
-                << particles.delta_gamma[p]          << ","     // 10
-                << particles.eps_pl_vol_pradhana[p]  << "\n";   // 11
+                << particles.delta_gamma[p]   << ","     // 10
+                << particles.viscosity[p]     << ","     // 11
+                << particles.eps_pl_vol_pradhana[p]  << "\n";   // 12
                 // << tau(0,0)                   << ","   // 13
                 // << tau(0,1)                   << ","   // 14
                 // << tau(1,0)                   << ","   // 15

@@ -14,7 +14,7 @@ int main(){
       sim.end_frame = 400;
       sim.fps = 100;
 
-      T theta = 30 * M_PI / 180;
+      T theta = 0 * M_PI / 180;
       sim.gravity = TV::Zero();
       sim.gravity[0] = +9.81 * std::sin(theta);
       sim.gravity[1] = -9.81 * std::cos(theta);
@@ -26,7 +26,7 @@ int main(){
 
       sim.initialize(/* E */ 3e6, /* nu */ 0.3, /* rho */ 2500);
 
-      std::string sample = "samples/sample_Lx15.0_Ly3.0_r0.05/";
+      std::string sample = "samples/sample_Lx0.2_Ly0.14_r0.001/";
       std::ifstream file1(sample + "num.txt"); file1 >> sim.Np; file1.close();
       std::ifstream file2(sample + "Lx.txt");  file2 >> sim.Lx; file2.close();
       std::ifstream file3(sample + "Ly.txt");  file3 >> sim.Ly; file3.close();
@@ -76,11 +76,9 @@ int main(){
 
       ///////// 2D /////////
       // name = "Compressor"; InfinitePlate compressor = InfinitePlate(0,               sim.Ly + offset,  0,         vel_top,   sim.vmin_factor, sim.load_factor, top,    SLIP, name);  sim.objects.push_back(compressor);
-      name = "Ground";     InfinitePlate ground     = InfinitePlate(0,               0 - offset,       0,         vel_bot,   1,               0,               bottom, STICKY, name);  sim.objects.push_back(ground);
-      name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0 - offset,      0,                vel_left,  0,         1,               0,               left,   SEPARATE, name);  sim.objects.push_back(side_left);
+      name = "Ground";     InfinitePlate ground     = InfinitePlate(0,               0 - offset,       0,         vel_bot,   1,               0,               bottom, SLIP, 0.48, name);  sim.objects.push_back(ground);
+      name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0 - offset,      0,                vel_left,  0,         1,               0,               left,   SLIP, 0.18, name);  sim.objects.push_back(side_left);
       // name = "SideRight";  InfinitePlate side_right = InfinitePlate(sim.Lx + offset, 0,                vel_right, 0,         1,               0,               right,  SLIP, name);  sim.objects.push_back(side_right);
-
-      sim.friction = 0.0; // in 3D currently only support zero friction, in 2D it's fine
 
       // Elastoplasticity
       sim.elastic_model = StvkWithHencky;
@@ -92,7 +90,7 @@ int main(){
       sim.plastic_model = PerzynaMuIDP;
       // sim.plastic_model = Curved;
 
-      sim.dp_slope = 0.5;
+      sim.dp_slope = 0.48;
       sim.dp_cohesion = 0;
 
       sim.yield_stress_orig = 1e3;
@@ -105,7 +103,7 @@ int main(){
       sim.M = 0.5;
       sim.p0 = 3461;
 
-      sim.xi = 1;
+      sim.xi = 0;
       sim.xi_nonloc = 0;
 
       sim.nonlocal_l = 0;
