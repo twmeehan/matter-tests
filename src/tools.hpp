@@ -98,7 +98,7 @@ bool PerzynaCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt
 bool PerzynaQuadRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc);
 bool CamClayRMA(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus);
 bool QuadRMA(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus);
-bool QuadAnalyticRMA(T& p, T& q, int& exit, T M, T p0, T beta); //  // DO NOT USE - WRONG PROJECTION
+bool QuadAnalyticRMA(T& p, T& q, int& exit, T M, T p0, T beta);  // DO NOT USE - WRONG PROJECTION
 
 #ifdef CUBICSPLINES
 

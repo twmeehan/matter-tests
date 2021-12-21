@@ -1,5 +1,21 @@
 #include "simulation.hpp"
 
+void Simulation::saveInfo(){
+
+    std::ofstream infoFile(directory + sim_name + "/info.txt");
+    infoFile << end_frame           << "\n"   // 0
+             << fps                 << "\n"   // 1
+             << dx                  << "\n"   // 2
+             << mu                  << "\n"   // 3
+             << lambda              << "\n"   // 4
+             << vmin_factor         << "\n"   // 5
+             << load_factor         << "\n"   // 6
+             << Np                  << "\n"   // 7
+             << particle_volume     << "\n"   // 8
+             << rho                 << "\n";  // 9
+    infoFile.close();
+}
+
 void Simulation::saveParticleData(std::string extra){
     std::ofstream outFile(directory + sim_name + "/out_part_frame_" + extra + std::to_string(frame) + ".csv");
 
@@ -84,7 +100,8 @@ void Simulation::saveParticleData(std::string extra){
     T volavg_devstress = std::sqrt(3.0/2.0 * selfDoubleDot(volavg_tau_dev));
     std::ofstream outFile2(directory + sim_name + "/out_pq_frame_" + extra + std::to_string(frame) + ".csv");
     outFile2 << volavg_pressure    << ","
-             << volavg_devstress   << "\n";
+             << volavg_devstress   << ","
+             << Jsum               << "\n";
     outFile2.close();
 
     std::ofstream outFile3(directory + sim_name + "/last_written.txt");

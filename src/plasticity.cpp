@@ -159,7 +159,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             }
 
             // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
-            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion;
+            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion; // not sure if we should really shift this intersection!!!
 
             // right of tip AND outside yield surface
             if ((p_trial+p_shift) > p_tip && q_trial > q_yield) {
@@ -174,9 +174,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         debug("PerzynaDP: FATAL did not exit loop at iter = ", iter);
                         exit = 1;
                     }
-
-                    if (delta_gamma < 0) // not possible and can also lead to division by zero
-                        delta_gamma = 1e-10;
 
                     T tm = perzyna_visc * delta_gamma + dt;
                     T tmp = dt / tm;
@@ -195,6 +192,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     }
 
                     delta_gamma -= residual / residual_diff;
+
+                    if (delta_gamma < 0) // not possible and can also lead to division by zero
+                        delta_gamma = 1e-10;
+
                 } // end N-R iterations
 
                 hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
@@ -209,9 +210,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
             /////////////  Mu(I) Rheology Params  ///////////////
             T rho_s           = 2500;
-            T grain_diameter  = 7e-3;
+            T grain_diameter  = 7e-4;
             T in_numb_ref     = 0.279;
-            T mu_1            = 0.48;
+            T mu_1            = 0.2;
             T mu_2            = 0.73;
             //////////////////////////////////////////////
             T fac_Q = in_numb_ref * dt / (2*grain_diameter*std::sqrt(rho_s));
@@ -244,7 +245,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             }
 
             // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
-            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion;
+            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion; // not sure if we should really shift this intersection!!!
 
             // right of tip AND outside yield surface
             if ((p_trial+p_shift) > p_tip && q_trial > q_yield) {
@@ -334,13 +335,13 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = p_stress;
             T q_trial = q_stress;
 
-            T particle_beta = beta;
+            // T particle_beta = beta;
             // T particle_p0_hard = p0;
-            T particle_p0_hard = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p])); // NB small p0 may be problematic for viscous MCC
+            // T particle_p0_hard = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p])); // NB small p0 may be problematic for viscous MCC
 
             ////// HARDNING ALT 0
             // T particle_beta = beta;
-            // T particle_p0_hard = p0 * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi));
+            // T particle_p0_hard = p0 * std::exp( (1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi) );
 
             ////// HARDNING ALT 1
             // T particle_beta = beta;
@@ -362,24 +363,24 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // T particle_beta = particle_pt_hard / particle_p0_hard;
 
             ///// HARDNING ALT 3
-            // T p0_aftersoft = 1000;
-            // T p0_min = 1000;
-            // T particle_p0_hard = p0;
-            // T particle_beta = beta;
-            // if (particles.eps_pl_vol_2[p] > 0){ // if plastic
-            //     if (particles.fail_crit[p]){ // if finished with softening phase
-            //         particle_p0_hard = std::max(p0_min, (T)(p0_aftersoft * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi))));
-            //         particle_beta = 0;
-            //     } else { // softening continues
-            //         particle_p0_hard = p0 * std::exp( (1 - std::exp(xi_nonloc*particles.eps_pl_vol_2[p])) / (rho/1000 * xi) );
-            //         particle_beta = beta;
-            //         if (particle_p0_hard < p0_aftersoft){ // softening should stop
-            //             particle_p0_hard = std::max(p0_min, (T)(p0_aftersoft * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi))));
-            //             particle_beta = 0;
-            //             particles.fail_crit[p] = true;
-            //         }
-            //     }
-            // } // end if plastic
+            T p0_aftersoft = 20e3;
+            T p0_min = 100;
+            T particle_p0_hard = p0;
+            T particle_beta = beta;
+            if (particles.eps_pl_vol_abs[p] > 0){ // if plastic
+                if (particles.fail_crit[p]){ // if finished with softening phase
+                    particle_p0_hard = std::max(p0_min, (T)(p0_aftersoft * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi))));
+                    particle_beta = 0; // ideally zero
+                } else { // softening continues
+                    particle_p0_hard = p0 * std::exp( (1 - std::exp(xi_nonloc*particles.eps_pl_vol_abs[p])) / (rho/1000 * xi) );
+                    particle_beta = beta;
+                    if (particle_p0_hard < p0_aftersoft){ // softening should stop
+                        particle_p0_hard = std::max(p0_min, (T)(p0_aftersoft * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi))));
+                        particle_beta = 0; // ideally zero
+                        particles.fail_crit[p] = true;
+                    }
+                }
+            } // end if plastic
 
             ///// HARDNING ALT MCC
             // T p0_aftersoft = 1000.0;
@@ -425,8 +426,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // bool perform_rma = PerzynaCamClayRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta, mu, K, dt, dim, perzyna_visc);
             // bool perform_rma = PerzynaQuadRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta, mu, K, dt, dim, perzyna_visc);
             bool perform_rma = CamClayRMA(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, particle_p0_hard, particle_beta, mu, K);
-            // bool perform_rma = QuadRMA(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, p0_hard, beta, mu, K);
-            // bool perform_rma = QuadAnalyticRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta); // p_stress, q_stress will now be the stress at n+1
+            // bool perform_rma = QuadRMA(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, particle_p0_hard, particle_beta, mu, K);
+            // bool perform_rma = QuadAnalyticRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta); // DO NOT USE - WRONG PROJECTION
 
             if (perform_rma) { // returns true if it performs a return mapping
                 plastic_count++;
@@ -438,14 +439,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 T ep = p_stress / (K*dim);
                 T eps_pl_vol_inst = hencky_trace + dim * ep;
                 particles.eps_pl_vol[p]     += eps_pl_vol_inst;
+
                 particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
-                // particles.eps_pl_vol_abs[p] += std::abs(eps_pl_vol_inst);
-                //
-                // if (particles.fail_crit[p]){
-                //     particles.eps_pl_vol_mcc[p] += -std::abs(eps_pl_vol_inst);
-                // }else{
-                //     particles.eps_pl_vol_mcc[p] += xi_nonloc * std::abs(eps_pl_vol_inst);
-                // }
+
+                particles.eps_pl_vol_abs[p] += std::abs(eps_pl_vol_inst);
+
+                if (particles.fail_crit[p]){
+                    particles.eps_pl_vol_mcc[p] += -std::abs(eps_pl_vol_inst);
+                }else{
+                    particles.eps_pl_vol_mcc[p] += xi_nonloc * std::abs(eps_pl_vol_inst);
+                }
 
                 hencky = q_stress / mu_sqrt6 * hencky_deviatoric - ep*TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();

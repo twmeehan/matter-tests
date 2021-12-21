@@ -12,12 +12,25 @@ legendsize = 5
 #basename = "/media/blatny/harddrive4/larsie/3d_ql_anal_"
 #names = ["rho300_xi0.3", "soft_rho300_xi0.3", "soft_monforte", "soft_monforte_v3"]
 
-basename = "/media/blatny/harddrive4/larsie/2d_ql_anal_soft_altMCC_N10000_"
+# basename = "/media/blatny/harddrive4/larsie/2d_ql_anal_soft_altMCC_N10000_"
 # names = ["0", "1", "3", "3_m100", "3_N20000_xisoft0.1"]
 # names = ["3_N20000_xisoft0.05_xi0.1", "3_N20000_xisoft0.02_xi0.3", "3_N20000_xisoft0.02_xi0.3_constvel", "3_N20000_xisoft0.02_xi0.6", "3_N20000_xisoft0.02_xi0.6_abs"]
 # names = ["3_N10000_2", "3_N10000_3", "3_N10000_4", "3_N10000_5", "3_N10000_5"]
-names = ["1", "1_slow", "2", "2_fps", "3"]
+# names = ["1", "1_slow", "2", "2_fps", "3"]
 # names = ["natcomms", "natcomms_slow", "test"]
+
+basename = "/media/blatny/harddrive4/larsie/homomodel/2d_"
+names = [
+"test_onlyhard",
+#"test_softandhard",
+"test_softandhard_beta0",
+"test_softandhard_beta0_slow",
+#"test_softandhard_beta0_xinonloc100",
+#"test_softandhard_beta0_xinonloc1",
+#"test_softandhard_beta0_xinonloc1000",
+"thin"
+]
+
 
 vel = -0.2
 Ly = 2.0
@@ -29,15 +42,24 @@ Ly = 2.0
 eps_ax_list = []
 mean_p_list = []
 mean_q_list = []
+phi_list = []
 for name in names:
+
+    if "slow" in name:
+        vel = -0.2/25
+    else:
+        vel = -0.2
 
     info = np.loadtxt(basename + name + "/info.txt")
     last_written = np.loadtxt(basename + name + "/last_written.txt").astype(int)
 
     frame_dt  = 1.0 / float(info[1])
-    dx = float(info[2])
-    vmin_factor = int(info[5])
-    load_factor = int(info[6])
+    dx              = float(info[2])
+    vmin_factor     = int(info[5])
+    load_factor     = int(info[6])
+    # Np              = int(info[7])
+    # particle_volume = float(info[8])
+    rho             = float(info[9])
 
     v_min = vel / vmin_factor
 
@@ -63,6 +85,8 @@ for name in names:
     eps_ax_list.append(eps_ax)
     mean_p_list.append(mean_p)
     mean_q_list.append(mean_q)
+
+    phi_list.append( (rho/1000)/(1+eps_ax) )
 
 
 plt.figure(figsize = figsize, dpi = dpi)
@@ -94,3 +118,13 @@ plt.show()
 # plt.show(block=False)
 # plt.pause(5)
 # plt.close()
+
+plt.figure(figsize = figsize, dpi = dpi)
+plt.title(basename.replace("_", " "))
+for n in range(0, len(names)):
+    plt.plot(np.log10(mean_p_list[n][1:]), 1/phi_list[n][1:], '.-',  label = names[n].replace("_", " "))
+plt.xlabel(r'$\log_{10} \langle p \rangle$')
+plt.ylabel(r'$1/\phi$ [-]')
+plt.legend(prop={'size': legendsize})
+plt.grid()
+plt.show()

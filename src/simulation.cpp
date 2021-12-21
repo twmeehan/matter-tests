@@ -75,17 +75,8 @@ void Simulation::simulate(){
 
     createDirectory();
 
-    // Write parameters to file for future reference
-    std::ofstream infoFile(directory + sim_name + "/info.txt");
-    infoFile << end_frame           << "\n"   // 0
-             << fps                 << "\n"   // 1
-             << dx                  << "\n"   // 2
-             << mu                  << "\n"   // 3
-             << lambda              << "\n"   // 4
-             << vmin_factor         << "\n"   // 5
-             << load_factor         << "\n";  // 6
-    infoFile.close();
-
+    saveInfo();
+    
     // Total runtime of simulation
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
