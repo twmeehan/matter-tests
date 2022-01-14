@@ -4,8 +4,6 @@
 
 void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
 
-    // TODO: Make this a vector-based function
-
     // Reference to velocity components
     T& vxi = vi(0);
     T& vyi = vi(1);
@@ -32,22 +30,20 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
             else if (obj.bc == SLIP) {
                 if (obj.plate_type == top || obj.plate_type == bottom){
                     // tangential velocity is the (x,z) components
+
+                    T vel_t      = std::sqrt(vx_rel*vx_rel + vz_rel*vz_rel);
+                    T fric_vel_n = obj.friction * std::abs(vy_rel);
+
                     if (obj.friction == 0){
                         // Do nothing
                     }
-                    else if ( std::sqrt(vx_rel*vx_rel + vz_rel*vz_rel) < obj.friction * std::abs(vy_rel) ){
+                    else if ( vel_t <= fric_vel_n ){
                         vx_rel = 0; // tangential component also set to zero
                         vz_rel = 0;
                     }
                     else { // just reduce tangential component
-                        if (vx_rel > 0)
-                            vx_rel -= obj.friction * std::abs(vy_rel);
-                        else
-                            vx_rel += obj.friction * std::abs(vy_rel);
-                        if (vz_rel > 0)
-                            vz_rel -= obj.friction * std::abs(vy_rel);
-                        else
-                            vz_rel += obj.friction * std::abs(vy_rel);
+                        vx_rel = sgn(vx_rel) * (vel_t - fric_vel_n) / std::sqrt(1 + vz_rel*vz_rel/(vx_rel*vx_rel));
+                        vz_rel = sgn(vz_rel) * (vel_t - fric_vel_n) / std::sqrt(1 + vx_rel*vx_rel/(vz_rel*vz_rel));
                     }
 
                     // normal component (y) must be set to zero
@@ -56,22 +52,20 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
                 } // end top and bottom plate
                 else if (obj.plate_type == left || obj.plate_type == right){
                     // tangential velocity is the (y,z) components
+
+                    T vel_t      = std::sqrt(vy_rel*vy_rel + vz_rel*vz_rel);
+                    T fric_vel_n = obj.friction * std::abs(vx_rel);
+
                     if (obj.friction == 0){
                         // Do nothing
                     }
-                    else if ( std::sqrt(vy_rel*vy_rel + vz_rel*vz_rel) < obj.friction * std::abs(vx_rel) ){
+                    else if ( vel_t <= fric_vel_n ){
                         vy_rel = 0; // tangential component also set to zero
                         vz_rel = 0;
                     }
                     else { // just reduce tangential component
-                        if (vy_rel > 0)
-                            vy_rel -= obj.friction * std::abs(vx_rel);
-                        else
-                            vy_rel += obj.friction * std::abs(vx_rel);
-                        if (vz_rel > 0)
-                            vz_rel -= obj.friction * std::abs(vx_rel);
-                        else
-                            vz_rel += obj.friction * std::abs(vx_rel);
+                        vy_rel = sgn(vy_rel) * (vel_t - fric_vel_n) / std::sqrt(1 + vz_rel*vz_rel/(vy_rel*vy_rel));
+                        vz_rel = sgn(vz_rel) * (vel_t - fric_vel_n) / std::sqrt(1 + vy_rel*vy_rel/(vz_rel*vz_rel));
                     }
 
                     // normal component (x) must be set to zero
@@ -80,22 +74,20 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
                 } // end left or right plate
                 else if (obj.plate_type == front || obj.plate_type == back){
                     // tangential velocity is the (x,y) components
+
+                    T vel_t      = std::sqrt(vx_rel*vx_rel + vy_rel*vy_rel);
+                    T fric_vel_n = obj.friction * std::abs(vz_rel);
+
                     if (obj.friction == 0){
                         // Do nothing
                     }
-                    else if ( std::sqrt(vx_rel*vx_rel + vy_rel*vy_rel) < obj.friction * std::abs(vx_rel) ){
+                    else if ( vel_t <= fric_vel_n ){
                         vx_rel = 0; // tangential component also set to zero
                         vy_rel = 0;
                     }
                     else { // just reduce tangential component
-                        if (vx_rel > 0)
-                            vx_rel -= obj.friction * std::abs(vz_rel);
-                        else
-                            vx_rel += obj.friction * std::abs(vz_rel);
-                        if (vy_rel > 0)
-                            vy_rel -= obj.friction * std::abs(vz_rel);
-                        else
-                            vy_rel += obj.friction * std::abs(vz_rel);
+                        vx_rel = sgn(vx_rel) * (vel_t - fric_vel_n) / std::sqrt(1 + vy_rel*vy_rel/(vx_rel*vx_rel));
+                        vy_rel = sgn(vy_rel) * (vel_t - fric_vel_n) / std::sqrt(1 + vx_rel*vx_rel/(vy_rel*vy_rel));
                     }
 
                     // normal component (z) must be set to zero
@@ -109,22 +101,19 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
             else if (obj.bc == SEPARATE) {
                 if ((obj.plate_type == top && vy_rel > 0) || (obj.plate_type == bottom && vy_rel < 0)){
                     // tangential velocity is the (x,z) components
+                    T vel_t      = std::sqrt(vx_rel*vx_rel + vz_rel*vz_rel);
+                    T fric_vel_n = obj.friction * std::abs(vy_rel);
+
                     if (obj.friction == 0){
                         // Do nothing
                     }
-                    else if ( std::sqrt(vx_rel*vx_rel + vz_rel*vz_rel) < obj.friction * std::abs(vy_rel) ){
+                    else if ( vel_t <= fric_vel_n ){
                         vx_rel = 0; // tangential component also set to zero
                         vz_rel = 0;
                     }
                     else { // just reduce tangential component
-                        if (vx_rel > 0)
-                            vx_rel -= obj.friction * std::abs(vy_rel);
-                        else
-                            vx_rel += obj.friction * std::abs(vy_rel);
-                        if (vz_rel > 0)
-                            vz_rel -= obj.friction * std::abs(vy_rel);
-                        else
-                            vz_rel += obj.friction * std::abs(vy_rel);
+                        vx_rel = sgn(vx_rel) * (vel_t - fric_vel_n) / std::sqrt(1 + vz_rel*vz_rel/(vx_rel*vx_rel));
+                        vz_rel = sgn(vz_rel) * (vel_t - fric_vel_n) / std::sqrt(1 + vx_rel*vx_rel/(vz_rel*vz_rel));
                     }
 
                     // normal component (y) must be set to zero
@@ -133,22 +122,19 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
                 } // end top and bottom plate
                 else if ((obj.plate_type == left && vx_rel < 0) || (obj.plate_type == right && vx_rel > 0)){
                     // tangential velocity is the (y,z) components
+                    T vel_t      = std::sqrt(vy_rel*vy_rel + vz_rel*vz_rel);
+                    T fric_vel_n = obj.friction * std::abs(vx_rel);
+
                     if (obj.friction == 0){
                         // Do nothing
                     }
-                    else if ( std::sqrt(vy_rel*vy_rel + vz_rel*vz_rel) < obj.friction * std::abs(vx_rel) ){
+                    else if ( vel_t <= fric_vel_n ){
                         vy_rel = 0; // tangential component also set to zero
                         vz_rel = 0;
                     }
                     else { // just reduce tangential component
-                        if (vy_rel > 0)
-                            vy_rel -= obj.friction * std::abs(vx_rel);
-                        else
-                            vy_rel += obj.friction * std::abs(vx_rel);
-                        if (vz_rel > 0)
-                            vz_rel -= obj.friction * std::abs(vx_rel);
-                        else
-                            vz_rel += obj.friction * std::abs(vx_rel);
+                        vy_rel = sgn(vy_rel) * (vel_t - fric_vel_n) / std::sqrt(1 + vz_rel*vz_rel/(vy_rel*vy_rel));
+                        vz_rel = sgn(vz_rel) * (vel_t - fric_vel_n) / std::sqrt(1 + vy_rel*vy_rel/(vz_rel*vz_rel));
                     }
 
                     // normal component (x) must be set to zero
@@ -157,22 +143,19 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
                 } // end left or right plate
                 else if ((obj.plate_type == front && vz_rel > 0) || (obj.plate_type == back && vz_rel < 0 )){
                     // tangential velocity is the (x,y) components
+                    T vel_t      = std::sqrt(vx_rel*vx_rel + vy_rel*vy_rel);
+                    T fric_vel_n = obj.friction * std::abs(vz_rel);
+
                     if (obj.friction == 0){
                         // Do nothing
                     }
-                    else if ( std::sqrt(vx_rel*vx_rel + vy_rel*vy_rel) < obj.friction * std::abs(vx_rel) ){
+                    else if ( vel_t <= fric_vel_n ){
                         vx_rel = 0; // tangential component also set to zero
                         vy_rel = 0;
                     }
                     else { // just reduce tangential component
-                        if (vx_rel > 0)
-                            vx_rel -= obj.friction * std::abs(vz_rel);
-                        else
-                            vx_rel += obj.friction * std::abs(vz_rel);
-                        if (vy_rel > 0)
-                            vy_rel -= obj.friction * std::abs(vz_rel);
-                        else
-                            vy_rel += obj.friction * std::abs(vz_rel);
+                        vx_rel = sgn(vx_rel) * (vel_t - fric_vel_n) / std::sqrt(1 + vy_rel*vy_rel/(vx_rel*vx_rel));
+                        vy_rel = sgn(vy_rel) * (vel_t - fric_vel_n) / std::sqrt(1 + vx_rel*vx_rel/(vy_rel*vy_rel));
                     }
 
                     // normal component (z) must be set to zero

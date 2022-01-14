@@ -9,10 +9,14 @@ public:
 
 #ifdef THREEDIM
 
-    InfinitePlate(T x_object, T y_object, T z_object, T vx_object, T vy_object, T vz_object, T vmin_factor, T load_factor, PlateType plate_type, BoundaryCondition bc, T friction, std::string name) :
-              x_object(x_object),
-              y_object(y_object),
-              z_object(z_object),
+    InfinitePlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object, T vy_object, T vz_object, T vmin_factor, T load_factor) :
+              pos_object(pos_object),
+              pos_upper(pos_upper),
+              pos_lower(pos_lower),
+              plate_type(plate_type),
+              bc(bc),
+              friction(friction),
+              name(name),
               vx_object(vx_object),
               vy_object(vy_object),
               vz_object(vz_object),
@@ -20,60 +24,101 @@ public:
               vy_object_original(vy_object),
               vz_object_original(vz_object),
               vmin_factor(vmin_factor),
-              load_factor(load_factor),
-              plate_type(plate_type),
-              bc(bc),
-              friction(friction),
-              name(name) {}
+              load_factor(load_factor) {}
 
-    bool inside(T x, T y, T z){
-        return distance(x, y, z) <= 0; // inside if dist is negative
-    }
+      bool inside(T x, T y, T z){
+          if (plate_type == left){
+              if (y < pos_upper && y > pos_lower && (x - pos_object) <= 0){
+                  return true;
+              } else{
+                  return false;
+              }
+          }
+          if (plate_type == right){
+              if (y < pos_upper && y > pos_lower && (pos_object - x) <= 0){
+                  return true;
+              } else{
+                  return false;
+              }
+          }
+          if (plate_type == bottom){
+              if (x < pos_upper && x > pos_lower && (y - pos_object) <= 0){
+                  return true;
+              } else{
+                  return false;
+              }
+          }
+          if (plate_type == top){
+              if (x < pos_upper && x > pos_lower && (pos_object - y) <= 0){
+                  return true;
+              } else{
+                  return false;
+              }
+          }
+          if (plate_type == back){
+              if (z - pos_object) <= 0){
+                  return true;
+              } else{
+                  return false;
+              }
+          }
+          if (plate_type == front){
+              if (pos_object - z) <= 0){
+                  return true;
+              } else{
+                  return false;
+              }
+          }
 
-    T distance(T x, T y, T z){
-        if (plate_type == bottom)
-          return (y - y_object);
-        else if (plate_type == top)
-            return (y_object - y);
-        else if (plate_type == left)
-            return (x - x_object);
-        else if (plate_type == right)
-            return (x_object - x);
-        else if (plate_type == back)
-            return (z - z_object);
-        else if (plate_type == front)
-            return (z_object - z);
-    }
+      } // end inside(x,y,z)
+
 
 #else // TWODIM
 
-    InfinitePlate(T x_object, T y_object, T vx_object, T vy_object, T vmin_factor, T load_factor, PlateType plate_type, BoundaryCondition bc, T friction, std::string name) :
-              x_object(x_object),
-              y_object(y_object),
+    InfinitePlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object, T vy_object, T vmin_factor, T load_factor) :
+              pos_object(pos_object),
+              pos_upper(pos_upper),
+              pos_lower(pos_lower),
+              plate_type(plate_type),
+              bc(bc),
+              friction(friction),
+              name(name),
               vx_object(vx_object),
               vy_object(vy_object),
               vx_object_original(vx_object),
               vy_object_original(vy_object),
               vmin_factor(vmin_factor),
-              load_factor(load_factor),
-              plate_type(plate_type),
-              bc(bc),
-              friction(friction),
-              name(name) {}
+              load_factor(load_factor) {}
 
     bool inside(T x, T y){
-        return distance(x, y) <= 0; // inside if dist is negative
-    }
-
-    T distance(T x, T y){
-        if (plate_type == bottom)
-          return (y - y_object);
-        else if (plate_type == top)
-            return (y_object - y);
-        else if (plate_type == left)
-            return (x - x_object);
-        else if (plate_type == right)
-            return (x_object - x);
+        if (plate_type == left){
+            if (y < pos_upper && y > pos_lower && (x - pos_object) <= 0){
+                return true;
+            } else{
+                return false;
+            }
+        }
+        if (plate_type == right){
+            if (y < pos_upper && y > pos_lower && (pos_object - x) <= 0){
+                return true;
+            } else{
+                return false;
+            }
+        }
+        if (plate_type == bottom){
+            if (x < pos_upper && x > pos_lower && (y - pos_object) <= 0){
+                return true;
+            } else{
+                return false;
+            }
+        }
+        if (plate_type == top){
+            if (x < pos_upper && x > pos_lower && (pos_object - y) <= 0){
+                return true;
+            } else{
+                return false;
+            }
+        }
     }
 
 #endif
@@ -97,18 +142,33 @@ public:
           #endif
       }
 
-      x_object += dt * vx_object;
-      y_object += dt * vy_object;
-      #ifdef THREEDIM
-      z_object += dt * vz_object;
-      #endif
-  }
+      if (plate_type == left || plate_type == right){
+          pos_object += dt * vx_object;
+          pos_upper  += dt * vy_object;
+          pos_lower  += dt * vy_object;
+      }
+      else if (plate_type == bottom || plate_type == top){
+          pos_object += dt * vy_object;
+          pos_upper  += dt * vx_object;
+          pos_lower  += dt * vx_object;
+      }
+#ifdef THREEDIM
+      else if (plate_type == back || plate_type == front){
+          pos_object += dt * vz_object;
+      }
+#endif
 
-  T x_object;
-  T y_object;
-  #ifdef THREEDIM
-    T z_object;
-  #endif
+
+  } // end move(dt, frame_dt, time)
+
+  T pos_object;
+  T pos_upper;
+  T pos_lower;
+
+  BoundaryCondition bc;
+  T friction;
+  PlateType plate_type;
+  std::string name;
 
   T vx_object;
   T vy_object;
@@ -124,11 +184,6 @@ public:
 
   T vmin_factor;
   T load_factor;
-
-  BoundaryCondition bc;
-  T friction;
-  PlateType plate_type;
-  std::string name;
 
 };
 
