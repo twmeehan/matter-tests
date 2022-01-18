@@ -12,7 +12,6 @@
 #include <chrono>
 #include "tools.hpp"
 #include "object.hpp"
-#include "data_arrays.hpp"
 #include "timer.hpp"
 
 #define OMP //comment out if not using omp

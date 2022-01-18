@@ -56,14 +56,14 @@ public:
               }
           }
           if (plate_type == back){
-              if (z - pos_object) <= 0){
+              if (z - pos_object <= 0){
                   return true;
               } else{
                   return false;
               }
           }
           if (plate_type == front){
-              if (pos_object - z) <= 0){
+              if (pos_object - z <= 0){
                   return true;
               } else{
                   return false;

@@ -9,11 +9,13 @@
 #include <sstream>
 #include <vector>
 #include <assert.h>
+#include "poisson_disk_sampling.hpp"
+
 
 //// PARAMETERS ////
 // typedef float T;
 typedef double T;
-// #define CUBICSPLINES
+#define CUBICSPLINES
 // #define THREEDIM // Uncomment for 2D
 // #define DIMENSION 3 // Needed for OMP collapse
 #define DIMENSION 2 // Needed for OMP collapse
@@ -226,5 +228,147 @@ bool QuadAnalyticRMA(T& p, T& q, int& exit, T M, T p0, T beta);  // DO NOT USE -
     }
 
 #endif
+
+
+
+class Particles{
+public:
+  Particles(unsigned int Np = 1){
+      x.resize(Np);    std::fill( x.begin(),    x.end(),    TV::Zero() );
+      v.resize(Np);    std::fill( v.begin(),    v.end(),    TV::Zero() );
+      pic.resize(Np);  std::fill( pic.begin(),  pic.end(),  TV::Zero() );
+      flip.resize(Np); std::fill( flip.begin(), flip.end(), TV::Zero() );
+
+      eps_pl_dev.resize(Np);     std::fill( eps_pl_dev.begin(),     eps_pl_dev.end(),     0.0 );
+      eps_pl_vol.resize(Np);     std::fill( eps_pl_vol.begin(),     eps_pl_vol.end(),     0.0 );
+
+      eps_pl_vol_abs.resize(Np);     std::fill( eps_pl_vol_abs.begin(),     eps_pl_vol_abs.end(),     0.0 );
+      eps_pl_vol_mcc.resize(Np);     std::fill( eps_pl_vol_mcc.begin(),     eps_pl_vol_mcc.end(),     0.0 );
+      eps_pl_vol_pradhana.resize(Np);std::fill( eps_pl_vol_pradhana.begin(),eps_pl_vol_pradhana.end(),0.0 );
+
+      yield_stress_orig.resize(Np); std::fill( yield_stress_orig.begin(), yield_stress_orig.end(), 0.0 );
+
+      viscosity.resize(Np); std::fill( viscosity.begin(), viscosity.end(), 0.0 );
+
+      fail_crit.resize(Np); std::fill( fail_crit.begin(), fail_crit.end(), false );
+      eps_pl_dev_nonloc.resize(Np);  std::fill( eps_pl_dev_nonloc.begin(),  eps_pl_dev_nonloc.end(),  0.0 );
+      delta_gamma_nonloc.resize(Np); std::fill( delta_gamma_nonloc.begin(), delta_gamma_nonloc.end(), 0.0 );
+      delta_gamma.resize(Np);        std::fill( delta_gamma.begin(),        delta_gamma.end(),        0.0 );
+      hencky.resize(Np);             std::fill( hencky.begin(),             hencky.end(),      TV::Zero() );
+
+      tau.resize(Np); std::fill( tau.begin(), tau.end(), TM::Zero()     );
+      F.resize(Np);   std::fill( F.begin(),   F.end(),   TM::Identity() );
+  }
+
+  std::vector<TV> x;
+  std::vector<TV> x0;
+  std::vector<TV> v;
+  std::vector<TV> pic;
+  std::vector<TV> flip;
+
+  std::vector<T> eps_pl_dev;
+  std::vector<T> eps_pl_vol;
+  std::vector<T> eps_pl_vol_abs;
+  std::vector<T> eps_pl_vol_mcc;
+  std::vector<T> eps_pl_vol_pradhana;
+
+  std::vector<T> yield_stress_orig;
+
+  std::vector<T> viscosity;
+
+
+  std::vector<bool> fail_crit;
+  std::vector<T> eps_pl_dev_nonloc;
+  std::vector<T> delta_gamma_nonloc;
+  std::vector<T> delta_gamma;
+  std::vector<TV> hencky;
+
+  std::vector<T> cohesion_proj;
+
+  std::vector<TM> tau;
+  std::vector<TM> F;
+
+};
+
+class Grid{
+public:
+    Grid(){}
+    std::vector<T> x;
+    std::vector<T> y;
+    #ifdef THREEDIM
+    std::vector<T> z;
+    #endif
+    std::vector<TV> v;
+    std::vector<TV> flip;
+    std::vector<T> mass;
+    std::vector<T> delta_gamma;
+    T xc;
+    T yc;
+    #ifdef THREEDIM
+    T zc;
+    #endif
+};
+
+
+
+#ifdef THREEDIM
+    template <typename S>
+    void SampleInBox(const T Lx, const T Ly, const T Lz, T kRadius, S& sim){
+        std::uint32_t kAttempts = 30;
+        std::uint32_t kSeed = 42;
+        std::array<T, 3> kXMin = std::array<T, 3>{{0, 0, 0}};
+        std::array<T, 3> kXMax = std::array<T, 3>{{Lx, Ly, Lz}};
+
+        debug("Sampling particles...");
+        std::vector<std::array<T, 3>> samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);
+        sim.Np = samples.size();
+        debug("Number of particles samples: ", sim.Np);
+
+        sim.particles = Particles(sim.Np);
+        for(int p = 0; p < sim.Np; p++){
+            for(int d = 0; d < 3; d++){
+                sim.particles.x[p](d) = samples[p][d];
+            }
+        }
+
+        unsigned int Npx = Lx / (Lx*Ly*Lz) * std::pow( std::pow(Lx*Ly*Lz, 2) * sim.Np, 1.0/3.0);
+        T dx_p = (Lx / Npx);
+        sim.dx = 2 * dx_p;
+        sim.particle_volume = std::pow(dx_p, 3);
+        sim.particle_mass = sim.rho * sim.particle_volume;
+    } // end SampleInBox
+
+#else // TWODIM
+
+template <typename S>
+void SampleInBox(const T Lx, const T Ly, T kRadius, S& sim){
+    std::uint32_t kAttempts = 30;
+    std::uint32_t kSeed = 42;
+    std::array<T, 2> kXMin = std::array<T, 2>{{0, 0}};
+    std::array<T, 2> kXMax = std::array<T, 2>{{Lx, Ly}};
+
+    debug("Sampling particles...");
+    std::vector<std::array<T, 2>> samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);
+    sim.Np = samples.size();
+    debug("Number of particles samples: ", sim.Np);
+
+    sim.particles = Particles(sim.Np);
+    for(int p = 0; p < sim.Np; p++){
+        for(int d = 0; d < 2; d++){
+            sim.particles.x[p](d) = samples[p][d];
+        }
+    }
+
+    unsigned int Npx = std::sqrt(Lx/Ly * sim.Np);
+    T dx_p = (Lx / Npx);
+    sim.dx = 2 * dx_p;
+    sim.particle_volume = std::pow(dx_p, 2);
+    sim.particle_mass = sim.rho * sim.particle_volume;
+} // end SampleInBox
+
+#endif // DIMENSION
+
+
+
 
 #endif  // TOOLS_HPP
