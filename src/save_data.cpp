@@ -31,15 +31,16 @@ void Simulation::saveParticleData(std::string extra){
             << "eps_pl_dev"  << ","   // 9
             << "delta_gamma" << ","   // 10
             << "viscosity"   << ","   // 11
-            << "eps_pl_vol_pradhana" << "\n";   // 12
-            // << "tau_xx"      << ","   // 13
-            // << "tau_xy"      << ","   // 14
-            // << "tau_yx"      << ","   // 15
-            // << "tau_yy"      << ","   // 16
-            // << "Fe_xx"       << ","   // 17
-            // << "Fe_xy"       << ","   // 18
-            // << "Fe_yx"       << ","   // 19
-            // << "Fe_yy"       << "\n";   // 20
+            << "muI"         << ","   // 12
+            << "eps_pl_vol_pradhana" << "\n";   // 13
+            // << "tau_xx"      << ","   // 14
+            // << "tau_xy"      << ","   // 15
+            // << "tau_yx"      << ","   // 16
+            // << "tau_yy"      << ","   // 17
+            // << "Fe_xx"       << ","   // 18
+            // << "Fe_xy"       << ","   // 19
+            // << "Fe_yx"       << ","   // 20
+            // << "Fe_yy"       << "\n";   // 21
 
     TM I = TM::Identity();
     TM volavg_tau = TM::Zero();
@@ -82,15 +83,16 @@ void Simulation::saveParticleData(std::string extra){
                 << particles.eps_pl_dev[p]    << ","   // 9
                 << particles.delta_gamma[p]   << ","     // 10
                 << particles.viscosity[p]     << ","     // 11
-                << particles.eps_pl_vol_pradhana[p]  << "\n";   // 12
-                // << tau(0,0)                   << ","   // 13
-                // << tau(0,1)                   << ","   // 14
-                // << tau(1,0)                   << ","   // 15
-                // << tau(1,1)                   << ","   // 16
-                // << Fe(0,0)                    << ","    // 17
-                // << Fe(0,1)                    << ","    // 18
-                // << Fe(1,0)                    << ","    // 19
-                // << Fe(1,1)                    << "\n";  // 20
+                << particles.muI[p]           << ","     // 12
+                << particles.eps_pl_vol_pradhana[p]  << "\n";   // 13
+                // << tau(0,0)                   << ","   // 14
+                // << tau(0,1)                   << ","   // 15
+                // << tau(1,0)                   << ","   // 16
+                // << tau(1,1)                   << ","   // 17
+                // << Fe(0,0)                    << ","    // 18
+                // << Fe(0,1)                    << ","    // 19
+                // << Fe(1,0)                    << ","    // 20
+                // << Fe(1,1)                    << "\n";  // 21
     } // end loop over particles
     outFile.close();
 

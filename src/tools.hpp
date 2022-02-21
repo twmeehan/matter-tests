@@ -38,9 +38,9 @@ typedef double T;
 #endif
 ////////////////////////
 
-enum PlateType { top, bottom, left, right, front, back};
+enum PlateType { top, bottom, left, right, front, back };
 enum ElasticModel { StvkWithHencky, NeoHookean };
-enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, Curved, PerzynaVM, PerzynaDP, PerzynaMuIDP};
+enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, DPSoft, Curved, PerzynaVM, PerzynaDP, PerzynaMuIDP};
 enum BoundaryCondition { STICKY, SLIP, SEPARATE };
 
 ///////////////////// TOOLS ////////////////////////
@@ -249,6 +249,7 @@ public:
       yield_stress_orig.resize(Np); std::fill( yield_stress_orig.begin(), yield_stress_orig.end(), 0.0 );
 
       viscosity.resize(Np); std::fill( viscosity.begin(), viscosity.end(), 0.0 );
+      muI.resize(Np); std::fill( muI.begin(), muI.end(), 0.0 );
 
       fail_crit.resize(Np); std::fill( fail_crit.begin(), fail_crit.end(), false );
       eps_pl_dev_nonloc.resize(Np);  std::fill( eps_pl_dev_nonloc.begin(),  eps_pl_dev_nonloc.end(),  0.0 );
@@ -275,7 +276,7 @@ public:
   std::vector<T> yield_stress_orig;
 
   std::vector<T> viscosity;
-
+  std::vector<T> muI;
 
   std::vector<bool> fail_crit;
   std::vector<T> eps_pl_dev_nonloc;

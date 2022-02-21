@@ -118,6 +118,7 @@ public:
   // Von Mises:
   T yield_stress_orig;
   T yield_stress_min;
+  T vm_ptensile;
 
   // Drucker Prager
   T dp_slope;
