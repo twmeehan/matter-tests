@@ -51,6 +51,92 @@ bool copy_file(std::string source, std::string destination){
 
 
 
+bool PerzynaNewCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc)
+{
+    typedef Eigen::Matrix<T, 2, 1> TV2; // 3 dim vector regardless of dim of problem
+    using std::sqrt;
+    using std::pow;
+
+    T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+
+    if (y > 0) {
+
+        T pt = p;
+        T qt = q;
+        T Cp =    K*dt / (p0*p0 * perzyna_visc);
+        T Cq = 3*mu*dt / (p0*p0 * perzyna_visc);
+        T dkdp = 2*M*M;
+        T dldq = 4*beta+2;
+
+        T max_iter = 40;
+        for (int iter = 0; iter < max_iter; iter++) {
+
+            if (iter == max_iter - 1){ // did not break loop
+                debug("PerzynaNewCamClayRMA: FATAL did not exit loop at iter = ", iter);
+                exit = 1;
+            }
+
+            y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+            T k = M*M * (beta*p0 + 2*p - p0);
+            T l = 2*q * (2*beta+1);
+            T n = sqrt(k*k/d + 3.0/2.0*l*l);
+            T r1 = pt - p - Cp * y*k/n;
+            T r2 = qt - q - Cq * y*l/n;
+
+            if ( std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
+                // debug("PerzynaCamClayRMA: Breaking the loop due to small residual");
+                break;
+            }
+
+            T dndp =             k*dkdp / (n*d);
+            T dndq = (3.0/2.0) * l*dldq / n;
+
+            T tmp1 = (k*n - y*dndp) / (n*n);
+            T tmp2 = (l*n - y*dndq) / (n*n);
+
+            T Ja = -1 - Cp * (tmp1 * k + y/n * dkdp);
+            T Jb =    - Cp * tmp2 * k;
+            T Jc =    - Cq * tmp1 * l;
+            T Jd = -1 - Cq * (tmp2 * l + y/n * dldq);
+
+            T det = Ja*Jd - Jb*Jc;
+
+            T p_prev = p;
+            T q_prev = q;
+
+            if (abs(det) <= T(1e-6)){
+                p -= 0.001*r1;
+                q -= 0.001*r2;
+            } else{
+                p -= ( Jd*r1 - Jb*r2) / det;
+                q -= (-Jc*r1 + Ja*r2) / det;
+            }
+
+            if (q < 1e-10){
+                q = 1e-10;
+            }
+
+            // debug(iter, ":  pt   = ", pt);
+            // debug(iter, ":  qt   = ", qt);
+            // debug(iter, ":  p    = ", p);
+            // debug(iter, ":  q    = ", q);
+            // debug(iter, ":  r1   = ", r1);
+            // debug(iter, ":  r2   = ", r2);
+
+
+            if ( iter > 4 && std::abs(p-p_prev) < 1e-3 && std::abs(q-q_prev) < 1e-3 ){
+                // debug("PerzynaCamClayRMA: Breaking the loop due to no change in p and q");
+                break;
+            }
+        } // end for loop
+
+        return true; // if plastic, i.e., y > 0
+    } // end if outside
+    return false;
+}
+
+
+
 bool PerzynaCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc)
 {
     typedef Eigen::Matrix<T, 2, 1> TV2; // 3 dim vector regardless of dim of problem
@@ -87,15 +173,16 @@ bool PerzynaCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt
         T max_iter = 40;
         for (int iter = 0; iter < max_iter; iter++) {
 
-            // if (iter == max_iter - 1){ // did not break loop
-            //     debug("PerzynaCamClayRMA: FATAL did not exit loop at iter = ", iter);
-            //     exit = 1;
-            // }
+            if (iter == max_iter - 1){ // did not break loop
+                debug("PerzynaCamClayRMA: FATAL did not exit loop at iter = ", iter);
+                exit = 1;
+            }
 
+            y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
             T dydp = M*M * (beta*p0 + 2*p - p0);
             T dydq = 2*q * (2*beta+1);
             T normalization = p0*p0;
-            T prefactor = (dt/v) * (y/normalization) / sqrt(dydp*dydp/d + 3/2*dydq*dydq);
+            T prefactor = (dt/v) * (y/normalization) / sqrt(dydp*dydp/d + 3.0/2.0*dydq*dydq);
             T r0 = pt - p -    K*prefactor*dydp;
             T r1 = qt - q - 3*mu*prefactor*dydq;
 
@@ -133,6 +220,8 @@ bool PerzynaCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt
 
             p_prev = p;
             q_prev = q;
+
+            // debug(iter, ": (p_prev, q_prev) = (", p_prev, ", ", q_prev,")");
 
             p += step(0);
             q += step(1);
