@@ -51,12 +51,78 @@ bool copy_file(std::string source, std::string destination){
 
 
 
-bool PerzynaNewCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc)
+bool ModifiedCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K)
 {
-    typedef Eigen::Matrix<T, 2, 1> TV2; // 3 dim vector regardless of dim of problem
-    using std::sqrt;
-    using std::pow;
+    T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
 
+    if (y > 0) {
+
+        T delta_gamma = 0;
+        T pt = p;
+        T qt = q;
+        T dkdp = 2*M*M;
+        T dldq = 4*beta+2;
+
+        T max_iter = 40;
+        for (int iter = 0; iter < max_iter; iter++) {
+
+            if (iter == max_iter - 1){ // did not break loop
+                debug("ModifiedCamClayRMA: FATAL did not exit loop at iter = ", iter);
+                exit = 1;
+            }
+
+            y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+            T k = M*M * (beta*p0 + 2*p - p0);
+            T l = 2*q * (2*beta+1);
+            T r1 = pt - p - K    * delta_gamma * k;
+            T r2 = qt - q - 3*mu * delta_gamma * l;
+
+            if ( iter > 4 && std::abs(y) < 1e-3 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
+                // debug("ModifiedCamClayRMA: Breaking loop bc small rx at iter = ", iter);
+                break;
+            }
+
+            T J11 = -1 - K*delta_gamma*dkdp;
+            T J13 = -K*k;
+
+            T J22 = -1 - 3*mu*delta_gamma*dldq;
+            T J23 = -3*mu*l;
+
+            T J31 = k;
+            T J32 = l;
+
+            T det = J11*(-J32*J23) + J13*(-J31*J22);
+
+            if (abs(det) < T(1e-6)){
+                debug("Determinant of Jacobian too small: det = ", det);
+                p           -= 0.001*r1;
+                q           -= 0.001*r2;
+                delta_gamma -= 0.001*y / (p0*p0);
+            } else{
+                p           -= ( -J32*J23*r1 + J32*J13*r2 - J22*J13*y ) / det;
+                q           -= (  J31*J23*r1 - J31*J13*r2 - J11*J23*y ) / det;
+                delta_gamma -= ( -J31*J22*r1 - J11*J32*r2 + J11*J22*y ) / det;
+            }
+
+            if (q < 1e-15){
+                q = 1e-15;
+            }
+            // debug(iter, ":  r1   = ", r1);
+            // debug(iter, ":  r2   = ", r2);
+            // debug(iter, ":  y    = ", y);
+
+        } // end for loop
+
+        return true; // if plastic, i.e., y > 0
+    } // end if outside
+    return false;
+}
+
+
+
+
+bool PerzynaMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc)
+{
     T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
 
     if (y > 0) {
@@ -72,19 +138,19 @@ bool PerzynaNewCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T
         for (int iter = 0; iter < max_iter; iter++) {
 
             if (iter == max_iter - 1){ // did not break loop
-                debug("PerzynaNewCamClayRMA: FATAL did not exit loop at iter = ", iter);
+                debug("PerzynaMCCRMA: FATAL did not exit loop at iter = ", iter);
                 exit = 1;
             }
 
             y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
             T k = M*M * (beta*p0 + 2*p - p0);
             T l = 2*q * (2*beta+1);
-            T n = sqrt(k*k/d + 3.0/2.0*l*l);
+            T n = std::sqrt(k*k/d + 3.0/2.0*l*l);
             T r1 = pt - p - Cp * y*k/n;
             T r2 = qt - q - Cq * y*l/n;
 
-            if ( std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
-                // debug("PerzynaCamClayRMA: Breaking the loop due to small residual");
+            if ( iter > 4 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
+                // debug("PerzynaMCCRMA: Breaking the loop due to small residual");
                 break;
             }
 
@@ -101,10 +167,8 @@ bool PerzynaNewCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T
 
             T det = Ja*Jd - Jb*Jc;
 
-            T p_prev = p;
-            T q_prev = q;
-
             if (abs(det) <= T(1e-6)){
+                debug("Determinant of Jacobian too small: det = ", det);
                 p -= 0.001*r1;
                 q -= 0.001*r2;
             } else{
@@ -112,22 +176,13 @@ bool PerzynaNewCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T
                 q -= (-Jc*r1 + Ja*r2) / det;
             }
 
-            if (q < 1e-10){
-                q = 1e-10;
+            if (q < 1e-15){
+                q = 1e-15;
             }
 
-            // debug(iter, ":  pt   = ", pt);
-            // debug(iter, ":  qt   = ", qt);
-            // debug(iter, ":  p    = ", p);
-            // debug(iter, ":  q    = ", q);
             // debug(iter, ":  r1   = ", r1);
             // debug(iter, ":  r2   = ", r2);
 
-
-            if ( iter > 4 && std::abs(p-p_prev) < 1e-3 && std::abs(q-q_prev) < 1e-3 ){
-                // debug("PerzynaCamClayRMA: Breaking the loop due to no change in p and q");
-                break;
-            }
         } // end for loop
 
         return true; // if plastic, i.e., y > 0
@@ -137,6 +192,7 @@ bool PerzynaNewCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T
 
 
 
+// Do NOT USE!
 bool PerzynaCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc)
 {
     typedef Eigen::Matrix<T, 2, 1> TV2; // 3 dim vector regardless of dim of problem
@@ -241,7 +297,7 @@ bool PerzynaCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt
 
 
 
-
+// Do NOT USE!
 bool PerzynaQuadRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc)
 {
     typedef Eigen::Matrix<T, 2, 1> TV2; // 3 dim vector regardless of dim of problem
@@ -326,7 +382,7 @@ bool PerzynaQuadRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T
 
 
 
-
+// Do NOT USE!
 bool CamClayRMA(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus)
 {
     typedef Eigen::Matrix<T, 3, 1> TV3; // 3 dim vector regardless of dim of problem
@@ -406,6 +462,7 @@ bool CamClayRMA(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p
     return false;
 }
 
+// Do NOT USE!
 bool QuadRMA(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus)
 {
     typedef Eigen::Matrix<T, 3, 1> TV3; // 3 dim vector regardless of dim of problem
@@ -498,141 +555,6 @@ bool QuadRMA(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, 
         assert((q * (1 + 2 * beta) + 2 * M * (p + beta * p0) * (p - p0) / p0) <= T(1e-3)); // yield surface, do not use precomps here! NB this is the unscaled yield surface!
         assert(std::isfinite(p));
         assert(std::isfinite(q));
-        return true;
-    }
-    return false;
-}
-
-
- // DO NOT USE - WRONG PROJECTION
-bool QuadAnalyticRMA(T& p, T& q, int& exit, T M, T p0, T beta)
-{
-    using std::abs;
-    using std::cbrt;
-    using std::max;
-    using std::min;
-    using std::pow;
-    using std::sqrt;
-
-    T y = q * (1 + 2 * beta) + 2 * M * (p + beta * p0) * (p - p0) / p0;
-
-    if (y > 0) {
-        T max_p = p0;
-        T min_p = -beta * max_p;
-        T max_q = M / (2 * beta + 1) * T(0.5) * p0 * (1 + beta) * (1 + beta);
-
-        T scale = max(-min_p, max(max_p, max_q));
-        //T scale = 1.0;
-        T scale_inverse = 1 / scale;
-        p0 *= scale_inverse;
-        p *= scale_inverse;
-        q *= scale_inverse;
-
-        // Lagrangian multiplier solution (The real solution)
-        // T lamb = -1.0L/3.0L*(-3*(4*pow(M, 2)*pow(beta, 2)*pow(p0, 2) + 8*pow(M, 2)*beta*pow(p0, 2) + 4*pow(M, 2)*pow(p0, 2) - 16*M*beta*p0*q - 8*M*p0*q + 4*pow(beta, 2)*pow(p0, 2) + 4*beta*pow(p0, 2) + pow(p0, 2))/(16*pow(M, 2)*pow(beta, 2) + 16*pow(M, 2)*beta + 4*pow(M, 2)) + pow(-pow(M, 2)*pow(beta, 2)*p0 - 2*pow(M, 2)*beta*p0 - pow(M, 2)*p0 + 4*M*beta*q + 2*M*q - 4*pow(beta, 2)*p0 - 4*beta*p0 - p0, 2)/pow(4*M*pow(beta, 2) + 4*M*beta + M, 2))/cbrt((1.0L/2.0L)*sqrt(-4*pow(-3*(4*pow(M, 2)*pow(beta, 2)*pow(p0, 2) + 8*pow(M, 2)*beta*pow(p0, 2) + 4*pow(M, 2)*pow(p0, 2) - 16*M*beta*p0*q - 8*M*p0*q + 4*pow(beta, 2)*pow(p0, 2) + 4*beta*pow(p0, 2) + pow(p0, 2))/(16*pow(M, 2)*pow(beta, 2) + 16*pow(M, 2)*beta + 4*pow(M, 2)) + pow(-pow(M, 2)*pow(beta, 2)*p0 - 2*pow(M, 2)*beta*p0 - pow(M, 2)*p0 + 4*M*beta*q + 2*M*q - 4*pow(beta, 2)*p0 - 4*beta*p0 - p0, 2)/pow(4*M*pow(beta, 2) + 4*M*beta + M, 2), 3) + pow(27*(-2*M*beta*pow(p0, 3) + 2*M*beta*pow(p0, 2)*p - 2*M*pow(p0, 2)*p + 2*M*p0*pow(p, 2) + 2*beta*pow(p0, 2)*q + pow(p0, 2)*q)/(8*pow(M, 2)*pow(beta, 2) + 8*pow(M, 2)*beta + 2*pow(M, 2)) - 9*(-pow(M, 2)*pow(beta, 2)*p0 - 2*pow(M, 2)*beta*p0 - pow(M, 2)*p0 + 4*M*beta*q + 2*M*q - 4*pow(beta, 2)*p0 - 4*beta*p0 - p0)*(4*pow(M, 2)*pow(beta, 2)*pow(p0, 2) + 8*pow(M, 2)*beta*pow(p0, 2) + 4*pow(M, 2)*pow(p0, 2) - 16*M*beta*p0*q - 8*M*p0*q + 4*pow(beta, 2)*pow(p0, 2) + 4*beta*pow(p0, 2) + pow(p0, 2))/((4*M*pow(beta, 2) + 4*M*beta + M)*(16*pow(M, 2)*pow(beta, 2) + 16*pow(M, 2)*beta + 4*pow(M, 2))) + 2*pow(-pow(M, 2)*pow(beta, 2)*p0 - 2*pow(M, 2)*beta*p0 - pow(M, 2)*p0 + 4*M*beta*q + 2*M*q - 4*pow(beta, 2)*p0 - 4*beta*p0 - p0, 3)/pow(4*M*pow(beta, 2) + 4*M*beta + M, 3), 2)) + (27.0L/2.0L)*(-2*M*beta*pow(p0, 3) + 2*M*beta*pow(p0, 2)*p - 2*M*pow(p0, 2)*p + 2*M*p0*pow(p, 2) + 2*beta*pow(p0, 2)*q + pow(p0, 2)*q)/(8*pow(M, 2)*pow(beta, 2) + 8*pow(M, 2)*beta + 2*pow(M, 2)) - 9.0L/2.0L*(-pow(M, 2)*pow(beta, 2)*p0 - 2*pow(M, 2)*beta*p0 - pow(M, 2)*p0 + 4*M*beta*q + 2*M*q - 4*pow(beta, 2)*p0 - 4*beta*p0 - p0)*(4*pow(M, 2)*pow(beta, 2)*pow(p0, 2) + 8*pow(M, 2)*beta*pow(p0, 2) + 4*pow(M, 2)*pow(p0, 2) - 16*M*beta*p0*q - 8*M*p0*q + 4*pow(beta, 2)*pow(p0, 2) + 4*beta*pow(p0, 2) + pow(p0, 2))/((4*M*pow(beta, 2) + 4*M*beta + M)*(16*pow(M, 2)*pow(beta, 2) + 16*pow(M, 2)*beta + 4*pow(M, 2))) + pow(-pow(M, 2)*pow(beta, 2)*p0 - 2*pow(M, 2)*beta*p0 - pow(M, 2)*p0 + 4*M*beta*q + 2*M*q - 4*pow(beta, 2)*p0 - 4*beta*p0 - p0, 3)/pow(4*M*pow(beta, 2) + 4*M*beta + M, 3)) - 1.0L/3.0L*cbrt((1.0L/2.0L)*sqrt(-4*pow(-3*(4*pow(M, 2)*pow(beta, 2)*pow(p0, 2) + 8*pow(M, 2)*beta*pow(p0, 2) + 4*pow(M, 2)*pow(p0, 2) - 16*M*beta*p0*q - 8*M*p0*q + 4*pow(beta, 2)*pow(p0, 2) + 4*beta*pow(p0, 2) + pow(p0, 2))/(16*pow(M, 2)*pow(beta, 2) + 16*pow(M, 2)*beta + 4*pow(M, 2)) + pow(-pow(M, 2)*pow(beta, 2)*p0 - 2*pow(M, 2)*beta*p0 - pow(M, 2)*p0 + 4*M*beta*q + 2*M*q - 4*pow(beta, 2)*p0 - 4*beta*p0 - p0, 2)/pow(4*M*pow(beta, 2) + 4*M*beta + M, 2), 3) + pow(27*(-2*M*beta*pow(p0, 3) + 2*M*beta*pow(p0, 2)*p - 2*M*pow(p0, 2)*p + 2*M*p0*pow(p, 2) + 2*beta*pow(p0, 2)*q + pow(p0, 2)*q)/(8*pow(M, 2)*pow(beta, 2) + 8*pow(M, 2)*beta + 2*pow(M, 2)) - 9*(-pow(M, 2)*pow(beta, 2)*p0 - 2*pow(M, 2)*beta*p0 - pow(M, 2)*p0 + 4*M*beta*q + 2*M*q - 4*pow(beta, 2)*p0 - 4*beta*p0 - p0)*(4*pow(M, 2)*pow(beta, 2)*pow(p0, 2) + 8*pow(M, 2)*beta*pow(p0, 2) + 4*pow(M, 2)*pow(p0, 2) - 16*M*beta*p0*q - 8*M*p0*q + 4*pow(beta, 2)*pow(p0, 2) + 4*beta*pow(p0, 2) + pow(p0, 2))/((4*M*pow(beta, 2) + 4*M*beta + M)*(16*pow(M, 2)*pow(beta, 2) + 16*pow(M, 2)*beta + 4*pow(M, 2))) + 2*pow(-pow(M, 2)*pow(beta, 2)*p0 - 2*pow(M, 2)*beta*p0 - pow(M, 2)*p0 + 4*M*beta*q + 2*M*q - 4*pow(beta, 2)*p0 - 4*beta*p0 - p0, 3)/pow(4*M*pow(beta, 2) + 4*M*beta + M, 3), 2)) + (27.0L/2.0L)*(-2*M*beta*pow(p0, 3) + 2*M*beta*pow(p0, 2)*p - 2*M*pow(p0, 2)*p + 2*M*p0*pow(p, 2) + 2*beta*pow(p0, 2)*q + pow(p0, 2)*q)/(8*pow(M, 2)*pow(beta, 2) + 8*pow(M, 2)*beta + 2*pow(M, 2)) - 9.0L/2.0L*(-pow(M, 2)*pow(beta, 2)*p0 - 2*pow(M, 2)*beta*p0 - pow(M, 2)*p0 + 4*M*beta*q + 2*M*q - 4*pow(beta, 2)*p0 - 4*beta*p0 - p0)*(4*pow(M, 2)*pow(beta, 2)*pow(p0, 2) + 8*pow(M, 2)*beta*pow(p0, 2) + 4*pow(M, 2)*pow(p0, 2) - 16*M*beta*p0*q - 8*M*p0*q + 4*pow(beta, 2)*pow(p0, 2) + 4*beta*pow(p0, 2) + pow(p0, 2))/((4*M*pow(beta, 2) + 4*M*beta + M)*(16*pow(M, 2)*pow(beta, 2) + 16*pow(M, 2)*beta + 4*pow(M, 2))) + pow(-pow(M, 2)*pow(beta, 2)*p0 - 2*pow(M, 2)*beta*p0 - pow(M, 2)*p0 + 4*M*beta*q + 2*M*q - 4*pow(beta, 2)*p0 - 4*beta*p0 - p0, 3)/pow(4*M*pow(beta, 2) + 4*M*beta + M, 3)) - 1.0L/3.0L*(-pow(M, 2)*pow(beta, 2)*p0 - 2*pow(M, 2)*beta*p0 - pow(M, 2)*p0 + 4*M*beta*q + 2*M*q - 4*pow(beta, 2)*p0 - 4*beta*p0 - p0)/(4*M*pow(beta, 2) + 4*M*beta + M);
-
-        /////////////////////////////////////////////////////////////////////////
-
-        T M_sq = M * M;
-        T beta_sq = beta * beta;
-        T p0_sq = p0 * p0;
-        T p0_cu = p0_sq * p0;
-        T p_sq = p * p;
-
-        T tmp9 = (4 * M_sq * beta_sq * p0_sq + 8 * M_sq * beta * p0_sq + 4 * M_sq * p0_sq - 16 * M * beta * p0 * q - 8 * M * p0 * q + 4 * beta_sq * p0_sq + 4 * beta * p0_sq + p0_sq);
-        T tmp10 = (16 * M_sq * beta_sq + 16 * M_sq * beta + 4 * M_sq);
-        T tmp11 = -M_sq * beta_sq * p0 - 2 * M_sq * beta * p0 - M_sq * p0 + 4 * M * beta * q + 2 * M * q - 4 * beta_sq * p0 - 4 * beta * p0 - p0;
-        T tmp12 = (-2 * M * beta * p0_cu + 2 * M * beta * p0_sq * p - 2 * M * p0_sq * p + 2 * M * p0 * p_sq + 2 * beta * p0_sq * q + p0_sq * q);
-        T tmp13 = (8 * M_sq * beta_sq + 8 * M_sq * beta + 2 * M_sq);
-        T tmp14 = (4 * M * beta_sq + 4 * M * beta + M);
-
-        T tmp7 = tmp14 * tmp14;
-        T tmp3 = tmp7 * tmp14;
-        T tmp5 = tmp11 * tmp11;
-        T tmp4 = tmp5 * tmp11;
-
-        T tmp4_over_tmp3 = tmp4 / tmp3;
-        T tmp9_over_tmp10 = tmp9 / tmp10;
-        T tmp5_over_tmp7 = tmp5 / tmp7;
-        T tmp12_over_tmp13 = tmp12 / tmp13;
-        T tmp91410 = tmp9 / (tmp14 * tmp10);
-
-        T tmp6_1 = 27 * tmp12_over_tmp13 - 9 * tmp11 * tmp91410 + 2 * tmp4_over_tmp3;
-        T tmp6 = tmp6_1 * tmp6_1;
-        T tmp8_1 = -3 * tmp9_over_tmp10 + tmp5_over_tmp7;
-        T tmp8 = tmp8_1 * tmp8_1 * tmp8_1;
-
-        T tmp2_inside = -4 * tmp8 + tmp6;
-        if (tmp2_inside < 0) {
-#ifdef WARNINGS
-            debug("AnalQuadReturnMapping: WARNING Square root of negative number, tmp2_inside = ", tmp2_inside);
-            debug("                   ... with these values: scale = ", scale);
-            debug("                   ... with these values: p0    = ", p0, ", p0*scale = ", p0 * scale, " Pa");
-            debug("                   ... with these values: p     = ", p, ", p*scale  = ", p * scale, " Pa");
-            debug("                   ... with these values: q     = ", q, ", q*scale  = ", q * scale, " Pa");
-            debug("          Compare to: ");
-            debug("                  13.5*tmp12_over_tmp13 = ", 13.5 * tmp12_over_tmp13);
-            debug("                  4.5*tmp11*tmp91410    = ", 4.5 * tmp11 * tmp91410);
-            debug("                  tmp4_over_tmp3        = ", tmp4_over_tmp3);
-#endif
-            if (tmp2_inside < -1e-15) {
-#ifdef WARNINGS
-                debug("          tmp2_inside = ", tmp2_inside);
-#endif
-                T assumption_1 =                          13.5 * tmp12_over_tmp13 - 4.5 * tmp11 * tmp91410 + tmp4_over_tmp3;
-                T assumption_2 = 0.5*sqrt(-tmp2_inside) + 13.5 * tmp12_over_tmp13 - 4.5 * tmp11 * tmp91410 + tmp4_over_tmp3;
-                if ( abs(assumption_1-assumption_2)/abs(assumption_1) < 1e-2 ){
-                    tmp2_inside = 0;
-#ifdef WARNINGS
-                    debug("                  The relative mistake by neglecting tmp2 is less than 1 percent");
-#endif
-                } else {
-                    debug("                  FATAL The relative mistake by neglecting tmp2 is NOT less than 1 percent");
-                    exit = 1;
-                }
-            } else {
-                tmp2_inside = 0;
-#ifdef WARNINGS
-                debug("                  Even though the inside of the square root is negative, it is so small, on the order of machine precision");
-#endif
-            }
-        }
-        T tmp2 = sqrt(tmp2_inside);
-        T tmp1 = cbrt(0.5 * tmp2 + 13.5 * tmp12_over_tmp13 - 4.5 * tmp11 * tmp91410 + tmp4_over_tmp3);
-
-        if (tmp1 < 1e-15){
-            debug("AnalQuadReturnMapping: FATAL tmp1 = ", tmp1);
-            exit = 1;
-        }
-
-        T lamb = -0.3333333333333333333333333333333333333333333333333333333333333 * tmp8_1 / tmp1 - 0.3333333333333333333333333333333333333333333333333333333333333 * tmp1 - 0.3333333333333333333333333333333333333333333333333333333333333 * tmp11 / tmp14;
-
-        /////////////////////////////////////////////////////////////////////////
-
-        p = p0 * (-M * beta * lamb + M * lamb - p) / (2 * M * lamb - p0);
-        q = beta * lamb + lamb / 2 + q;
-
-        p0 *= scale;
-        p *= scale;
-        q *= scale;
-
-        p = max(min(p, max_p), min_p);
-        q = min(max(q, T(0)), max_q);
-
-        T yield_function = q * (1 + 2 * beta) + 2 * M * (p + beta * p0) * (p - p0) / p0; // yield surface, do not use precomps here!
-        if (std::abs(yield_function) > T(5)) {
-#ifdef WARNINGS
-            debug("AnalQuadReturnMapping: WARNING y(p,q) = ", yield_function, " at p = ", p, " and q = ", q);
-#endif
-            if (yield_function*yield_function > T(1e-4)*(p*p+q*q)) {
-                debug("AnalQuadReturnMapping: FATAL y(p,q) = ", yield_function, " at p = ", p, " and q = ", q);
-                exit = 1;
-            }
-        }
-        if (!std::isfinite(p) || !std::isfinite(q)){
-            debug("AnalQuadReturnMapping: FATAL p or q not finite");
-            exit = 1;
-        }
         return true;
     }
     return false;

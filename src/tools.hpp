@@ -40,7 +40,7 @@ typedef double T;
 
 enum PlateType { top, bottom, left, right, front, back };
 enum ElasticModel { StvkWithHencky, NeoHookean };
-enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, DPSoft, Curved, PerzynaVM, PerzynaDP, PerzynaMuIDP};
+enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, DPSoft, ModifiedCamClay, PerzynaVM, PerzynaDP, PerzynaMuIDP, PerzynaMCC};
 enum BoundaryCondition { STICKY, SLIP, SEPARATE };
 
 ///////////////////// TOOLS ////////////////////////
@@ -96,12 +96,14 @@ unsigned int load_array(std::vector<TV>& array, std::string file_name);
 std::vector<T> linspace(T a, T b, size_t N);
 bool copy_file(std::string source, std::string destination);
 
-bool PerzynaNewCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc);
+bool ModifiedCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K);
+bool PerzynaMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc);
+
+// DO NOT USE THESE:
 bool PerzynaCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc);
 bool PerzynaQuadRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc);
 bool CamClayRMA(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus);
 bool QuadRMA(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, T beta, T mu, T bulk_modulus);
-bool QuadAnalyticRMA(T& p, T& q, int& exit, T M, T p0, T beta);  // DO NOT USE - WRONG PROJECTION
 
 #ifdef CUBICSPLINES
 

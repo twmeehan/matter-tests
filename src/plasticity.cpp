@@ -6,7 +6,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == Curved || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP){
+    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == ModifiedCamClay || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log(); // VonMises
@@ -426,7 +426,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaMuIDP
 
 
-        else if (plastic_model == Curved){
+        else if (plastic_model == ModifiedCamClay || plastic_model == PerzynaMCC){
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -439,6 +439,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T particle_beta = beta;
             T particle_p0_hard = p0;
             // T particle_p0_hard = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p])); // NB small p0 may be problematic for viscous MCC
+
 
             ////// HARDNING ALT 0
             // T particle_beta = beta;
@@ -524,18 +525,24 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // } // end if plastic
 
 
-            bool perform_rma = PerzynaCamClayRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta, mu, K, dt, dim, perzyna_visc);
-            // bool perform_rma = PerzynaQuadRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta, mu, K, dt, dim, perzyna_visc);
-            // bool perform_rma = CamClayRMA(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, particle_p0_hard, particle_beta, mu, K);
-            // bool perform_rma = QuadRMA(p_stress, q_stress, exit, hencky_trace, hencky_deviatoric_norm, M, particle_p0_hard, particle_beta, mu, K);
-            // bool perform_rma = QuadAnalyticRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta); // DO NOT USE - WRONG PROJECTION
+
+            bool perform_rma;
+            if (plastic_model == ModifiedCamClay)
+            {
+                perform_rma = ModifiedCamClayRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta, mu, K);
+            }
+            else if (plastic_model == PerzynaMCC)
+            {
+                perform_rma = PerzynaMCCRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta, mu, K, dt, dim, perzyna_visc);
+            }
+
 
             if (perform_rma) { // returns true if it performs a return mapping
                 plastic_count++;
 
                 T eps_pl_dev_instant = (q_trial - q_stress) / mu_sqrt6;
                 particles.eps_pl_dev[p] += eps_pl_dev_instant;
-                particles.delta_gamma[p] = eps_pl_dev_instant; // TEMPORARY FOR VIZ.
+                particles.delta_gamma[p] = eps_pl_dev_instant / dt;
 
                 T ep = p_stress / (K*dim);
                 T eps_pl_vol_inst = hencky_trace + dim * ep;
@@ -543,13 +550,12 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
 
-                particles.eps_pl_vol_abs[p] += std::abs(eps_pl_vol_inst);
-
-                if (particles.fail_crit[p]){
-                    particles.eps_pl_vol_mcc[p] += -std::abs(eps_pl_vol_inst);
-                }else{
-                    particles.eps_pl_vol_mcc[p] += xi_nonloc * std::abs(eps_pl_vol_inst);
-                }
+                // particles.eps_pl_vol_abs[p] += std::abs(eps_pl_vol_inst);
+                // if (particles.fail_crit[p]){
+                //     particles.eps_pl_vol_mcc[p] += -std::abs(eps_pl_vol_inst);
+                // }else{
+                //     particles.eps_pl_vol_mcc[p] += xi_nonloc * std::abs(eps_pl_vol_inst);
+                // }
 
                 hencky = q_stress / mu_sqrt6 * hencky_deviatoric - ep*TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
