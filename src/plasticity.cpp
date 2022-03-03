@@ -6,7 +6,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == ModifiedCamClay || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP){
+    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == ModifiedCamClay || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log(); // VonMises
@@ -355,7 +355,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 particles.viscosity[p] = 0.5*p_trial*dt*(mu_2-mu_1) / (fac_Q*std::sqrt(p_trial) + delta_gamma);
 
-                T in_numb = (2*delta_gamma*grain_diameter / std::sqrt(p_trial/rho_s));
+                T in_numb = (2*delta_gamma/dt*grain_diameter / std::sqrt(p_trial/rho_s));
                 particles.muI[p] = mu_1 + (mu_2-mu_1) / (in_numb_ref/in_numb + 1);
 
                 //////////////////////////////////////////////
@@ -418,12 +418,84 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 //     exit = 1;
                 // }
 
-            } // end plastic projection projection
+            } // end plastic projection
             else{
                 particles.viscosity[p] = 0;
                 particles.muI[p] = 0;
             }
         } // end PerzynaMuIDP
+
+        else if (plastic_model == PerzynaMuIMCC) {
+
+            // the trial stress states
+            T p_stress = -K * hencky_trace;
+            T q_stress = mu_sqrt6 * hencky_deviatoric_norm;
+
+            // make copies
+            T p_trial = p_stress;
+            T q_trial = q_stress;
+
+            T particle_p0 = p0;
+            // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
+
+            bool perform_rma = ModifiedCamClayRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K);
+
+            if (perform_rma){
+                plastic_count++;
+
+                T ep = p_stress / (K*dim);
+                T eps_pl_vol_inst = hencky_trace + dim * ep;
+                particles.eps_pl_vol[p]     += eps_pl_vol_inst;
+                particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
+
+                //////////////////////////////////////////////
+                T rho_s           = 2672.13;
+                T grain_diameter  = 7e-4;
+                T in_numb_ref     = 1.0334;
+                T mu_1            = M;
+                T mu_2            = M+0.5;
+                T fac_Q = in_numb_ref / (2*grain_diameter*std::sqrt(rho_s));
+                //////////////////////////////////////////////
+
+                p_stress = std::max(p_stress, -beta*particle_p0);
+                p_stress = std::min(p_stress, particle_p0);
+                T q_yield = M * std::sqrt( (particle_p0-p_stress)*(beta*particle_p0+p_stress) / (1+2*beta) );
+
+                if (q_trial < q_yield){
+                    q_stress = q_yield;
+                    debug("Setting q = q_yield = ", q_yield);
+                    particles.viscosity[p] = 0;
+                    particles.muI[p] = 0;
+                }
+                else{
+                    T fac_a = mu_sqrt6 * dt; // always positive
+                    T fac_b = std::abs(p_stress)*(mu_2-mu_1) + mu_sqrt6*dt*fac_Q*std::sqrt(std::abs(p_stress)) - (q_trial-q_yield);
+                    T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(std::abs(p_stress)); // always negative
+
+                    T gamma_dot_S = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always psoitive because a>0 and c<0
+
+                    q_stress = std::max(q_yield, q_trial - mu_sqrt6 * dt * gamma_dot_S);
+
+                    particles.viscosity[p] = 0.5*std::abs(p_stress)*(mu_2-mu_1) / (fac_Q*std::sqrt(std::abs(p_stress)) + gamma_dot_S);
+
+                    T in_numb = (2*gamma_dot_S*grain_diameter / std::sqrt(std::abs(p_stress)/rho_s));
+                    particles.muI[p] = mu_1 + (mu_2-mu_1) / (in_numb_ref/in_numb + 1);
+                }
+
+                T eps_pl_dev_instant = (q_trial - q_stress) / mu_sqrt6;
+                particles.eps_pl_dev[p] += eps_pl_dev_instant;
+                particles.delta_gamma[p] = eps_pl_dev_instant / dt;
+
+                hencky = q_stress / mu_sqrt6 * hencky_deviatoric - ep*TV::Ones();
+                particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
+            } // end plastic projection
+            else{
+                particles.viscosity[p] = 0;
+                particles.muI[p] = 0;
+            }
+
+
+        } // end PerzynaMuIMCC
 
 
         else if (plastic_model == ModifiedCamClay || plastic_model == PerzynaMCC){
@@ -437,8 +509,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T q_trial = q_stress;
 
             T particle_beta = beta;
-            T particle_p0_hard = p0;
-            // T particle_p0_hard = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p])); // NB small p0 may be problematic for viscous MCC
+            // T particle_p0_hard = p0;
+            T particle_p0_hard = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p])); // NB small p0 may be problematic for viscous MCC
 
 
             ////// HARDNING ALT 0
