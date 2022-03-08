@@ -6,7 +6,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == ModifiedCamClay || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC){
+    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == ModifiedCamClay || plastic_model == ModifiedCamClayHard || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log(); // VonMises
@@ -301,7 +301,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T mu_1            = dp_slope;
             T mu_2            = 0.95;
             //////////////////////////////////////////////
-            T fac_Q = in_numb_ref * dt / (2*grain_diameter*std::sqrt(rho_s));
+            T fac_Q = in_numb_ref * dt / (grain_diameter*std::sqrt(rho_s)); // NB: Use 2 * grain diameter if using the other definiton
             //////////////////////////////////////////////
 
             // trial stresses
@@ -348,14 +348,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 // Method 2 - not peric, with mu_i, only exp=1
                 //////////////////////////////////////////////
                 T fac_a = mu_sqrt6; // always positive
-                T fac_b = p_trial*(mu_2-mu_1) + mu_sqrt6*fac_Q*std::sqrt(p_trial) - (q_trial-q_yield); // remove 0.5 if 2*visc
+                T fac_b = p_trial*(mu_2-mu_1) + mu_sqrt6*fac_Q*std::sqrt(p_trial) - (q_trial-q_yield);
                 T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(p_trial); // always negative
 
                 T delta_gamma = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always psoitive because a>0 and c<0
 
-                particles.viscosity[p] = 0.5*p_trial*dt*(mu_2-mu_1) / (fac_Q*std::sqrt(p_trial) + delta_gamma);
+                // particles.viscosity[p] = 0.5*p_trial*dt*(mu_2-mu_1) / (fac_Q*std::sqrt(p_trial) + delta_gamma);
+                particles.viscosity[p] = p_trial*dt*(mu_2-mu_1) / (fac_Q*std::sqrt(p_trial) + delta_gamma);
 
-                T in_numb = (2*delta_gamma/dt*grain_diameter / std::sqrt(p_trial/rho_s));
+                // T in_numb = (2*delta_gamma/dt*grain_diameter / std::sqrt(p_trial/rho_s));
+                T in_numb = (delta_gamma/dt*grain_diameter / std::sqrt(p_trial/rho_s));
                 particles.muI[p] = mu_1 + (mu_2-mu_1) / (in_numb_ref/in_numb + 1);
 
                 //////////////////////////////////////////////
@@ -435,10 +437,12 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = p_stress;
             T q_trial = q_stress;
 
-            T particle_p0 = p0;
-            // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
-
+            // EXLICIT HARDENING
+            T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
             bool perform_rma = ModifiedCamClayRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K);
+
+            // IMPLICIT HARDENING
+            // bool perform_rma = ModifiedCamClayHardRMA(p_stress, q_stress, exit, M, particles.eps_pl_vol_mcc[p], beta, mu, K, xi);
 
             if (perform_rma){
                 plastic_count++;
@@ -448,13 +452,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_vol[p]     += eps_pl_vol_inst;
                 particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
 
+                // ONLY if implicit hardening
+                // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
+
                 //////////////////////////////////////////////
                 T rho_s           = 2672.13;
                 T grain_diameter  = 7e-4;
                 T in_numb_ref     = 1.0334;
                 T mu_1            = M;
                 T mu_2            = M+0.5;
-                T fac_Q = in_numb_ref / (2*grain_diameter*std::sqrt(rho_s));
+                T fac_Q = in_numb_ref / (grain_diameter*std::sqrt(rho_s)); // NB: Use 2 * grain diameter if using the other definiton
                 //////////////////////////////////////////////
 
                 p_stress = std::max(p_stress, -beta*particle_p0);
@@ -472,13 +479,15 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     T fac_b = std::abs(p_stress)*(mu_2-mu_1) + mu_sqrt6*dt*fac_Q*std::sqrt(std::abs(p_stress)) - (q_trial-q_yield);
                     T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(std::abs(p_stress)); // always negative
 
-                    T gamma_dot_S = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always psoitive because a>0 and c<0
+                    T gamma_dot_S = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always positive because a>0 and c<0
 
                     q_stress = std::max(q_yield, q_trial - mu_sqrt6 * dt * gamma_dot_S);
 
-                    particles.viscosity[p] = 0.5*std::abs(p_stress)*(mu_2-mu_1) / (fac_Q*std::sqrt(std::abs(p_stress)) + gamma_dot_S);
+                    // particles.viscosity[p] = 0.5*std::abs(p_stress)*(mu_2-mu_1) / (fac_Q*std::sqrt(std::abs(p_stress)) + gamma_dot_S);
+                    particles.viscosity[p] = std::abs(p_stress)*(mu_2-mu_1) / (fac_Q*std::sqrt(std::abs(p_stress)) + gamma_dot_S);
 
-                    T in_numb = (2*gamma_dot_S*grain_diameter / std::sqrt(std::abs(p_stress)/rho_s));
+                    // T in_numb = (2*gamma_dot_S*grain_diameter / std::sqrt(std::abs(p_stress)/rho_s));
+                    T in_numb = (gamma_dot_S*grain_diameter / std::sqrt(std::abs(p_stress)/rho_s));
                     particles.muI[p] = mu_1 + (mu_2-mu_1) / (in_numb_ref/in_numb + 1);
                 }
 
@@ -498,7 +507,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaMuIMCC
 
 
-        else if (plastic_model == ModifiedCamClay || plastic_model == PerzynaMCC){
+        else if (plastic_model == ModifiedCamClay || plastic_model == ModifiedCamClayHard || plastic_model == PerzynaMCC){
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -531,11 +540,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             //     }
             // }
 
-            ////// HARDNING ALT 2
-            // T particle_p0_hard = std::max(T(100), (T)(p0  * std::exp(0.0001 * xi * particles.eps_pl_vol[p])));
-            // T particle_pt_hard =              (beta * p0) * std::exp(      xi * particles.eps_pl_vol_abs[p]);
-            // T particle_beta = particle_pt_hard / particle_p0_hard;
-
             ///// HARDNING ALT 3
             // T p0_aftersoft = 20e3;
             // T p0_min = 100;
@@ -556,52 +560,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             //     }
             // } // end if plastic
 
-            ///// HARDNING ALT MCC
-            // T p0_aftersoft = 1000.0;
-            // T eps_pl_vol_limit = -std::asinh(p0_aftersoft/K) / xi;
-            // T particle_p0_hard = K*std::sinh(xi*std::max(-particles.eps_pl_vol_3[p], -eps_pl_vol_limit));
-            // T particle_beta = beta;
-            // if (particles.eps_pl_dev[p] > 0){ // if plastic
-            //     if (particles.fail_crit[p]){ // if finished with softening phase
-            //         particle_beta = 0;
-            //     } else { // softening continues
-            //         if (particle_p0_hard < (p0_aftersoft+1e-3)){ // softening should stop
-            //             particle_beta = 0;
-            //             particle_p0_hard = p0_aftersoft;
-            //             particles.eps_pl_vol_3[p] = eps_pl_vol_limit;
-            //             particles.fail_crit[p] = true;
-            //         }
-            //     }
-            // } // end if plastic
-
-            ///// HARDNING ALT MCC 2
-            // T p0_aftersoft = 1000;
-            //
-            // // if elastic or softening phase
-            // T particle_p0_hard = K*std::sinh(-xi*particles.eps_pl_vol_3[p]); // initially eps_pl_vol_3 must be negative!!!
-            // T particle_beta = beta;
-            //
-            // // if plastic
-            // if (particles.eps_pl_dev[p] > 0){
-            //     if (particles.fail_crit[p]){ // if finished with softening phase
-            //         particle_beta = 0;
-            //         particle_p0_hard = std::max(p0_aftersoft, K*std::sinh(-xi*particles.eps_pl_vol_3[p]));
-            //     } else { // softening continues
-            //         if (particle_p0_hard < p0_aftersoft){ // softening should stop
-            //             particle_beta = 0;
-            //             particle_p0_hard = p0_aftersoft;
-            //             particles.eps_pl_vol_3[p] = -std::asinh(p0_aftersoft/K) / xi;;
-            //             particles.fail_crit[p] = true;
-            //         }
-            //     }
-            // } // end if plastic
-
-
 
             bool perform_rma;
             if (plastic_model == ModifiedCamClay)
             {
                 perform_rma = ModifiedCamClayRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta, mu, K);
+            }
+            else if (plastic_model == ModifiedCamClayHard)
+            {
+                perform_rma = ModifiedCamClayHardRMA(p_stress, q_stress, exit, M, particles.eps_pl_vol_mcc[p], beta, mu, K, xi);
+
             }
             else if (plastic_model == PerzynaMCC)
             {
