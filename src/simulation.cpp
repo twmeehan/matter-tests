@@ -52,6 +52,8 @@ void Simulation::simulate(){
     // Precomputations
     frame_dt = 1.0 / fps;
 
+    gravity_final = gravity;
+
     one_over_dx = 1.0 / dx;
     one_over_dx_square = one_over_dx * one_over_dx;
 
@@ -76,7 +78,7 @@ void Simulation::simulate(){
     createDirectory();
 
     saveInfo();
-    
+
     // Total runtime of simulation
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
@@ -126,9 +128,10 @@ void Simulation::advanceStep(){
     updateDt();
 
     if (current_time_step == 0) {
-        remeshFixedInit();
+        // remeshFixedInit(2,2,2); // if not PBC
+        remeshFixedInit(2,6,2);    // if PBC
     } else {
-        remeshFixedCont();
+        // remeshFixedCont();      // if not PBC
     }
 
     moveObjects();
@@ -136,13 +139,15 @@ void Simulation::advanceStep(){
     // calculateMassConservation();
     explicitEulerUpdate();
     // addExternalParticleGravity();
+    PBC(2);
     G2P();
     deformationUpdate();
-    // plasticity_projection();
-    positionUpdate();
+    // plasticity_projection();   // if nonlocal approach
 
-    // periodicBoundaryConditions();
-}
+    // positionUpdate();          // if not PBC
+    positionUpdatePBC();          // if PBC
+
+} // end advanceStep
 
 
 
@@ -233,6 +238,13 @@ void Simulation::updateDt(){
     //     return;
     // }
 
+    if (time < gravity_time){
+        gravity = gravity_final * time/gravity_time;
+    }
+    else{
+        gravity = gravity_final;
+    }
+
 } // end updateDt
 
 
@@ -248,6 +260,27 @@ void Simulation::positionUpdate(){
 
         // Position is updated according to PIC velocities
         particles.x[p] = particles.x[p] + dt * particles.pic[p];
+
+        // New particle velocity is a FLIP-PIC combination
+        particles.v[p] = flip_ratio * ( particles.v[p] + particles.flip[p] ) + (1 - flip_ratio) * particles.pic[p];
+
+    } // end loop over particles
+}
+
+void Simulation::positionUpdatePBC(){
+
+    #pragma omp parallel for num_threads(n_threads)
+    for(int p=0; p<Np; p++){
+
+        // Position is updated according to PIC velocities
+        particles.x[p] = particles.x[p] + dt * particles.pic[p];
+
+        if (particles.x[p](0) > Lx){
+            particles.x[p](0) = particles.x[p](0) - Lx;
+        }
+        else if (particles.x[p](0) < 0){
+            particles.x[p](0) = Lx + particles.x[p](0);
+        }
 
         // New particle velocity is a FLIP-PIC combination
         particles.v[p] = flip_ratio * ( particles.v[p] + particles.flip[p] ) + (1 - flip_ratio) * particles.pic[p];
@@ -287,22 +320,6 @@ void Simulation::positionUpdate(){
 //     moveObjects(-dt);
 //
 // } // end boundaryCorrection
-
-void Simulation::periodicBoundaryConditions(){
-    T min_x_boundary = 0;
-    T max_x_boundary = Lx;
-    for(int p=0; p<Np; p++){
-        T part_x = particles.x[p](0);
-        if (part_x > max_x_boundary){
-            part_x = min_x_boundary + (part_x-max_x_boundary);
-        }
-        else if(part_x < min_x_boundary){
-            part_x = max_x_boundary - (min_x_boundary-part_x);
-        }
-
-        particles.x[p](0) = part_x;
-    }
-} // end periodicBoundaryConditions
 
 
 // This function is to be used in explicitEulerUpdate after boundaryCollision

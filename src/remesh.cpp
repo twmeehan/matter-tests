@@ -101,7 +101,7 @@ void Simulation::remesh(){
 
 }
 
-void Simulation::remeshFixedInit(){
+void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned int sfz){
 
     // ACTUAL min and max position of particles
     auto max_x_it = std::max_element( particles.x.begin(), particles.x.end(),
@@ -167,12 +167,14 @@ void Simulation::remeshFixedInit(){
 
     // safety_factor = 2 means we have a grid which has a grid point 2*dx from the boundary particle
     // Assuming a local approach, a grid point 2dx away from a particle will not influence this particle
-    unsigned int safety_factor = std::max((unsigned int)2, nonlocal_support);
+    unsigned int safety_factor_x = sfx; // std::max(sfx, nonlocal_support);
+    unsigned int safety_factor_y = sfy; // std::max(sfy, nonlocal_support);
+    unsigned int safety_factor_z = sfz; // std::max(sfz, nonlocal_support);
 
-    Nx = std::ceil(Lx * one_over_dx) + 1 + 2*safety_factor;
-    Ny = std::ceil(Ly * one_over_dx) + 1 + 2*safety_factor;
+    Nx = std::ceil(Lx * one_over_dx) + 1 + 2*safety_factor_x;
+    Ny = std::ceil(Ly * one_over_dx) + 1 + 2*safety_factor_y;
 #ifdef THREEDIM
-    Nz = std::ceil(Lz * one_over_dx) + 1 + 2*safety_factor;
+    Nz = std::ceil(Lz * one_over_dx) + 1 + 2*safety_factor_z;
     grid_nodes = Nx*Ny*Nz;
 #else
     grid_nodes = Nx*Ny;
@@ -185,13 +187,13 @@ void Simulation::remeshFixedInit(){
     Nz_init = Nz;
 #endif
 
-    low_x_init    = min_x - dx * safety_factor;
-    high_x_init   = max_x + dx * safety_factor;
-    low_y_init    = min_y - dx * safety_factor;
-    high_y_init   = max_y + dx * safety_factor;
+    low_x_init    = min_x - dx * safety_factor_x;
+    high_x_init   = max_x + dx * safety_factor_x;
+    low_y_init    = min_y - dx * safety_factor_y;
+    high_y_init   = max_y + dx * safety_factor_y;
 #ifdef THREEDIM
-    T low_z_init  = min_z - dx * safety_factor;
-    T high_z_init = max_z + dx * safety_factor;
+    T low_z_init  = min_z - dx * safety_factor_z;
+    T high_z_init = max_z + dx * safety_factor_z;
 #endif
 
 #ifdef WARNINGS

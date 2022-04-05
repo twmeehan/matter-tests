@@ -54,6 +54,8 @@ public:
 
   T rho;
   TV gravity;
+  TV gravity_final;
+  T gravity_time;
 
   T amplitude;
 
@@ -133,6 +135,13 @@ public:
  T beta;
  T p0;
 
+ // mu(I) rheology
+ T rho_s;
+ T grain_diameter;
+ T in_numb_ref;
+ T mu_1;
+ T mu_2;
+
   // Regularization by Laplacian
   T nonlocal_l;
   T nonlocal_l_sq;
@@ -165,7 +174,7 @@ public:
   void advanceStep();
   void updateDt();
   void remesh();
-  void remeshFixedInit();
+  void remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned int sfz);
   void remeshFixedCont();
 
   void P2G();
@@ -195,6 +204,8 @@ public:
 #endif
 
   void positionUpdate();
+  void positionUpdatePBC();
+  void PBC(unsigned int safety_factor);
 
   TM NeoHookeanPiola(TM & Fe);
   TM StvkWithHenckyPiola(TM & Fe);
@@ -216,7 +227,6 @@ public:
 
   void validateRMA();
 
-  void periodicBoundaryConditions();
   void addExternalParticleGravity();
   std::pair<TMX, TMX> createExternalGridGravity();
 

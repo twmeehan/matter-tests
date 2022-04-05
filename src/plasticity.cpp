@@ -288,21 +288,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == PerzynaMuIDP){
 
-            /////////////  Mu(I) Rheology Params  ///////////////
-            // T rho_s           = 2500;
-            // T grain_diameter  = 7e-4;
-            // T in_numb_ref     = 0.279;
-            // T mu_1            = 0.48; // must match dp slope
-            // T mu_2            = 0.73;
-
-            T rho_s           = 2672.13;
-            T grain_diameter  = 7e-4;
-            T in_numb_ref     = 1.0334;
-            T mu_1            = dp_slope;
-            T mu_2            = 0.95;
-            //////////////////////////////////////////////
             T fac_Q = in_numb_ref * dt / (grain_diameter*std::sqrt(rho_s)); // NB: Use 2 * grain diameter if using the other definiton
-            //////////////////////////////////////////////
 
             // trial stresses
             T p_trial = -K * hencky_trace;
@@ -438,11 +424,11 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T q_trial = q_stress;
 
             // EXLICIT HARDENING
-            T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
-            bool perform_rma = ModifiedCamClayRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K);
+            // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
+            // bool perform_rma = ModifiedCamClayRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K);
 
             // IMPLICIT HARDENING
-            // bool perform_rma = ModifiedCamClayHardRMA(p_stress, q_stress, exit, M, particles.eps_pl_vol_mcc[p], beta, mu, K, xi);
+            bool perform_rma = ModifiedCamClayHardRMA(p_stress, q_stress, exit, M, particles.eps_pl_vol_mcc[p], beta, mu, K, xi);
 
             if (perform_rma){
                 plastic_count++;
@@ -453,16 +439,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
 
                 // ONLY if implicit hardening
-                // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
+                T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
 
-                //////////////////////////////////////////////
-                T rho_s           = 2672.13;
-                T grain_diameter  = 7e-4;
-                T in_numb_ref     = 1.0334;
-                T mu_1            = M;
-                T mu_2            = M+0.5;
                 T fac_Q = in_numb_ref / (grain_diameter*std::sqrt(rho_s)); // NB: Use 2 * grain diameter if using the other definiton
-                //////////////////////////////////////////////
 
                 p_stress = std::max(p_stress, -beta*particle_p0);
                 p_stress = std::min(p_stress, particle_p0);
