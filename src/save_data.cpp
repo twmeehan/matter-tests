@@ -32,7 +32,8 @@ void Simulation::saveParticleData(std::string extra){
             << "delta_gamma" << ","   // 10
             << "viscosity"   << ","   // 11
             << "muI"         << ","   // 12
-            << "eps_pl_vol_pradhana" << "\n";   // 13
+            << "eps_pl_vol_pradhana" << ","   // 13
+            << "Je"         << "\n";
             // << "tau_xx"      << ","   // 14
             // << "tau_xy"      << ","   // 15
             // << "tau_yx"      << ","   // 16
@@ -55,7 +56,8 @@ void Simulation::saveParticleData(std::string extra){
         else if (elastic_model == StvkWithHencky)
             tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
 
-        T J = Fe.determinant() * std::exp( particles.eps_pl_vol[p] );
+        T Je = Fe.determinant();
+        T J = Je * std::exp( particles.eps_pl_vol[p] );
         volavg_tau += tau * J;
         Jsum += J;
 
@@ -84,7 +86,8 @@ void Simulation::saveParticleData(std::string extra){
                 << particles.delta_gamma[p]   << ","     // 10
                 << particles.viscosity[p]     << ","     // 11
                 << particles.muI[p]           << ","     // 12
-                << particles.eps_pl_vol_pradhana[p]  << "\n";   // 13
+                << particles.eps_pl_vol_pradhana[p]  << ","  // 13
+                << Je                         << "\n";
                 // << tau(0,0)                   << ","   // 14
                 // << tau(0,1)                   << ","   // 15
                 // << tau(1,0)                   << ","   // 16
@@ -96,6 +99,8 @@ void Simulation::saveParticleData(std::string extra){
     } // end loop over particles
     outFile.close();
 
+    // UNCOMMENT IF OUTPUTTING VOL-AVG STRESS INVARIANTS:
+/*
     volavg_tau /= Jsum;
     T volavg_pressure = -volavg_tau.trace() / dim;
     TM volavg_tau_dev = volavg_tau + volavg_pressure * I;
@@ -105,7 +110,7 @@ void Simulation::saveParticleData(std::string extra){
              << volavg_devstress   << ","
              << Jsum               << "\n";
     outFile2.close();
-
+*/
     std::ofstream outFile3(directory + sim_name + "/last_written.txt");
     outFile3 << std::to_string(frame) << "\n";
     outFile3.close();

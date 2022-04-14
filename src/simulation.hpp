@@ -206,6 +206,9 @@ public:
   void positionUpdate();
   void positionUpdatePBC();
   void PBC(unsigned int safety_factor);
+  void PBCAddParticles(unsigned int safety_factor);
+  void PBCDelParticles();
+  unsigned int num_add_pbc_particles;
 
   TM NeoHookeanPiola(TM & Fe);
   TM StvkWithHenckyPiola(TM & Fe);

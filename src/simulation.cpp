@@ -128,24 +128,30 @@ void Simulation::advanceStep(){
     updateDt();
 
     if (current_time_step == 0) {
-        // remeshFixedInit(2,2,2); // if not PBC
-        remeshFixedInit(2,6,2);    // if PBC
+        remeshFixedInit(2,2,2);
+        // remeshFixedInit(2,18,2);
     } else {
-        // remeshFixedCont();      // if not PBC
+        remeshFixedCont();
     }
 
     moveObjects();
+
+    // PBCAddParticles(2);
+
     P2G();
     // calculateMassConservation();
     explicitEulerUpdate();
     // addExternalParticleGravity();
-    PBC(2);
+
+    // PBCDelParticles();
+    // PBC(2);
+
     G2P();
     deformationUpdate();
     // plasticity_projection();   // if nonlocal approach
 
-    // positionUpdate();          // if not PBC
-    positionUpdatePBC();          // if PBC
+    positionUpdate();          // if not PBC
+    // positionUpdatePBC();          // if PBC
 
 } // end advanceStep
 
@@ -256,6 +262,8 @@ void Simulation::moveObjects(){
 }
 
 void Simulation::positionUpdate(){
+
+    #pragma omp parallel for num_threads(n_threads)
     for(int p=0; p<Np; p++){
 
         // Position is updated according to PIC velocities

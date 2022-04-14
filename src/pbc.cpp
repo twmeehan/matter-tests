@@ -2,6 +2,7 @@
 
 void Simulation::PBC(unsigned int safety_factor){
 
+    #pragma omp parallel for num_threads(n_threads)
     for(int j = 0; j < Ny; j++){
 
         grid.v[ind(0,j)] = grid.v[ind(Nx-2-safety_factor-1,j)];
@@ -31,5 +32,67 @@ void Simulation::PBC(unsigned int safety_factor){
 
     }
 
+} // end PBC()
 
-} // end pbc()
+
+void Simulation::PBCAddParticles(unsigned int safety_factor){
+
+    num_add_pbc_particles = 0;
+
+    #pragma omp parallel for reduction(+:num_add_pbc_particles) num_threads(n_threads)
+    for(int p = 0; p < Np; p++){
+
+        TV part_x = particles.x[p]; // copy
+        T diff;
+
+        diff = Lx - part_x(0);
+        if ( diff < safety_factor*dx && diff > 0){
+            part_x(0) = -diff;
+            #pragma omp critical
+            {
+                particles.x.push_back(part_x);
+                particles.v.push_back(particles.v[p]);
+                particles.F.push_back(particles.F[p]);
+                particles.tau.push_back(particles.tau[p]);
+            }
+            num_add_pbc_particles++;
+            continue; // go directly to next p
+        }
+
+        diff = part_x(0);
+        if ( diff < safety_factor*dx && diff >= 0 ){
+            part_x(0) = Lx + diff;
+            #pragma omp critical
+            {
+                particles.x.push_back(part_x);
+                particles.v.push_back(particles.v[p]);
+                particles.F.push_back(particles.F[p]);
+                particles.tau.push_back(particles.tau[p]);
+            }
+            num_add_pbc_particles++;
+            continue; // go directly to next p
+        }
+
+    } // end loop over p
+
+    Np = particles.x.size();
+
+#ifdef WARNINGS
+    debug("Added particles:                    ", num_add_pbc_particles);
+    debug("Number of particles after addition: ", particles.x.size()   );
+#endif
+} // end PBCAddParticles()
+
+void Simulation::PBCDelParticles(){
+
+    particles.x.erase(particles.x.end()-num_add_pbc_particles, particles.x.end());
+    particles.v.erase(particles.v.end()-num_add_pbc_particles, particles.v.end());
+    particles.F.erase(particles.F.end()-num_add_pbc_particles, particles.F.end());
+    particles.tau.erase(particles.tau.end()-num_add_pbc_particles, particles.tau.end());
+    Np = particles.x.size();
+
+#ifdef WARNINGS
+    debug("Number of particles after delition: ", particles.x.size());
+    debug("Np:                                 ", Np                );
+#endif
+} // end PBCDelParticles()

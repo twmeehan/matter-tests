@@ -225,6 +225,21 @@ bool QuadRMA(T& p, T& q, int& exit, T trace_epsilon, T norm_eps_hat, T M, T p0, 
         return out;
     }
 
+    // inline T wip(T xp, T yp, T xi, T yi, T one_over_h){
+    //     T Lx = 0.1;
+    //     return N( fmod(xp - xi, Lx) * one_over_h ) * N( (yp - yi) * one_over_h );
+    // }
+    // inline TV grad_wip(T xp, T yp, T xi, T yi, T one_over_h){
+    //     T Lx = 0.1;
+    //     T xpminxi = xp-xi;
+    //     if (xpminxi <= -Lx || xpminxi >= Lx)
+    //         xpminxi = -fmod(xpminxi, Lx);
+    //     TV out;
+    //     out << dNdu( xpminxi  * one_over_h) * N((yp - yi) * one_over_h) * one_over_h,
+    //            dNdu((yp - yi) * one_over_h) * N( xpminxi  * one_over_h) * one_over_h;
+    //     return out;
+    // }
+
     inline T laplace_wip(T xp, T yp, T xi, T yi, T one_over_h, T one_over_h_square){
         T term1 = d2Ndu2((xp - xi) * one_over_h) * N((yp - yi) * one_over_h);
         T term2 = d2Ndu2((yp - yi) * one_over_h) * N((xp - xi) * one_over_h);
