@@ -288,6 +288,97 @@ bool PerzynaMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T 
     return false;
 }
 
+bool SinteringMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T epv, T S, T visc, T Sinf, T tc, T ec, T plasitic_index)
+{
+    T mu_sqrt6 = mu*std::sqrt(6);
+    T pc = std::max( T(0), p0 * std::sinh(-epv / plasitic_index) * (1+S) );
+    T y = (M * M * (p - pc) * (p + beta * pc) + (1 + 2 * beta) * (q * q)) / (p0*p0);
+
+    if (y > 0) {
+
+        T pt = p;
+        T qt = q;
+
+        T max_iter = 40;
+        for (int iter = 0; iter < max_iter; iter++) {
+
+            if (iter == max_iter - 1){ // did not break loop
+                debug("PerzynaMCCRMA: FATAL did not exit loop at iter = ", iter);
+                exit = 1;
+            }
+
+            T delta_epv = (p-pt) / K;
+
+            T S     = std::max(T(-1.0), (dt/tc*Sinf - (qt-q)/(mu_sqrt6*ec) ) / (1.0+dt/tc));
+            T dSdq  = 1 / ( (1+dt/tc)*ec*mu_sqrt6 );
+            T dSdq2 = 0;
+
+            T f     = std::max(T(0), p0                           * std::sinh(-(epv+delta_epv) / plasitic_index));
+            T dfdp  = 0;
+            T dfdp2 = 0;
+            if ( (epv+delta_epv) < 0 )
+                dfdp  = -p0 / (K*  plasitic_index)                * std::cosh(-(epv+delta_epv) / plasitic_index);
+                dfdp2 =  p0 / (K*K*plasitic_index*plasitic_index) * std::sinh(-(epv+delta_epv) / plasitic_index);
+
+            T pc     = std::max( T(0), f * (1+S) );
+            T dpcdp  = dfdp * (1+S);
+            T dpcdp2 = dfdp2 * (1+S);
+            T dpcdq  = f * dSdq;
+            T dpcdq2 = f * dSdq2;
+            T dpcdpdq = dfdp * dSdq;
+
+            T y      = (M * M * (p - pc) * (p + beta * pc) + (1 + 2 * beta) * (q * q)) / (p0*p0);
+            T dydp   = - M*M/(p0*p0) * (2*beta*pc*dpcdp + (1-beta)*(dpcdp*p+pc-2*p));
+            T dydq   = 2*(1+2*beta)/(p0*p0) * q - M*M / (p0*p0) * (2*beta*pc*dpcdq + (1-beta)*p*dpcdq);
+            T n      = std::sqrt(dydp*dydp/d + 3.0/2.0*dydq*dydq);
+            T r1     = pt - p -    K*dt/visc * y * dydp/n;
+            T r2     = pt - p - 3*mu*dt/visc * y * dydq/n;
+
+            if ( iter > 4 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
+                // debug("PerzynaMCCRMA: Breaking the loop due to small residual");
+                break;
+            }
+
+            T dydp2  =                      - M*M/(p0*p0) * ( 2*beta*( dpcdp*dpcdp + pc*dpcdp2  ) + (1-beta)*( dpcdp2*p + dpcdp+dpcdp - 2 ) );
+            T dydq2  = 2*(1+2*beta)/(p0*p0) - M*M/(p0*p0) * ( 2*beta*( dpcdq*dpcdq + pc*dpcdq2  ) + (1-beta)*( p*dpcdq2 ) );
+            T dydpdq =                      - M*M/(p0*p0) * ( 2*beta*( dpcdp*dpcdq + pc*dpcdpdq ) + (1-beta)*( dpcdq + p*dpcdpdq ) );
+
+            T dndp = (2/d * dydp*dydp2  + 3 * dydq*dydpdq) / (2*n);
+            T dndq = (2/d * dydp*dydpdq + 3 * dydq*dydq2) / (2*n);
+
+            T dfracdp = (dydp * n - y * dfracdp) / (n*n);
+            T dfracdq = (dydq * n - y * dfracdq) / (n*n);
+
+            T Ja = -1 - K*dt/visc    * (dfracdp * dydp + y/n * dydp2);
+            T Jb =    - K*dt/visc    * (dfracdq * dydp + y/n * dydpdq);
+            T Jc =    - 3*mu*dt/visc * (dfracdp * dydq + y/n * dydpdq);
+            T Jd = -1 - 3*mu*dt/visc * (dfracdq * dydq + y/n * dydq2);
+
+            T det = Ja*Jd - Jb*Jc;
+
+            if (abs(det) <= T(1e-6)){
+                debug("Determinant of Jacobian too small: det = ", det);
+                p -= 0.001*r1;
+                q -= 0.001*r2;
+            } else{
+                p -= ( Jd*r1 - Jb*r2) / det;
+                q -= (-Jc*r1 + Ja*r2) / det;
+            }
+
+            if (q < 1e-15){
+                q = 1e-15;
+            }
+
+            // debug(iter, ":  r1   = ", r1);
+            // debug(iter, ":  r2   = ", r2);
+
+        } // end for loop
+
+        return true; // if plastic, i.e., y > 0
+    } // end if outside
+    return false;
+}
+
 
 
 // Do NOT USE!
