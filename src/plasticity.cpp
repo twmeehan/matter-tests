@@ -6,7 +6,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == ModifiedCamClay || plastic_model == ModifiedCamClayHard || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC){
+    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == ModifiedCamClay || plastic_model == ModifiedCamClayHard || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC || plastic_model == SinteringMCC){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log(); // VonMises
@@ -486,7 +486,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaMuIMCC
 
 
-        else if (plastic_model == ModifiedCamClay || plastic_model == ModifiedCamClayHard || plastic_model == PerzynaMCC){
+        else if (plastic_model == ModifiedCamClay || plastic_model == ModifiedCamClayHard || plastic_model == PerzynaMCC || plastic_model == SinteringMCC){
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -554,14 +554,18 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             {
                 perform_rma = PerzynaMCCRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta, mu, K, dt, dim, perzyna_visc);
             }
-
+            else if (plastic_model == SinteringMCC)
+            {
+                T sinter_S = (dt / sinter_tc * sinter_Sinf - particles.delta_gamma[p] / sinter_ec ) / (1+dt/sinter_tc);
+                perform_rma = SinteringMCCRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta, mu, K, dt, dim, particles.eps_pl_vol_mcc[p], sinter_S, perzyna_visc, sinter_Sinf, sinter_tc, sinter_ec, xi);
+            }
 
             if (perform_rma) { // returns true if it performs a return mapping
                 plastic_count++;
 
                 T eps_pl_dev_instant = (q_trial - q_stress) / mu_sqrt6;
                 particles.eps_pl_dev[p] += eps_pl_dev_instant;
-                particles.delta_gamma[p] = eps_pl_dev_instant / dt;
+                particles.delta_gamma[p] = eps_pl_dev_instant; // NB - cannot divide by dt if using sintering model
 
                 T ep = p_stress / (K*dim);
                 T eps_pl_vol_inst = hencky_trace + dim * ep;

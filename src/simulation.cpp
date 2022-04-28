@@ -136,22 +136,22 @@ void Simulation::advanceStep(){
 
     moveObjects();
 
-    // PBCAddParticles(2);
+    PBCAddParticles(4);
 
     P2G();
     // calculateMassConservation();
     explicitEulerUpdate();
     // addExternalParticleGravity();
 
-    // PBCDelParticles();
+    PBCDelParticles();
     // PBC(2);
 
     G2P();
     deformationUpdate();
     // plasticity_projection();   // if nonlocal approach
 
-    positionUpdate();          // if not PBC
-    // positionUpdatePBC();          // if PBC
+    // positionUpdate();          // if not PBC
+    positionUpdatePBC();          // if PBC
 
 } // end advanceStep
 

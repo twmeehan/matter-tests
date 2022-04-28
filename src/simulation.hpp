@@ -130,7 +130,7 @@ public:
   T perzyna_exp;
   T perzyna_visc;
 
- // QuadraticLars
+ // MCC
  T M;
  T beta;
  T p0;
@@ -141,6 +141,11 @@ public:
  T in_numb_ref;
  T mu_1;
  T mu_2;
+
+ // Sintering model
+ T sinter_Sinf;
+ T sinter_tc;
+ T sinter_ec;
 
   // Regularization by Laplacian
   T nonlocal_l;
