@@ -557,7 +557,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             else if (plastic_model == SinteringMCC)
             {
                 T sinter_S = (dt / sinter_tc * sinter_Sinf - particles.delta_gamma[p] / sinter_ec ) / (1+dt/sinter_tc);
-                perform_rma = SinteringMCCRMA(p_stress, q_stress, exit, M, particle_p0_hard, particle_beta, mu, K, dt, dim, particles.eps_pl_vol_mcc[p], sinter_S, perzyna_visc, sinter_Sinf, sinter_tc, sinter_ec, xi);
+                perform_rma = SinteringMCCRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, dt, dim, particles.eps_pl_vol_mcc[p], sinter_S, perzyna_visc, sinter_Sinf, sinter_tc, sinter_ec, xi);
             }
 
             if (perform_rma) { // returns true if it performs a return mapping
