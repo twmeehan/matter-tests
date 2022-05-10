@@ -310,7 +310,7 @@ bool SinteringMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, 
 
             T delta_epv = -(pt-p) / K;
 
-            T S     = std::max(T(-1.0), (dt/tc*Sinf - (qt-q)/(mu_sqrt6*ec) ) / (1.0+dt/tc));
+            T S     = std::max(T(0.0), (dt/tc*Sinf - (qt-q)/(mu_sqrt6*ec) ) / (1.0+dt/tc));
             T dSdq  = 1.0 / ( (1+dt/tc)*ec*mu_sqrt6 );
             T dSdq2 = 0;
 
@@ -333,12 +333,12 @@ bool SinteringMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, 
             T dydq   = 2*(1+2*beta)/(p0*p0) * q - M*M / (p0*p0) * (2*beta*pc*dpcdq + (1-beta)*p*dpcdq);
             T n      = std::sqrt(dydp*dydp/d + 3.0/2.0*dydq*dydq);
             T r1     = pt - p -    K*dt/visc * y * dydp/n;
-            T r2     = pt - p - 3*mu*dt/visc * y * dydq/n;
+            T r2     = qt - q - 3*mu*dt/visc * y * dydq/n;
 
-            debug(iter, ":  r1   = ", r1);
-            debug(iter, ":  r2   = ", r2);
+            // debug(iter, ":  r1   = ", r1);
+            // debug(iter, ":  r2   = ", r2);
 
-            if ( iter > 4 && std::abs(r1) < 1e-1 && std::abs(r2) < 1e-1 ){
+            if ( iter > 4 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
                 // debug("PerzynaMCCRMA: Breaking the loop due to small residual");
                 break;
             }
