@@ -129,29 +129,28 @@ void Simulation::advanceStep(){
 
     if (current_time_step == 0) {
         remeshFixedInit(2,2,2);
-        // remeshFixedInit(2,18,2);
     } else {
         remeshFixedCont();
     }
 
     moveObjects();
 
-    PBCAddParticles(4);
+    // PBCAddParticles(4);           // if PBC
 
     P2G();
     // calculateMassConservation();
     explicitEulerUpdate();
     // addExternalParticleGravity();
 
-    PBCDelParticles();
-    // PBC(2);
+    // PBCDelParticles();            // if PBC
+    // PBC(2);                    // do not use
 
     G2P();
     deformationUpdate();
     // plasticity_projection();   // if nonlocal approach
 
-    // positionUpdate();          // if not PBC
-    positionUpdatePBC();          // if PBC
+    positionUpdate();          // if not PBC
+    // positionUpdatePBC();          // if PBC
 
 } // end advanceStep
 

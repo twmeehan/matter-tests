@@ -15,7 +15,7 @@
 //// PARAMETERS ////
 // typedef float T;
 typedef double T;
-#define CUBICSPLINES
+// #define CUBICSPLINES
 // #define THREEDIM // Uncomment for 2D
 // #define DIMENSION 3 // Needed for OMP collapse
 #define DIMENSION 2 // Needed for OMP collapse
@@ -40,7 +40,7 @@ typedef double T;
 
 enum PlateType { top, bottom, left, right, front, back };
 enum ElasticModel { StvkWithHencky, NeoHookean };
-enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, DPSoft, ModifiedCamClay, ModifiedCamClayHard, PerzynaVM, PerzynaDP, PerzynaMuIDP, PerzynaMCC, PerzynaMuIMCC, SinteringMCC};
+enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, DPSoft, ModifiedCamClay, ModifiedCamClayHard, PerzynaVM, PerzynaDP, PerzynaMuIDP, PerzynaMCC, PerzynaMuIMCC, PerzynaSinterMCC};
 enum BoundaryCondition { STICKY, SLIP, SEPARATE };
 
 ///////////////////// TOOLS ////////////////////////
@@ -99,7 +99,7 @@ bool copy_file(std::string source, std::string destination);
 bool ModifiedCamClayHardRMA(T& p, T& q, int& exit, T M, T epv, T beta, T mu, T K, T xi);
 bool ModifiedCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K);
 bool PerzynaMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc);
-bool SinteringMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T epv, T S, T visc, T Sinf, T tc, T ec, T plasitic_index);
+bool PerzynaSinterMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T epv, T S, T visc, T Sinf, T tc, T ec, T plasitic_index);
 
 // DO NOT USE THESE:
 bool PerzynaCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc);
@@ -261,20 +261,23 @@ public:
 
       eps_pl_dev.resize(Np);     std::fill( eps_pl_dev.begin(),     eps_pl_dev.end(),     0.0 );
       eps_pl_vol.resize(Np);     std::fill( eps_pl_vol.begin(),     eps_pl_vol.end(),     0.0 );
-
-      eps_pl_vol_abs.resize(Np);     std::fill( eps_pl_vol_abs.begin(),     eps_pl_vol_abs.end(),     0.0 );
       eps_pl_vol_mcc.resize(Np);     std::fill( eps_pl_vol_mcc.begin(),     eps_pl_vol_mcc.end(),     0.0 );
       eps_pl_vol_pradhana.resize(Np);std::fill( eps_pl_vol_pradhana.begin(),eps_pl_vol_pradhana.end(),0.0 );
+
+      // eps_pl_vol_abs.resize(Np);     std::fill( eps_pl_vol_abs.begin(),     eps_pl_vol_abs.end(),     0.0 );
+      // fail_crit.resize(Np); std::fill( fail_crit.begin(), fail_crit.end(), false );
+
+      eps_pl_dev_nonloc.resize(Np);  std::fill( eps_pl_dev_nonloc.begin(),  eps_pl_dev_nonloc.end(),  0.0 );
+      delta_gamma_nonloc.resize(Np); std::fill( delta_gamma_nonloc.begin(), delta_gamma_nonloc.end(), 0.0 );
+      delta_gamma.resize(Np);        std::fill( delta_gamma.begin(),        delta_gamma.end(),        0.0 );
+
+      sinter_S.resize(Np); std::fill( sinter_S.begin(), sinter_S.end(), 0.0 );
 
       yield_stress_orig.resize(Np); std::fill( yield_stress_orig.begin(), yield_stress_orig.end(), 0.0 );
 
       viscosity.resize(Np); std::fill( viscosity.begin(), viscosity.end(), 0.0 );
       muI.resize(Np); std::fill( muI.begin(), muI.end(), 0.0 );
 
-      fail_crit.resize(Np); std::fill( fail_crit.begin(), fail_crit.end(), false );
-      eps_pl_dev_nonloc.resize(Np);  std::fill( eps_pl_dev_nonloc.begin(),  eps_pl_dev_nonloc.end(),  0.0 );
-      delta_gamma_nonloc.resize(Np); std::fill( delta_gamma_nonloc.begin(), delta_gamma_nonloc.end(), 0.0 );
-      delta_gamma.resize(Np);        std::fill( delta_gamma.begin(),        delta_gamma.end(),        0.0 );
       hencky.resize(Np);             std::fill( hencky.begin(),             hencky.end(),      TV::Zero() );
 
       tau.resize(Np); std::fill( tau.begin(), tau.end(), TM::Zero()     );
@@ -289,19 +292,21 @@ public:
 
   std::vector<T> eps_pl_dev;
   std::vector<T> eps_pl_vol;
-  std::vector<T> eps_pl_vol_abs;
   std::vector<T> eps_pl_vol_mcc;
   std::vector<T> eps_pl_vol_pradhana;
+  // std::vector<T> eps_pl_vol_abs;
+  // std::vector<bool> fail_crit;
+  std::vector<T> eps_pl_dev_nonloc;
+  std::vector<T> delta_gamma_nonloc;
+  std::vector<T> delta_gamma;
+
+  std::vector<T> sinter_S;
 
   std::vector<T> yield_stress_orig;
 
   std::vector<T> viscosity;
   std::vector<T> muI;
 
-  std::vector<bool> fail_crit;
-  std::vector<T> eps_pl_dev_nonloc;
-  std::vector<T> delta_gamma_nonloc;
-  std::vector<T> delta_gamma;
   std::vector<TV> hencky;
 
   std::vector<T> cohesion_proj;

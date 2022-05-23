@@ -33,15 +33,16 @@ void Simulation::saveParticleData(std::string extra){
             << "viscosity"   << ","   // 11
             << "muI"         << ","   // 12
             << "eps_pl_vol_pradhana" << ","   // 13
-            << "Je"         << "\n";
-            // << "tau_xx"      << ","   // 14
-            // << "tau_xy"      << ","   // 15
-            // << "tau_yx"      << ","   // 16
-            // << "tau_yy"      << ","   // 17
-            // << "Fe_xx"       << ","   // 18
-            // << "Fe_xy"       << ","   // 19
-            // << "Fe_yx"       << ","   // 20
-            // << "Fe_yy"       << "\n";   // 21
+            << "Je"         << ","    // 14
+            << "sinter_S"   << "\n";  // 15
+            // << "tau_xx"      << ","   // 16
+            // << "tau_xy"      << ","   // 17
+            // << "tau_yx"      << ","   // 18
+            // << "tau_yy"      << ","   // 19
+            // << "Fe_xx"       << ","   // 20
+            // << "Fe_xy"       << ","   // 21
+            // << "Fe_yx"       << ","   // 22
+            // << "Fe_yy"       << "\n";   // 23
 
     TM I = TM::Identity();
     TM volavg_tau = TM::Zero();
@@ -87,7 +88,8 @@ void Simulation::saveParticleData(std::string extra){
                 << particles.viscosity[p]     << ","     // 11
                 << particles.muI[p]           << ","     // 12
                 << particles.eps_pl_vol_pradhana[p]  << ","  // 13
-                << Je                         << "\n";
+                << Je                         << ","
+                << particles.sinter_S[p]     << "\n";
                 // << tau(0,0)                   << ","   // 14
                 // << tau(0,1)                   << ","   // 15
                 // << tau(1,0)                   << ","   // 16

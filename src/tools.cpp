@@ -288,11 +288,11 @@ bool PerzynaMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T 
     return false;
 }
 
-bool SinteringMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T epv, T S, T visc, T Sinf, T tc, T ec, T xi)
+bool PerzynaSinterMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T epv, T S, T visc, T Sinf, T tc, T ec, T xi)
 {
     //debug("S = ", S);
     T mu_sqrt6 = mu*std::sqrt(6);
-    T pc = std::max( T(0), p0 * std::sinh(-xi*epv) * (1+S) );
+    T pc = std::max( T(0), p0 * (1 + std::sinh(-xi*epv)) * (1+S) );
     T y = (M * M * (p - pc) * (p + beta * pc) + (1 + 2 * beta) * (q * q)) / (p0*p0);
 
     if (y > 0) {
@@ -303,18 +303,14 @@ bool SinteringMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, 
         T max_iter = 40;
         for (int iter = 0; iter < max_iter; iter++) {
 
-            if (iter == max_iter - 1){ // did not break loop
-                debug("SinteringMCCRMA: FATAL did not exit loop at iter = ", iter);
-                exit = 1;
-            }
-
             T delta_epv = -(pt-p) / K;
 
-            T S     = std::max(T(0.0), (dt/tc*Sinf - (qt-q)/(mu_sqrt6*ec) ) / (1.0+dt/tc));
+            // T S     = std::max(T(0.0), (dt/tc*Sinf - (qt-q)/(mu_sqrt6*ec) ) / (1.0+dt/tc));
+            T S     = std::max( T(0.0), Sinf - (qt-q)/(mu_sqrt6 * ec * (1.0+dt/tc)) );
             T dSdq  = 1.0 / ( (1+dt/tc)*ec*mu_sqrt6 );
             T dSdq2 = 0;
 
-            T f     = std::max(T(1e-3),    p0 * std::sinh(-xi*(epv+delta_epv)));
+            T f     = std::max(T(1e-3),    p0 * (1 + std::sinh(-xi*(epv+delta_epv))));
             T dfdp  = 0;
             T dfdp2 = 0;
             if ( (epv+delta_epv) < 0 )
@@ -334,6 +330,16 @@ bool SinteringMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, 
             T n      = std::sqrt(dydp*dydp/d + 3.0/2.0*dydq*dydq);
             T r1     = pt - p -    K*dt/visc * y * dydp/n;
             T r2     = qt - q - 3*mu*dt/visc * y * dydq/n;
+
+            if (iter == max_iter - 1){ // did not break loop
+                debug("PerzynaSinterMCCRMA: FATAL did not exit loop at iter = ", iter);
+                debug("S  = ", S);
+                debug("pc = ", pc);
+                debug("y  = ", y);
+                debug("r1 = ", r1);
+                debug("r2 = ", r2);
+                exit = 1;
+            }
 
             // debug(iter, ":  r1   = ", r1);
             // debug(iter, ":  r2   = ", r2);
