@@ -15,7 +15,7 @@
 //// PARAMETERS ////
 // typedef float T;
 typedef double T;
-// #define CUBICSPLINES
+#define CUBICSPLINES
 // #define THREEDIM // Uncomment for 2D
 // #define DIMENSION 3 // Needed for OMP collapse
 #define DIMENSION 2 // Needed for OMP collapse
@@ -393,6 +393,67 @@ void SampleInBox(const T Lx, const T Ly, T kRadius, S& sim){
 } // end SampleInBox
 
 #endif // DIMENSION
+
+template <typename S>
+void SampleIn2DSpecial(const T Lx, const T Ly, T kRadius, double ppc, unsigned int front_type, S& sim){
+    std::uint32_t kAttempts = 30;
+    std::uint32_t kSeed = 42;
+    std::array<T, 2> kXMin = std::array<T, 2>{{0, 0}};
+    std::array<T, 2> kXMax = std::array<T, 2>{{Lx, Ly}};
+
+    debug("Sampling particles...");
+    std::vector<std::array<T, 2>> square_samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);
+    std::vector<std::array<T, 2>> samples;
+
+    /////// Triangle
+    if (front_type == 1){
+        for(int p = 0; p < square_samples.size(); p++){
+            if (square_samples[p][1] < Ly - Ly/Lx*square_samples[p][0]){
+                samples.push_back(square_samples[p]);
+            }
+        }
+    }
+    /////// Rounded Edge
+    else if (front_type == 2){
+        for(int p = 0; p < square_samples.size(); p++){
+            if (square_samples[p][0] < Lx-Ly || square_samples[p][1] < std::sqrt(Ly*Ly - (square_samples[p][0]-Lx+Ly)*(square_samples[p][0]-Lx+Ly))){
+                samples.push_back(square_samples[p]);
+            }
+        }
+    }
+
+    /////// Quadratic Edge
+    else if (front_type == 3){
+        for(int p = 0; p < square_samples.size(); p++){
+            T ym = Ly;
+            T xm = Lx - std::sqrt(ym);
+            if (square_samples[p][0] < xm || square_samples[p][1] < ym - std::pow(square_samples[p][0] - xm, 2) ){
+                samples.push_back(square_samples[p]);
+            }
+        }
+    }
+    else{
+        debug("No front type specified (1,2,3), using just a square.");
+        samples = square_samples;
+    }
+
+    sim.Np = samples.size();
+    debug("Number of particles samples: ", sim.Np);
+
+    sim.particles = Particles(sim.Np);
+    for(int p = 0; p < sim.Np; p++){
+        for(int d = 0; d < 2; d++){
+            sim.particles.x[p](d) = samples[p][d];
+        }
+    }
+
+
+    unsigned int Npx = std::sqrt(Lx/Ly * sim.Np);
+    T dx_p = (Lx / Npx);
+    sim.dx = std::sqrt(ppc) * dx_p;
+    sim.particle_volume = std::pow(dx_p, 2);
+    sim.particle_mass = sim.rho * sim.particle_volume;
+} // end SampleIn2DTriangle
 
 
 
