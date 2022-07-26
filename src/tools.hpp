@@ -19,6 +19,7 @@ typedef double T;
 // #define THREEDIM // Uncomment for 2D
 // #define DIMENSION 3 // Needed for OMP collapse
 #define DIMENSION 2 // Needed for OMP collapse
+#define TINYPLY_IMPLEMENTATION // Use tinyply
 
 // #define WARNINGS // if write warnings to screen
 ////////////////////////

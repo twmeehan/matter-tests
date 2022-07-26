@@ -1,4 +1,5 @@
 #include "simulation.hpp"
+#include "tinyply.h"
 
 void Simulation::saveInfo(){
 
@@ -17,8 +18,177 @@ void Simulation::saveInfo(){
 }
 
 void Simulation::saveParticleData(std::string extra){
-    std::ofstream outFile(directory + sim_name + "/out_part_frame_" + extra + std::to_string(frame) + ".csv");
 
+    std::vector<T> pressure_vec(Np);
+    std::vector<T> devstress_vec(Np);
+    std::vector<T> Je_vec(Np);
+    // TM volavg_tau = TM::Zero();
+    // T Jsum = 0;
+    for(int p = 0; p < Np; p++){
+
+        TM Fe = particles.F[p];
+
+        TM tau; // particles.tau[p];
+        if (elastic_model == NeoHookean)
+            tau = NeoHookeanPiola(Fe) * Fe.transpose();
+        else if (elastic_model == StvkWithHencky)
+            tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
+
+        T Je = Fe.determinant();
+        T J = Je * std::exp( particles.eps_pl_vol[p] );
+        // volavg_tau += tau * J;
+        // Jsum += J;
+
+        T pressure  = -tau.trace() / dim;
+        TM tau_dev = tau + pressure * TM::Identity();
+        T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
+
+        pressure_vec[p] = pressure;
+        devstress_vec[p] = devstress;
+        Je_vec[p] = Je;
+    }
+
+#ifdef TINYPLY_IMPLEMENTATION
+
+    std::string filename = directory + sim_name + "/out_part_frame_" + extra + std::to_string(frame) + ".ply";
+    std::ofstream out;
+    out.open(filename, std::ios::out | std::ios::binary);
+    tinyply::PlyFile file;
+
+    auto type = std::is_same<T, float>::value ? tinyply::Type::FLOAT32 : tinyply::Type::FLOAT64;
+
+    #ifdef THREEDIM
+    file.add_properties_to_element(
+        "vertex",
+        { "x", "y", "z"},
+        type,
+        particles.x.size(),
+        reinterpret_cast<uint8_t*>(particles.x.data()),
+        tinyply::Type::INVALID,
+        0);
+    file.add_properties_to_element(
+        "vertex",
+        { "vx", "vy", "vz" },
+        type,
+        particles.v.size(),
+        reinterpret_cast<uint8_t*>(particles.v.data()),
+        tinyply::Type::INVALID,
+        0);
+    #else
+    file.add_properties_to_element(
+        "vertex",
+        { "x", "y"},
+        type,
+        particles.x.size(),
+        reinterpret_cast<uint8_t*>(particles.x.data()),
+        tinyply::Type::INVALID,
+        0);
+
+    file.add_properties_to_element(
+        "vertex",
+        { "vx", "vy"},
+        type,
+        particles.v.size(),
+        reinterpret_cast<uint8_t*>(particles.v.data()),
+        tinyply::Type::INVALID,
+        0);
+    #endif
+
+    file.add_properties_to_element(
+        "vertex",
+        { "eps_pl_vol" },
+        type,
+        particles.eps_pl_vol.size(),
+        reinterpret_cast<uint8_t*>(particles.eps_pl_vol.data()),
+        tinyply::Type::INVALID,
+        0);
+
+    file.add_properties_to_element(
+        "vertex",
+        { "eps_pl_dev" },
+        type,
+        particles.eps_pl_dev.size(),
+        reinterpret_cast<uint8_t*>(particles.eps_pl_dev.data()),
+        tinyply::Type::INVALID,
+        0);
+
+    file.add_properties_to_element(
+        "vertex",
+        { "delta_gamma" },
+        type,
+        particles.delta_gamma.size(),
+        reinterpret_cast<uint8_t*>(particles.delta_gamma.data()),
+        tinyply::Type::INVALID,
+        0);
+
+    file.add_properties_to_element(
+        "vertex",
+        { "viscosity" },
+        type,
+        particles.viscosity.size(),
+        reinterpret_cast<uint8_t*>(particles.viscosity.data()),
+        tinyply::Type::INVALID,
+        0);
+
+    file.add_properties_to_element(
+        "vertex",
+        { "muI" },
+        type,
+        particles.muI.size(),
+        reinterpret_cast<uint8_t*>(particles.muI.data()),
+        tinyply::Type::INVALID,
+        0);
+
+    // file.add_properties_to_element(
+    //     "vertex",
+    //     { "eps_pl_vol_pradhana" },
+    //     type,
+    //     particles.eps_pl_vol_pradhana.size(),
+    //     reinterpret_cast<uint8_t*>(particles.eps_pl_vol_pradhana.data()),
+    //     tinyply::Type::INVALID,
+    //     0);
+    //
+    // file.add_properties_to_element(
+    //     "vertex",
+    //     { "sinter_S" },
+    //     type,
+    //     particles.sinter_S.size(),
+    //     reinterpret_cast<uint8_t*>(particles.sinter_S.data()),
+    //     tinyply::Type::INVALID,
+    //     0);
+
+    file.add_properties_to_element(
+        "vertex",
+        { "pressure" },
+        type,
+        pressure_vec.size(),
+        reinterpret_cast<uint8_t*>(pressure_vec.data()),
+        tinyply::Type::INVALID,
+        0);
+
+    file.add_properties_to_element(
+        "vertex",
+        { "devstress" },
+        type,
+        devstress_vec.size(),
+        reinterpret_cast<uint8_t*>(devstress_vec.data()),
+        tinyply::Type::INVALID,
+        0);
+
+    file.add_properties_to_element(
+        "vertex",
+        { "Je" },
+        type,
+        Je_vec.size(),
+        reinterpret_cast<uint8_t*>(Je_vec.data()),
+        tinyply::Type::INVALID,
+        0);
+
+    file.write(out, true);
+
+#else
+
+    std::ofstream outFile(directory + sim_name + "/out_part_frame_" + extra + std::to_string(frame) + ".csv");
     outFile << "x"           << ","   // 0
             << "y"           << ","   // 1
             << "z"           << ","   // 2
@@ -44,27 +214,6 @@ void Simulation::saveParticleData(std::string extra){
             // << "Fe_yx"       << ","   // 22
             // << "Fe_yy"       << "\n";   // 23
 
-    TM I = TM::Identity();
-    TM volavg_tau = TM::Zero();
-    T Jsum = 0;
-    for(int p = 0; p < Np; p++){
-
-        TM Fe = particles.F[p];
-
-        TM tau; // particles.tau[p];
-        if (elastic_model == NeoHookean)
-            tau = NeoHookeanPiola(Fe) * Fe.transpose();
-        else if (elastic_model == StvkWithHencky)
-            tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
-
-        T Je = Fe.determinant();
-        T J = Je * std::exp( particles.eps_pl_vol[p] );
-        volavg_tau += tau * J;
-        Jsum += J;
-
-        T pressure  = -tau.trace() / dim;
-        TM tau_dev = tau + pressure * I;
-        T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
 
         outFile << particles.x[p](0)          << ","   // 0
                 << particles.x[p](1)          << ","   // 1
@@ -80,15 +229,15 @@ void Simulation::saveParticleData(std::string extra){
             #else
                 << 0                          << ","
             #endif
-                << pressure                   << ","   // 6
-                << devstress                  << ","   // 7
+                << pressure_vec[p]            << ","   // 6
+                << devstress_vec[p]           << ","   // 7
                 << particles.eps_pl_vol[p]    << ","   // 8
                 << particles.eps_pl_dev[p]    << ","   // 9
                 << particles.delta_gamma[p]   << ","     // 10
                 << particles.viscosity[p]     << ","     // 11
                 << particles.muI[p]           << ","     // 12
                 << particles.eps_pl_vol_pradhana[p]  << ","  // 13
-                << Je                         << ","
+                << Je_vec[p]                 << ","
                 << particles.sinter_S[p]     << "\n";
                 // << tau(0,0)                   << ","   // 14
                 // << tau(0,1)                   << ","   // 15
@@ -100,6 +249,8 @@ void Simulation::saveParticleData(std::string extra){
                 // << Fe(1,1)                    << "\n";  // 21
     } // end loop over particles
     outFile.close();
+
+#endif
 
     // UNCOMMENT IF OUTPUTTING VOL-AVG STRESS INVARIANTS:
 /*
@@ -113,6 +264,7 @@ void Simulation::saveParticleData(std::string extra){
              << Jsum               << "\n";
     outFile2.close();
 */
+
     std::ofstream outFile3(directory + sim_name + "/last_written.txt");
     outFile3 << std::to_string(frame) << "\n";
     outFile3.close();
