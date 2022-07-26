@@ -23,18 +23,20 @@ A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C
 * The following **(visco)plastic models** are currently available and compatible with the SVK-Hencky model above:
     * Von Mises
     * Drucker-Prager
-    * Peric Von Mises
-    * Peric Drucker-Prager
-    * Modified/Cohesive Cam Clay
-    * Cohesive Quadratic
+    * Modified Cam-Clay
+    * Perzyna-Von Mises
+    * Perzyna-Drucker-Prager
+    * Perzyna-Modified Cam-Clay
+    * mu(I)-Drucker-Prager
+    * mu(I)-Modified Cam-Clay
     * Implementing other (visco)plastic models is easy due to the general framework of the code
 
 
-* Analytic objects formulated as levelsets are supported with 1) **sticky**, 2) **slipping** or 3) **separating** boundary conditions. Currently, only infinite plate objects are implemented
+* Analytic objects formulated as levelsets are supported with 1) **sticky**, 2) **slipping** or 3) **separating** boundary conditions. Currently, the only implemented objects are axis-aligned plates which can move with a prescribed velocity.
 
 * Supports parallelization on shared memory with **OpenMP**
 
-* A Python script that generates initial particle positions distributed according to the Poisson disk sampling scheme by R. Bridson, ACM SIGGRAPH 2007 is provided
+* Initial particle positions can be sampled using the Poisson disk sampling scheme by R. Bridson, ACM SIGGRAPH 2007, here based on the implementation by [Tommy Hinks](https://github.com/thinks/poisson-disk-sampling)
 
 ### Get started
 
@@ -50,13 +52,17 @@ A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C
 
 ### Dependencies
 
-The only required dependencies are **CMake** and the linear algebra library **Eigen**.
+The only required dependencies are **[CMake](https://cmake.org/)** and the linear algebra library **[Eigen](https://eigen.tuxfamily.org/)**.
 
-The parallelized version with **OpenMP** is optional. To use this version, make sure to set the CMake option `-DUSE_OMP=True`, and select the appropriate parallelized functions you want to use in `simulation.cpp`.
+The parallelized version with **[OpenMP](https://www.openmp.org/)** is optional. To use this version, make sure to set the CMake option `-DUSE_OMP=True`, and select the appropriate parallelized functions you want to use in `simulation.cpp`.
 
 ### Output data
 
-The location of the output data is specified by the user. The data is by default saved as csv-files with the format (x, y, z, vx, vy, vz, ...) for both particles (`out_part_X.csv`) and grid (`out_grid_X.csv`) data where X represents the frame number (from 0 to `end_frame`).
+The location of the output data is specified by the user.
+Particle data is saved as binary PLY-files (using [tinyply](https://github.com/ddiakopoulos/tinyply)) with the format (`out_part_X.ply`) where X represents the frame number (from 0 to `end_frame` as specified by the user).
+This data format can be efficiently processed by SideFX's Houdini for visualization.
+The optional outputting of the grid data saves only the positions, velocities and mass of the grid nodes in a CSV-file for each frame (`out_grid_X.csv`).
+
 
 ### Validation
 
