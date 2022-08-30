@@ -49,6 +49,12 @@ void Simulation::createDirectory(){
 
 void Simulation::simulate(){
 
+    #ifdef CUBICSPLINES
+      apicDinverse = 3.0/(dx*dx);
+    #else
+      apicDinverse = 4.0/(dx*dx);
+    #endif
+
     // Precomputations
     frame_dt = 1.0 / fps;
 
@@ -63,6 +69,8 @@ void Simulation::simulate(){
     mu_sqrt6 = mu * std::sqrt((T)6);
 
     dt_max = dt_max_coeff * dx / wave_speed;
+
+    fac_Q = in_numb_ref / (grain_diameter*std::sqrt(rho_s)); // NB: Use 2 * grain diameter if using the other definiton
 
     debug("Num of particles = ", Np);
     debug("dx               = ", dx);
@@ -128,29 +136,28 @@ void Simulation::advanceStep(){
     updateDt();
 
     if (current_time_step == 0) {
-        remeshFixedInit(2,2,2);
+        remeshFixedInit(3,3,3);
     } else {
         remeshFixedCont();
     }
 
     moveObjects();
 
-    // PBCAddParticles(4);           // if PBC
+    PBCAddParticles(4);           // if PBC
 
     P2G();
     // calculateMassConservation();
     explicitEulerUpdate();
     // addExternalParticleGravity();
 
-    // PBCDelParticles();            // if PBC
-    // PBC(2);                    // do not use
+    PBCDelParticles();            // if PBC
 
     G2P();
     deformationUpdate();
     // plasticity_projection();   // if nonlocal approach
 
-    positionUpdate();          // if not PBC
-    // positionUpdatePBC();          // if PBC
+    // positionUpdate();          // if not PBC
+    positionUpdatePBC();          // if PBC
 
 } // end advanceStep
 
@@ -168,7 +175,7 @@ void Simulation::explicitEulerUpdate(){
     timer t_euler; t_euler.start();
     // explicitEulerUpdate_Baseline();
     // explicitEulerUpdate_Optimized();
-    explicitEulerUpdate_Optimized_Parallel(); // CURRENTLY NOT WORKING!
+    explicitEulerUpdate_Optimized_Parallel();
     t_euler.stop(); runtime_euler += t_euler.get_timing();
 }
 
@@ -265,11 +272,15 @@ void Simulation::positionUpdate(){
     #pragma omp parallel for num_threads(n_threads)
     for(int p=0; p<Np; p++){
 
-        // Position is updated according to PIC velocities
+        //// Position is updated according to PIC velocities
         particles.x[p] = particles.x[p] + dt * particles.pic[p];
 
-        // New particle velocity is a FLIP-PIC combination
-        particles.v[p] = flip_ratio * ( particles.v[p] + particles.flip[p] ) + (1 - flip_ratio) * particles.pic[p];
+        //// Velicity is updated
+        if (flip_ratio < 0){ // APIC
+            particles.v[p] = particles.pic[p];
+        } else{ // PIC-FLIP
+            particles.v[p] = flip_ratio * ( particles.v[p] + particles.flip[p] ) + (1 - flip_ratio) * particles.pic[p];
+        }
 
     } // end loop over particles
 }
@@ -279,7 +290,7 @@ void Simulation::positionUpdatePBC(){
     #pragma omp parallel for num_threads(n_threads)
     for(int p=0; p<Np; p++){
 
-        // Position is updated according to PIC velocities
+        //// Position is updated according to PIC velocities
         particles.x[p] = particles.x[p] + dt * particles.pic[p];
 
         if (particles.x[p](0) > Lx){
@@ -289,8 +300,12 @@ void Simulation::positionUpdatePBC(){
             particles.x[p](0) = Lx + particles.x[p](0);
         }
 
-        // New particle velocity is a FLIP-PIC combination
-        particles.v[p] = flip_ratio * ( particles.v[p] + particles.flip[p] ) + (1 - flip_ratio) * particles.pic[p];
+        //// Velicity is updated
+        if (flip_ratio < 0){ // APIC
+            particles.v[p] = particles.pic[p];
+        } else{ // PIC-FLIP
+            particles.v[p] = flip_ratio * ( particles.v[p] + particles.flip[p] ) + (1 - flip_ratio) * particles.pic[p];
+        }
 
     } // end loop over particles
 }

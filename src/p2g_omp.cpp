@@ -14,10 +14,10 @@ void Simulation::P2G_Optimized_Parallel(){
         #pragma omp for
         for(int p = 0; p < Np; p++){
             TV xp = particles.x[p];
-            unsigned int i_base = std::max(0, int(std::floor((xp(0)-grid.xc)*one_over_dx)) - 1); i_base = std::min(i_base, Nx-4); // the subtraction of one is valid for both quadratic and cubic splines
-            unsigned int j_base = std::max(0, int(std::floor((xp(1)-grid.yc)*one_over_dx)) - 1); j_base = std::min(j_base, Ny-4);
+            unsigned int i_base = std::max(0, int(std::floor((xp(0)-grid.xc)*one_over_dx)) - 1); // i_base = std::min(i_base, Nx-4); // the subtraction of one is valid for both quadratic and cubic splines
+            unsigned int j_base = std::max(0, int(std::floor((xp(1)-grid.yc)*one_over_dx)) - 1); // j_base = std::min(j_base, Ny-4);
         #ifdef THREEDIM
-            unsigned int k_base = std::max(0, int(std::floor((xp(2)-grid.zc)*one_over_dx)) - 1); k_base = std::min(k_base, Nz-4);
+            unsigned int k_base = std::max(0, int(std::floor((xp(2)-grid.zc)*one_over_dx)) - 1); // k_base = std::min(k_base, Nz-4);
         #endif
 
             for(int i = i_base; i < i_base+4; i++){
@@ -29,15 +29,28 @@ void Simulation::P2G_Optimized_Parallel(){
                         T zi = grid.z[k];
                         T weight = wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
                         if (weight > 1e-25){
-                            grid_mass_local[ind(i,j,k)] += weight;
-                            grid_v_local[ind(i,j,k)]    += particles.v[p] * weight;
+                            grid_mass_local[ind(i,j,k)]  += weight;
+                            grid_v_local[ind(i,j,k)]     += particles.v[p] * weight;
+                            if (flip_ratio < 0){ // APIC
+                                TV posdiffvec = TV::Zero();
+                                posdiffvec(0) = xi-xp(0);
+                                posdiffvec(1) = yi-xp(1);
+                                posdiffvec(2) = zi-xp(2);
+                                grid_v_local[ind(i,j,k)] += particles.Bmat[p] * posdiffvec * apicDinverse * weight;
+                            }
                         }
                     } // end for k
         #else
                     T weight = wip(xp(0), xp(1), xi, yi, one_over_dx);
                     if (weight > 1e-25){
-                        grid_mass_local[ind(i,j)] += weight;
-                        grid_v_local[ind(i,j)]    += particles.v[p] * weight;
+                        grid_mass_local[ind(i,j)]  += weight;
+                        grid_v_local[ind(i,j)]     += particles.v[p] * weight;
+                        if (flip_ratio < 0){ // APIC
+                            TV posdiffvec = TV::Zero();
+                            posdiffvec(0) = xi-xp(0);
+                            posdiffvec(1) = yi-xp(1);
+                            grid_v_local[ind(i,j)] += particles.Bmat[p] * posdiffvec * apicDinverse * weight;
+                        }
                     }
         #endif
                 } // end for j

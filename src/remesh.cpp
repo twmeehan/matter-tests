@@ -74,14 +74,6 @@ void Simulation::remesh(){
     T high_z = max_z + dx * safety_factor;
 #endif
 
-#ifdef WARNINGS
-    #ifdef THREEDIM
-        debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
-    #else
-        debug("               grid   = (", Nx, ", ", Ny, ")"  );
-    #endif
-#endif
-
     // Eigen:  LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
     grid.x = linspace(low_x, high_x, Nx);
     grid.y = linspace(low_y, high_y, Ny);
@@ -98,6 +90,14 @@ void Simulation::remesh(){
     grid.v.resize(grid_nodes);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
     grid.flip.resize(grid_nodes); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
     grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
+
+    #ifdef WARNINGS
+        #ifdef THREEDIM
+            debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
+        #else
+            debug("               grid   = (", Nx, ", ", Ny, ")"  );
+        #endif
+    #endif
 
 }
 
@@ -157,35 +157,11 @@ void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned in
     min_z_init = min_z;
 #endif
 
-
-    // ACTUAL (old) side lengths
-    T Lx = max_x - min_x;
-    T Ly = max_y - min_y;
-#ifdef THREEDIM
-    T Lz = max_z - min_z;
-#endif
-
     // safety_factor = 2 means we have a grid which has a grid point 2*dx from the boundary particle
     // Assuming a local approach, a grid point 2dx away from a particle will not influence this particle
     unsigned int safety_factor_x = sfx; // std::max(sfx, nonlocal_support);
     unsigned int safety_factor_y = sfy; // std::max(sfy, nonlocal_support);
     unsigned int safety_factor_z = sfz; // std::max(sfz, nonlocal_support);
-
-    Nx = std::ceil(Lx * one_over_dx) + 1 + 2*safety_factor_x;
-    Ny = std::ceil(Ly * one_over_dx) + 1 + 2*safety_factor_y;
-#ifdef THREEDIM
-    Nz = std::ceil(Lz * one_over_dx) + 1 + 2*safety_factor_z;
-    grid_nodes = Nx*Ny*Nz;
-#else
-    grid_nodes = Nx*Ny;
-#endif
-
-    // save for remeshFixedCont
-    Nx_init = Nx;
-    Ny_init = Ny;
-#ifdef THREEDIM
-    Nz_init = Nz;
-#endif
 
     low_x_init    = min_x - dx * safety_factor_x;
     high_x_init   = max_x + dx * safety_factor_x;
@@ -196,19 +172,10 @@ void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned in
     T high_z_init = max_z + dx * safety_factor_z;
 #endif
 
-#ifdef WARNINGS
-    #ifdef THREEDIM
-        debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
-    #else
-        debug("               grid   = (", Nx, ", ", Ny, ")"  );
-    #endif
-#endif
-
-    // Eigen:  LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
-    grid.x = linspace(low_x_init, high_x_init, Nx);
-    grid.y = linspace(low_y_init, high_y_init, Ny);
+    grid.x = arange(low_x_init, high_x_init+dx, dx);
+    grid.y = arange(low_y_init, high_y_init+dx, dx);
 #ifdef THREEDIM
-    grid.z = linspace(low_z_init, high_z_init, Nz);
+    grid.z = arange(low_z_init, high_z_init+dx, dx);
 #endif
 
     grid.xc = grid.x[0];
@@ -217,9 +184,49 @@ void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned in
     grid.zc = grid.z[0];
 #endif
 
+    Nx      = grid.x.size();
+    Ny      = grid.y.size();
+    Nx_init = Nx;
+    Ny_init = Ny;
+#ifdef THREEDIM
+    Nz      = grid.z.size();
+    Nz_init = Nz;
+    grid_nodes = Nx*Ny*Nz;
+#else
+    grid_nodes = Nx*Ny;
+#endif
+
     grid.v.resize(grid_nodes);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
     grid.flip.resize(grid_nodes); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
     grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
+
+    #ifdef WARNINGS
+        #ifdef THREEDIM
+            debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
+        #else
+            debug("               grid   = (", Nx, ", ", Ny, ")"  );
+        #endif
+
+        debug("               min_x   = ", min_x);
+        debug("               max_x   = ", max_x);
+        debug("               min_y   = ", min_y);
+        debug("               max_y   = ", max_y);
+        debug("               grid.xc = ", grid.xc);
+        debug("               grid.yc = ", grid.yc);
+        debug("               len(grid.x) = ", grid.x.size());
+        debug("               len(grid.y) = ", grid.y.size());
+        debug("               Nx      = ", Nx);
+        debug("               Ny      = ", Ny);
+        debug("               dx_meas = ", grid.x[1]-grid.x[0]);
+        // std::vector<double> tmp = linspace(0.0, 1.0, 5);
+        // for (double i: tmp)
+        //     std::cout << i << ' ';
+        // std::cout << std::endl;
+        // std::vector<double> tmp = arange(0.0, 1.0, 0.2);
+        // for (double i: tmp)
+        //     std::cout << i << ' ';
+        // std::cout << std::endl;
+    #endif
 
 }
 
@@ -265,129 +272,76 @@ void Simulation::remeshFixedCont(){
     T min_z = (*min_z_it)(2);
 #endif
 
+
     T high_x;
     if (max_x < max_x_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(max_x_init-max_x)/dx - 1e-8*dx) );
-#ifdef WARNINGS
-        debug("               grid +x reduction = ", reduction_factor);
-#endif
-        Nx     = Nx_init     - reduction_factor;
         high_x = high_x_init - reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(max_x-max_x_init)/dx - 1e-8*dx) );
-#ifdef WARNINGS
-        debug("               grid +x expansion = ", expansion_factor);
-#endif
-        Nx     = Nx_init     + expansion_factor;
         high_x = high_x_init + expansion_factor * dx;
     }
 
     T low_x;
     if (min_x > min_x_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(min_x-min_x_init)/dx - 1e-8*dx) );
-#ifdef WARNINGS
-        debug("               grid -x reduction = ", reduction_factor);
-#endif
-        Nx    = Nx         - reduction_factor;
         low_x = low_x_init + reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(min_x_init-min_x)/dx - 1e-8*dx) );
-#ifdef WARNINGS
-        debug("               grid -x expansion = ", expansion_factor);
-#endif
-        Nx    = Nx         + expansion_factor;
         low_x = low_x_init - expansion_factor * dx;
     }
 
     T high_y;
     if (max_y < max_y_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(max_y_init-max_y)/dx - 1e-8*dx) );
-#ifdef WARNINGS
-        debug("               grid +y reduction = ", reduction_factor);
-#endif
-        Ny     = Ny_init     - reduction_factor;
         high_y = high_y_init - reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(max_y-max_y_init)/dx - 1e-8*dx) );
-#ifdef WARNINGS
-        debug("               grid +y expansion = ", expansion_factor);
-#endif
-        Ny     = Ny_init     + expansion_factor;
         high_y = high_y_init + expansion_factor * dx;
     }
 
     T low_y;
     if (min_y > min_y_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(min_y-min_y_init)/dx - 1e-8*dx) );
-#ifdef WARNINGS
-        debug("               grid -y reduction = ", reduction_factor);
-#endif
-        Ny    = Ny         - reduction_factor;
         low_y = low_y_init + reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(min_y_init-min_y)/dx - 1e-8*dx) );
-#ifdef WARNINGS
-        debug("               grid -y expansion = ", expansion_factor);
-#endif
-        Ny    = Ny         + expansion_factor;
         low_y = low_y_init - expansion_factor * dx;
     }
-
 #ifdef THREEDIM
     T high_z;
     if (max_z < max_z_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(max_z_init-max_z)/dx - 1e-8*dx) );
-#ifdef WARNINGS
-        debug("               grid +z reduction = ", reduction_factor);
-#endif
-        Nz     = Nz_init     - reduction_factor;
         high_z = high_z_init - reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(max_z-max_z_init)/dx - 1e-8*dx) );
-#ifdef WARNINGS
-        debug("               grid +z expansion = ", expansion_factor);
-#endif
-        Nz     = Nz_init     + expansion_factor;
         high_z = high_z_init + expansion_factor * dx;
     }
 
     T low_z;
     if (min_z > min_z_init){
         unsigned int reduction_factor = std::floor( std::max(0.0,(min_z-min_z_init)/dx - 1e-8*dx) );
-#ifdef WARNINGS
-        debug("               grid -z reduction = ", reduction_factor);
-#endif
-        Nz    = Nz         - reduction_factor;
         low_z = low_z_init + reduction_factor * dx;
     } else{
         unsigned int expansion_factor = std::floor( std::max(0.0,(min_z_init-min_z)/dx - 1e-8*dx) );
-#ifdef WARNINGS
-        debug("               grid -z expansion = ", expansion_factor);
-#endif
-        Nz    = Nz         + expansion_factor;
         low_z = low_z_init - expansion_factor * dx;
     }
 #endif
 
-
-
+    grid.x = arange(low_x, high_x+dx, dx);
+    grid.y = arange(low_y, high_y+dx, dx);
 #ifdef THREEDIM
+    grid.z = arange(low_z, high_z+dx, dx);
+#endif
+
+    Nx      = grid.x.size();
+    Ny      = grid.y.size();
+#ifdef THREEDIM
+    Nz      = grid.z.size();
     grid_nodes = Nx*Ny*Nz;
 #else
     grid_nodes = Nx*Ny;
 #endif
-
-#ifdef WARNINGS
-    #ifdef THREEDIM
-        debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
-    #else
-        debug("               grid   = (", Nx, ", ", Ny, ")"  );
-    #endif
-#endif
-
-    // Eigen:  LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
-    grid.x = linspace(low_x, high_x, Nx);
-    grid.y = linspace(low_y, high_y, Ny);
 
     grid.xc = grid.x[0];
     grid.yc = grid.y[0];
@@ -398,5 +352,13 @@ void Simulation::remeshFixedCont(){
     grid.v.resize(grid_nodes);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
     grid.flip.resize(grid_nodes); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
     grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
+
+    #ifdef WARNINGS
+        #ifdef THREEDIM
+            debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
+        #else
+            debug("               grid   = (", Nx, ", ", Ny, ")"  );
+        #endif
+    #endif
 
 }

@@ -9,18 +9,18 @@
 #include <sstream>
 #include <vector>
 #include <assert.h>
+#include <iomanip>
 #include "poisson_disk_sampling.hpp"
 
 
 //// PARAMETERS ////
 // typedef float T;
 typedef double T;
-#define CUBICSPLINES
+// #define CUBICSPLINES
 // #define THREEDIM // Uncomment for 2D
 // #define DIMENSION 3 // Needed for OMP collapse
 #define DIMENSION 2 // Needed for OMP collapse
 #define TINYPLY_IMPLEMENTATION // Use tinyply
-
 // #define WARNINGS // if write warnings to screen
 ////////////////////////
 
@@ -48,7 +48,7 @@ enum BoundaryCondition { STICKY, SLIP, SEPARATE };
 
 template <typename T>
 void debug(T in){
-  std::cout << in << std::endl;
+  std::cout << std::setprecision(12) << in << std::endl;
 }
 template <typename T, typename U>
 void debug(T in1, U in2){
@@ -95,6 +95,7 @@ inline T selfDoubleDot(TM& A){
 
 unsigned int load_array(std::vector<TV>& array, std::string file_name);
 std::vector<T> linspace(T a, T b, size_t N);
+std::vector<T> arange(T start, T stop, T step);
 bool copy_file(std::string source, std::string destination);
 
 bool ModifiedCamClayHardRMA(T& p, T& q, int& exit, T M, T epv, T beta, T mu, T K, T xi);
@@ -283,6 +284,8 @@ public:
 
       tau.resize(Np); std::fill( tau.begin(), tau.end(), TM::Zero()     );
       F.resize(Np);   std::fill( F.begin(),   F.end(),   TM::Identity() );
+
+      Bmat.resize(Np); std::fill( Bmat.begin(), Bmat.end(), TM::Zero()  );
   }
 
   std::vector<TV> x;
@@ -314,6 +317,8 @@ public:
 
   std::vector<TM> tau;
   std::vector<TM> F;
+
+  std::vector<TM> Bmat;
 
 };
 
@@ -396,7 +401,7 @@ void SampleInBox(const T Lx, const T Ly, T kRadius, S& sim){
 #endif // DIMENSION
 
 template <typename S>
-void SampleIn2DSpecial(const T Lx, const T Ly, T kRadius, double ppc, unsigned int front_type, S& sim){
+void SampleIn2DSpecial(const T Lx, const T Ly, T kRadius, T ppc, unsigned int front_type, S& sim){
     std::uint32_t kAttempts = 30;
     std::uint32_t kSeed = 42;
     std::array<T, 2> kXMin = std::array<T, 2>{{0, 0}};
@@ -405,6 +410,8 @@ void SampleIn2DSpecial(const T Lx, const T Ly, T kRadius, double ppc, unsigned i
     debug("Sampling particles...");
     std::vector<std::array<T, 2>> square_samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);
     std::vector<std::array<T, 2>> samples;
+
+    debug("Number of square samples: ", square_samples.size());
 
     /////// Triangle
     if (front_type == 1){
@@ -448,11 +455,8 @@ void SampleIn2DSpecial(const T Lx, const T Ly, T kRadius, double ppc, unsigned i
         }
     }
 
-
-    unsigned int Npx = std::sqrt(Lx/Ly * sim.Np);
-    T dx_p = (Lx / Npx);
-    sim.dx = std::sqrt(ppc) * dx_p;
-    sim.particle_volume = std::pow(dx_p, 2);
+    sim.dx = std::sqrt(ppc / T(square_samples.size()) * Lx*Ly);
+    sim.particle_volume = sim.dx * sim.dx / ppc;
     sim.particle_mass = sim.rho * sim.particle_volume;
 } // end SampleIn2DTriangle
 

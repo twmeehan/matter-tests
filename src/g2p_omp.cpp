@@ -4,19 +4,22 @@
 
 void Simulation::G2P_Optimized_Parallel(){
 
-    std::fill( particles.pic.begin(), particles.pic.end(), TV::Zero() );
+    std::fill( particles.pic.begin(),  particles.pic.end(),  TV::Zero() );
     std::fill( particles.flip.begin(), particles.flip.end(), TV::Zero() );
+    std::fill( particles.Bmat.begin(), particles.Bmat.end(), TM::Zero() );
 
     #pragma omp parallel num_threads(n_threads)
     {
-        std::vector<TV> particles_pic_local(Np); std::fill( particles_pic_local.begin(), particles_pic_local.end(), TV::Zero() );
+        std::vector<TV> particles_pic_local(Np);  std::fill( particles_pic_local.begin(),  particles_pic_local.end(),  TV::Zero() );
         std::vector<TV> particles_flip_local(Np); std::fill( particles_flip_local.begin(), particles_flip_local.end(), TV::Zero() );
+        std::vector<TM> particles_Bmat_local(Np); std::fill( particles_Bmat_local.begin(), particles_Bmat_local.end(), TM::Zero() );
 
         #pragma omp for
         for(int p = 0; p < Np; p++){
             TV xp = particles.x[p];
-            TV vp = TV::Zero();
+            TV vp    = TV::Zero();
             TV flipp = TV::Zero();
+            TM Bp    = TM::Zero();
             unsigned int i_base = std::floor((xp(0)-grid.xc)*one_over_dx) - 1; // the subtraction of one is valid for both quadratic and cubic splines
             unsigned int j_base = std::floor((xp(1)-grid.yc)*one_over_dx) - 1;
         #ifdef THREEDIM
@@ -31,25 +34,48 @@ void Simulation::G2P_Optimized_Parallel(){
                     for(int k = k_base; k < k_base+4; k++){
                         T zi = grid.z[k];
                         T weight = wip(xp(0), xp(1), xp(2), xi, yi, zi, one_over_dx);
-                        vp               += grid.v[ind(i,j,k)]    * weight;
-                        flipp            += grid.flip[ind(i,j,k)] * weight;
+                        vp += grid.v[ind(i,j,k)] * weight;
+                        if (flip_ratio < 0){ // APIC
+                            TV posdiffvec = TV::Zero();
+                            posdiffvec(0) = xi-xp(0);
+                            posdiffvec(1) = yi-xp(1);
+                            posdiffvec(2) = zi-xp(2);
+                            Bp += grid.v[ind(i,j,k)] * posdiffvec.transpose() * weight;
+                        } else{ // PIC-FLIP
+                            flipp += grid.flip[ind(i,j,k)] * weight;
+                        }
                     } // end loop k
         #else
                     T weight = wip(xp(0), xp(1), xi, yi, one_over_dx);
-                    vp               += grid.v[ind(i,j)]    * weight;
-                    flipp            += grid.flip[ind(i,j)] * weight;
+                    vp += grid.v[ind(i,j)] * weight;
+                    if (flip_ratio < 0){ // APIC
+                        TV posdiffvec = TV::Zero();
+                        posdiffvec(0) = xi-xp(0);
+                        posdiffvec(1) = yi-xp(1);
+                        Bp += grid.v[ind(i,j)] * posdiffvec.transpose() * weight;
+                    } else{ // PIC-FLIP
+                        flipp += grid.flip[ind(i,j)] * weight;
+                    }
         #endif
                 } // end loop j
             } // end loop i
-            particles_pic_local[p]  = vp;
-            particles_flip_local[p] = flipp;
+            particles_pic_local[p] = vp;
+            if (flip_ratio < 0){ // APIC
+                particles_Bmat_local[p] = Bp;
+            } else{ // PIC-FLIP
+                particles_flip_local[p] = flipp;
+            }
         } // end loop p
 
         #pragma omp critical
         {
             for(int p = 0; p < Np; p++){
-                particles.pic[p]            += particles_pic_local[p];
-                particles.flip[p]           += particles_flip_local[p];
+                particles.pic[p] += particles_pic_local[p];
+                if (flip_ratio < 0){ // APIC
+                    particles.Bmat[p] += particles_Bmat_local[p];
+                } else{
+                    particles.flip[p] += particles_flip_local[p];
+                }
             }
         } // end omp critical
 

@@ -291,14 +291,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == PerzynaMuIDP){
 
-            T fac_Q = in_numb_ref * dt / (grain_diameter*std::sqrt(rho_s)); // NB: Use 2 * grain diameter if using the other definiton
-
             // trial stresses
             T p_trial = -K * hencky_trace;
             T q_trial = mu_sqrt6 * hencky_deviatoric_norm;
 
             T p_tip   = -dp_cohesion/dp_slope;
             T p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain! Force to be zero if using classical volume-expanding non-ass. DP
+
+            particles.muI[p]         = mu_1;
+            particles.viscosity[p]   = 0;
+            particles.delta_gamma[p] = 0;
 
             // if left of shifted tip,
             // => project to the original tip given by cohesion only (i.e., not the shifted tip)
@@ -316,7 +318,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             }
             else{ // if right of shifted tip (incl elastic states)
                 particles.eps_pl_vol_pradhana[p] = 0; // reset pradhana volume accumulation
-                particles.delta_gamma[p] = 0; // for the elastic particles this will be zero, the plastic particles have their delta_gamma overwritten in the next if
             }
 
             // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
@@ -327,73 +328,17 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 plastic_count++;
 
-                //////////////////////////////////////////////
-                // Method 1 - not peric, no mu_i, only exp=1
-                //////////////////////////////////////////////
+                T fac_a = mu_sqrt6 * dt; // always positive
+                T fac_b = p_trial*(mu_2-mu_1) + mu_sqrt6*dt*fac_Q*std::sqrt(std::abs(p_trial)) - (q_trial-q_yield);
+                T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(std::abs(p_trial)); // always negative
 
-                // T delta_gamma = (q_trial - q_yield) / (perzyna_visc/dt + mu_sqrt6);
+                T delta_gamma = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always positive because a>0 and c<0
 
-                //////////////////////////////////////////////
-                // Method 2 - not peric, with mu_i, only exp=1
-                //////////////////////////////////////////////
-                T fac_a = mu_sqrt6; // always positive
-                T fac_b = p_trial*(mu_2-mu_1) + mu_sqrt6*fac_Q*std::sqrt(p_trial) - (q_trial-q_yield);
-                T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(p_trial); // always negative
+                T mu_i                 = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(std::abs(p_trial)) / delta_gamma + 1.0);
+                particles.muI[p]       = mu_i;
+                particles.viscosity[p] = (mu_i - mu_1) * std::abs(p_trial) / delta_gamma;
 
-                T delta_gamma = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always psoitive because a>0 and c<0
-
-                // particles.viscosity[p] = 0.5*p_trial*dt*(mu_2-mu_1) / (fac_Q*std::sqrt(p_trial) + delta_gamma);
-                particles.viscosity[p] = p_trial*dt*(mu_2-mu_1) / (fac_Q*std::sqrt(p_trial) + delta_gamma);
-
-                // T in_numb = (2*delta_gamma/dt*grain_diameter / std::sqrt(p_trial/rho_s));
-                T in_numb = (delta_gamma/dt*grain_diameter / std::sqrt(p_trial/rho_s));
-                particles.muI[p] = mu_1 + (mu_2-mu_1) / (in_numb_ref/in_numb + 1);
-
-                //////////////////////////////////////////////
-                // Method 2 but linearized mu(I) law
-                //////////////////////////////////////////////
-                // T visc = (mu_2-mu_1) * grain_diameter * std::sqrt(rho_s*p_trial) / in_numb_ref;
-                // T delta_gamma = (q_trial - q_yield) / (visc/dt + mu_sqrt6);
-                // particles.viscosity[p] = visc;
-                // particles.muI[p] = mu_1 + (mu_2-mu_1) * (2*delta_gamma*grain_diameter / std::sqrt(p_trial/rho_s)) / in_numb_ref;
-
-                //////////////////////////////////////////////
-                // Method 3 - not Peric, with mu_i and any exponent. NB: result looks weird for exponent != 1
-                //////////////////////////////////////////////
-
-                // // initial guess
-                // // T delta_gamma = 0.01 * (q_trial - q_yield) / mu_sqrt6;
-                // T delta_gamma = 0.0;
-                //
-                // int max_iter = 60;
-                // for (int iter = 0; iter < max_iter; iter++) {
-                //     if (iter == max_iter - 1){ // did not break loop
-                //         debug("PerzynaMuIDP: FATAL did not exit loop at iter = ", iter);
-                //         // exit = 1;
-                //     }
-                //     // T tmp = 0.5*p_trial*(mu_2-mu_1) / (fac_Q*std::sqrt(p_trial)/delta_gamma+1);
-                //     // T residual = std::pow(tmp, perzyna_exp) - (q_trial - mu_sqrt6*delta_gamma) + q_yield;
-                //     // if (std::abs(residual) < 1e-1) {
-                //     //     break;
-                //     // }
-                //     // T d_tmp_d_deltagamma = 0.5 * fac_Q * p_trial * std::sqrt(p_trial) * (mu_2-mu_1) / std::pow(fac_Q * std::sqrt(p) + delta_gamma, 2);
-                //     // T residual_diff = perzyna_exp * std::pow(tmp, perzyna_exp-1) * d_tmp_d_deltagamma + mu_sqrt6;
-                //
-                //     if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
-                //         debug("PerzynaMuIDP: residual_diff too small in abs value = ", residual_diff);
-                //         exit = 1;
-                //     }
-                //
-                //     delta_gamma -= residual / residual_diff;
-                //
-                //     if (delta_gamma < 0) // not possible and can also lead to division by zero
-                //         delta_gamma = 1e-10;
-                //
-                // } // end N-R iterations
-
-                ////////////////////////////////////////////
-                // END METHODS
-                ////////////////////////////////////////////
+                delta_gamma *= dt;
 
                 hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
@@ -410,10 +355,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 // }
 
             } // end plastic projection
-            else{
-                particles.viscosity[p] = 0;
-                particles.muI[p] = 0;
-            }
+
         } // end PerzynaMuIDP
 
         else if (plastic_model == PerzynaMuIMCC) {
@@ -423,15 +365,18 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T q_stress = mu_sqrt6 * hencky_deviatoric_norm;
 
             // make copies
-            T p_trial = p_stress;
             T q_trial = q_stress;
 
-            // EXLICIT HARDENING
+            //////////////////////////////////////////////////////////////////////
+            /////// IMPLICIT HARDENING
+            bool perform_rma = ModifiedCamClayHardRMA(p_stress, q_stress, exit, M, particles.eps_pl_vol_mcc[p], beta, mu, K, xi);
+            /////// EXLICIT HARDENING
             // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
             // bool perform_rma = ModifiedCamClayRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K);
+            //////////////////////////////////////////////////////////////////////
 
-            // IMPLICIT HARDENING
-            bool perform_rma = ModifiedCamClayHardRMA(p_stress, q_stress, exit, M, particles.eps_pl_vol_mcc[p], beta, mu, K, xi);
+            particles.muI[p] = mu_1;
+            particles.viscosity[p] = 0;
 
             if (perform_rma){
                 plastic_count++;
@@ -441,20 +386,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_vol[p]     += eps_pl_vol_inst;
                 particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
 
-                // ONLY if implicit hardening
-                T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
-
-                T fac_Q = in_numb_ref / (grain_diameter*std::sqrt(rho_s)); // NB: Use 2 * grain diameter if using the other definiton
-
-                p_stress = std::max(p_stress, -beta*particle_p0);
-                p_stress = std::min(p_stress, particle_p0);
-                T q_yield = M * std::sqrt( (particle_p0-p_stress)*(beta*particle_p0+p_stress) / (1+2*beta) );
-
-                if (q_trial < q_yield){
+                T q_yield = q_stress;
+                if (q_trial < (q_yield + 1e-5)) {
                     q_stress = q_yield;
-                    debug("Setting q = q_yield = ", q_yield);
-                    particles.viscosity[p] = 0;
-                    particles.muI[p] = 0;
+                    // debug("Setting q = q_yield = ", q_yield);
                 }
                 else{
                     T fac_a = mu_sqrt6 * dt; // always positive
@@ -465,12 +400,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                     q_stress = std::max(q_yield, q_trial - mu_sqrt6 * dt * gamma_dot_S);
 
-                    // particles.viscosity[p] = 0.5*std::abs(p_stress)*(mu_2-mu_1) / (fac_Q*std::sqrt(std::abs(p_stress)) + gamma_dot_S);
-                    particles.viscosity[p] = std::abs(p_stress)*(mu_2-mu_1) / (fac_Q*std::sqrt(std::abs(p_stress)) + gamma_dot_S);
-
-                    // T in_numb = (2*gamma_dot_S*grain_diameter / std::sqrt(std::abs(p_stress)/rho_s));
-                    T in_numb = (gamma_dot_S*grain_diameter / std::sqrt(std::abs(p_stress)/rho_s));
-                    particles.muI[p] = mu_1 + (mu_2-mu_1) / (in_numb_ref/in_numb + 1);
+                    T mu_i                 = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(std::abs(p_stress)) / gamma_dot_S + 1.0);
+                    particles.muI[p]       = mu_i;
+                    particles.viscosity[p] = (mu_i - mu_1) * std::abs(p_stress) / gamma_dot_S;
                 }
 
                 T eps_pl_dev_instant = (q_trial - q_stress) / mu_sqrt6;
@@ -480,11 +412,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 hencky = q_stress / mu_sqrt6 * hencky_deviatoric - ep*TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
             } // end plastic projection
-            else{
-                particles.viscosity[p] = 0;
-                particles.muI[p] = 0;
-            }
-
 
         } // end PerzynaMuIMCC
 

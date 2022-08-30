@@ -141,6 +141,7 @@ public:
  T in_numb_ref;
  T mu_1;
  T mu_2;
+ T fac_Q;
 
  // Sintering model
  T sinter_Sinf;
@@ -166,6 +167,8 @@ public:
   T one_over_dx_square;
 
   T mu_sqrt6;
+
+  T apicDinverse;
 
   // Functions
   void initialize(T E, T nu, T density);

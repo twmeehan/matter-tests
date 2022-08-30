@@ -30,6 +30,7 @@ unsigned int load_array(std::vector<TV>& array, std::string file_name)
 
 
 // Taken from: https://gist.github.com/lorenzoriano/5414671
+// linspace(a,b,N) return std::vector of length N in the closed interval [a,b], i.e., including b
 std::vector<T> linspace(T a, T b, size_t N) {
     T h = (b - a) / static_cast<T>(N-1);
     std::vector<T> xs(N);
@@ -38,6 +39,15 @@ std::vector<T> linspace(T a, T b, size_t N) {
     for (x = xs.begin(), val = a; x != xs.end(); ++x, val += h)
         *x = val;
     return xs;
+}
+
+// Taken from: https://stackoverflow.com/questions/21216909/these-python-functions-in-c
+// Works like numpy.arange, does NOT include stop value
+std::vector<T> arange(T start, T stop, T step) {
+    std::vector<T> values;
+    for (T value = start; value < stop; value += step)
+        values.push_back(value);
+    return values;
 }
 
 
@@ -210,6 +220,10 @@ bool ModifiedCamClayHardRMA(T& p, T& q, int& exit, T M, T epv, T beta, T mu, T K
             }
 
         } // end for loop
+
+        p = std::max(p, -beta * p0);
+        p = std::min(p, p0);
+        q = M * std::sqrt((p0 - p) * (beta * p0 + p) / (1 + 2 * beta));
 
         return true; // if plastic, i.e., y > 0
     } // end if outside
