@@ -1,4 +1,5 @@
 #include "simulation.hpp"
+#include "sampling_particles.hpp"
 
 // TODO:
 //  * CUDA Parallilize
@@ -9,40 +10,56 @@ int main(){
 
       Simulation sim;
 
-      // sim.sim_name = "conveyor_MCCmui_quad_ppc25_new_xi1_a25_test_b3";
-      // sim.sim_name = "interpol_test_099";
-      // sim.sim_name = "pbc_flip_muimcc_ppc20_L03_Q40";
-      sim.sim_name = "pbc_apic_E1e9_Q40";
+      // sim.sim_name = "pbc_muimcc_pic09995_E1e10_a25";
+      sim.sim_name = "test";
 
       sim.directory = "/media/blatny/harddrive4/larsie/";
-      sim.end_frame = 1000; // 5000;
+      sim.end_frame = 500;
       sim.fps = 50;
 
-      T theta = 20 * M_PI / 180;
+      T theta = 25 * M_PI / 180;
       // sim.gravity = TV::Zero();
       sim.gravity[0] = +9.81 * std::sin(theta);
       sim.gravity[1] = -9.81 * std::cos(theta);
       sim.gravity_time = 0.0;
 
-      sim.cfl = 0.6;
-      sim.dt_max_coeff = 0.4;
-      sim.flip_ratio = -1;
+      sim.cfl = 0.5;
+      sim.flip_ratio = 0.9995;
       sim.n_threads = 4;
 
-      sim.initialize(/* E */ 1e9, /* nu */ 0.3, /* rho */ 1500);
+      sim.initialize(/* E */ 1e10, /* nu */ 0.3, /* rho */ 1500);
 
-      // sim.Lx = 1;
-      // sim.Ly = 0.067;
-
+      sim.pbc = true;
       sim.Lx = 12*0.0252256756512;
       sim.Ly = 1.0;
+      SampleParticles(sim.Lx, sim.Ly,     0.00445, 20, 0, sim);
 
-      SampleIn2DSpecial(sim.Lx, sim.Ly,     0.00445, 20, 0, sim);
-      // SampleIn2DSpecial(sim.Lx, sim.Ly,     0.000527, 16, 3, sim);
-      // SampleIn2DSpecial(sim.Lx, sim.Ly,     0.000421, 27.4, 3, sim);
-      // SampleIn2DSpecial(sim.Lx, sim.Ly,     0.005, 8, 0, sim);
-      // SampleInBox(sim.Lx, sim.Ly,         0.01, sim);
-      // SampleInBox(sim.Lx, sim.Ly, sim.Lz, 0.01, sim);
+      // sim.pbc = true;
+      // sim.Lx = 12*0.0224848121438;
+      // sim.Ly = 1.0;
+      // SampleParticles(sim.Lx, sim.Ly,     0.00894, 4, 0, sim);
+
+      // sim.pbc = false;
+      // sim.Lx = 0.5;
+      // sim.Ly = 0.5;
+      // SampleParticles(sim.Lx, sim.Ly,     0.0028, 6, 0, sim);
+
+      // sim.pbc = true;
+      // sim.Np = 20;
+      // sim.Ly = 1;
+      // sim.dx = sim.Ly / sim.Np; // one particle per cell
+      // sim.Lx = sim.dx;
+      // sim.particle_volume = sim.dx*sim.dx;
+      // sim.particle_mass = sim.rho * sim.particle_volume;
+      // sim.particles = Particles(sim.Np);
+      // for(int p = 0; p < sim.Np; p++){
+      //     TV vec = TV::Ones()*0.5*sim.dx;
+      //     vec(1) = (0.5+p)*sim.dx;
+      //     sim.particles.x[p] = vec;
+      // }
+
+      sim.dt_max = 0.5 * sim.dx / sim.wave_speed;
+      // sim.dt_max = 0.5 * sim.dx / (std::sqrt(1.0e12/1500.0));
 
       T offset = -0.1 * sim.dx/2.0; // When the grid is aligned with the boundary, it is important that the object overlap a bit into the particle domain
       std::string name;
@@ -73,7 +90,7 @@ int main(){
       sim.plastic_model = PerzynaMuIMCC;
       // sim.plastic_model = PerzynaSinterMCC;
 
-      sim.dp_slope = 0.35;
+      sim.dp_slope = 0.8;    // NB NB NB NB NB NB NB NB NB
       sim.dp_cohesion = 0;
 
       sim.vm_ptensile = -5e10;
@@ -84,7 +101,7 @@ int main(){
       sim.perzyna_visc = 0.001;
 
       sim.beta = 0.0;
-      sim.M = sim.dp_slope;
+      sim.M = 0.35;
       sim.p0 = 1e2;
 
       sim.xi = 1; // In case of sintering, xi = 1/(lambda*phi_0)
@@ -95,8 +112,8 @@ int main(){
       // For mu(I) rheology only
       sim.rho_s           = 2450;
       sim.grain_diameter  = 7e-4;
-      sim.in_numb_ref     = 1e-3 * 40;
-      sim.mu_1            = sim.dp_slope; //sim.M
+      sim.in_numb_ref     = 1e-3;
+      sim.mu_1            = sim.M; //sim.M
       sim.mu_2            = 0.7;
 
       // For sintering only

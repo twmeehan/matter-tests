@@ -1,19 +1,12 @@
-if (USE_ABC)
-	set(ALEMBIC_INCLUDES "/home/blatny/alembic/lib/")
-	set(OPENEXR_INCLUDES "/usr/include/OpenEXR")
-	include_directories("${ALEMBIC_INCLUDES}")
-	include_directories("${OPENEXR_INCLUDES}")
-	set(ALEMBIC_LIBRARIES "/home/blatny/alembic/build/lib/Alembic/libAlembic.so")
-endif (USE_ABC)
-
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 
 if (USE_OMP)
 	add_executable(mpm
 				   mpm.cpp
+				   tools.cpp
+				   plastic_models.cpp
 			   	   simulation.cpp
 				   save_data.cpp
-				   tools.cpp
 				   remesh.cpp
 			       deformation_update_omp.cpp
 				   plasticity.cpp
@@ -34,7 +27,6 @@ else (USE_OMP)
 				   mpm.cpp
 			   	   simulation.cpp
 				   save_data.cpp
-				   tools.cpp
 			       deformation_update.cpp
 				   plasticity.cpp
 			       p2g.cpp
@@ -48,6 +40,3 @@ else (USE_OMP)
 			       )
 	target_link_libraries (mpm Eigen3::Eigen ${ALEMBIC_LIBRARIES})
 endif (USE_OMP)
-
-
-# -lAlembic -L/home/blatny/alembic/build/lib/Alembic -I/home/blatny/alembic/lib/ -I/usr/include/OpenEXR

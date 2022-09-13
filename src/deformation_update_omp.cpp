@@ -4,6 +4,10 @@
 // Deformation gradient is updated based on the NEW GRID VELOCITIES and the OLD PARTICLE POSITIONS
 void Simulation::deformationUpdate_Parallel(){
 
+    #ifdef WARNINGS
+        debug("deformationUpdate_Parallel");
+    #endif
+
     std::fill( particles.delta_gamma.begin(), particles.delta_gamma.end(), 0.0 );
     unsigned int plastic_count = 0;
 
@@ -41,6 +45,6 @@ void Simulation::deformationUpdate_Parallel(){
 
     } // end loop over particles
 
-    debug("               proj particles = ", plastic_count, " / ", Np);
+    debug("               Proj: ", plastic_count, " / ", Np);
 
 } // end deformationUpdate_Parallel

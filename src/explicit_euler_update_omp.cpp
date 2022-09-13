@@ -4,6 +4,10 @@
 
 void Simulation::explicitEulerUpdate_Optimized_Parallel(){
 
+    #ifdef WARNINGS
+        debug("explicitEulerUpdate_Optimized_Parallel");
+    #endif
+    
     std::vector<TV> grid_force(grid_nodes, TV::Zero());
 
     #pragma omp parallel num_threads(n_threads)

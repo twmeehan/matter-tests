@@ -3,6 +3,10 @@
 
 void Simulation::P2G_Optimized_Parallel(){
 
+    #ifdef WARNINGS
+        debug("P2G_Optimized_Parallel");
+    #endif
+
     grid.v.resize(grid_nodes); std::fill( grid.v.begin(), grid.v.end(), TV::Zero() );
     grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
 

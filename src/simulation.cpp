@@ -49,10 +49,14 @@ void Simulation::createDirectory(){
 
 void Simulation::simulate(){
 
-    #ifdef CUBICSPLINES
+    #if SPLINEDEG == 3
       apicDinverse = 3.0/(dx*dx);
-    #else
+    #elif SPLINEDEG == 2
       apicDinverse = 4.0/(dx*dx);
+    #elif SPLINEDEG == 1
+        apicDinverse = 0; // NB not implemented
+    #else
+        #error Unsupported spline degree
     #endif
 
     // Precomputations
@@ -67,8 +71,6 @@ void Simulation::simulate(){
     nonlocal_support = std::ceil(nonlocal_l / dx);
 
     mu_sqrt6 = mu * std::sqrt((T)6);
-
-    dt_max = dt_max_coeff * dx / wave_speed;
 
     fac_Q = in_numb_ref / (grain_diameter*std::sqrt(rho_s)); // NB: Use 2 * grain diameter if using the other definiton
 
@@ -98,7 +100,8 @@ void Simulation::simulate(){
     final_time = end_frame * frame_dt;
     saveParticleData();
     while (frame < end_frame){
-        std::cout << "Frame: " << frame << std::endl;
+        std::cout << "Frame: "               << frame              << std::endl;
+        std::cout << "               Name: " << sim_name           << std::endl;
         std::cout << "               Step: " << current_time_step  << std::endl;
         std::cout << "               Time: " << time               << std::endl;
         advanceStep();
@@ -137,27 +140,37 @@ void Simulation::advanceStep(){
 
     if (current_time_step == 0) {
         remeshFixedInit(3,3,3);
+        // remeshFixed();
     } else {
         remeshFixedCont();
     }
 
+
     moveObjects();
 
-    PBCAddParticles(4);           // if PBC
+    if (pbc){
+        // PBCAddParticles1D();
+        PBCAddParticles(4);
+    }
 
     P2G();
     // calculateMassConservation();
     explicitEulerUpdate();
     // addExternalParticleGravity();
 
-    PBCDelParticles();            // if PBC
+    if (pbc){
+        PBCDelParticles();
+    }
 
     G2P();
     deformationUpdate();
     // plasticity_projection();   // if nonlocal approach
 
-    // positionUpdate();          // if not PBC
-    positionUpdatePBC();          // if PBC
+    if (pbc){
+        positionUpdatePBC();
+    } else{
+        positionUpdate();
+    }
 
 } // end advanceStep
 

@@ -11,6 +11,8 @@
 #include <vector>
 #include <chrono>
 #include "tools.hpp"
+#include "plastic_models.hpp"
+#include "data_structures.hpp"
 #include "object.hpp"
 #include "timer.hpp"
 
@@ -34,13 +36,13 @@ public:
   unsigned int frame;
   unsigned int end_frame;
   int exit;
+  bool pbc;
   T time;
   T final_time;
   T fps;
   T frame_dt;
   T dt;
   T dt_max;
-  T dt_max_coeff;
   T flip_ratio;
   T wave_speed;
   T cfl;
@@ -165,9 +167,7 @@ public:
   // Precomputations
   T one_over_dx;
   T one_over_dx_square;
-
   T mu_sqrt6;
-
   T apicDinverse;
 
   // Functions
@@ -181,7 +181,7 @@ public:
 
   void advanceStep();
   void updateDt();
-  void remesh();
+  void remeshFixed();
   void remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned int sfz);
   void remeshFixedCont();
 
@@ -213,7 +213,7 @@ public:
 
   void positionUpdate();
   void positionUpdatePBC();
-  void PBC(unsigned int safety_factor);
+  void PBCAddParticles1D();
   void PBCAddParticles(unsigned int safety_factor);
   void PBCDelParticles();
   unsigned int num_add_pbc_particles;

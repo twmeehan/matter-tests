@@ -1,103 +1,23 @@
 #include "simulation.hpp"
 
-void Simulation::remesh(){
+void Simulation::remeshFixed(){
+    // A fixed grid hard-coded for ever simulation
 
-    // ACTUAL min and max position of particles
-    auto max_x_it = std::max_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV &x1, const TV &x2 )
-                                             {
-                                                 return x1(0) < x2(0);
-                                             } );
-    T max_x = (*max_x_it)(0);
-    auto max_y_it = std::max_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV &x1, const TV &x2 )
-                                             {
-                                                 return x1(1) < x2(1);
-                                             } );
-    T max_y = (*max_y_it)(1);
-#ifdef THREEDIM
-    auto max_z_it = std::max_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV &x1, const TV &x2 )
-                                             {
-                                                 return x1(2) < x2(2);
-                                             } );
-    T max_z = (*max_z_it)(2);
-#endif
-    auto min_x_it = std::min_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV &x1, const TV &x2 )
-                                             {
-                                                 return x1(0) < x2(0);
-                                             } );
-    T min_x = (*min_x_it)(0);
-    auto min_y_it = std::min_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV &x1, const TV &x2 )
-                                             {
-                                                 return x1(1) < x2(1);
-                                             } );
-    T min_y = (*min_y_it)(1);
-#ifdef THREEDIM
-    auto min_z_it = std::min_element( particles.x.begin(), particles.x.end(),
-                                             []( const TV &x1, const TV &x2 )
-                                             {
-                                                 return x1(2) < x2(2);
-                                             } );
-    T min_z = (*min_z_it)(2);
-#endif
-
-    // ACTUAL (old) side lengths
-    T Lx = max_x - min_x;
-    T Ly = max_y - min_y;
-#ifdef THREEDIM
-    T Lz = max_z - min_z;
-#endif
-
-    // safety_factor = 2 means we have a grid which has a grid point 2*dx from the boundary particle
-    // Assuming local approach, the grid point 2dx away will not be be given a nonzero value
-    unsigned int safety_factor = std::max((unsigned int)2, nonlocal_support);
-
-    // NEW number of grid-dx's per side length
-    Nx = std::ceil(Lx * one_over_dx) + 1 + 2*safety_factor;
-    Ny = std::ceil(Ly * one_over_dx) + 1 + 2*safety_factor;
-#ifdef THREEDIM
-    Nz = std::ceil(Lz * one_over_dx) + 1 + 2*safety_factor;
-    grid_nodes = Nx*Ny*Nz;
-#else
-    grid_nodes = Nx*Ny;
-#endif
-
-    T low_x  = min_x - dx * safety_factor;
-    T high_x = max_x + dx * safety_factor;
-    T low_y  = min_y - dx * safety_factor;
-    T high_y = max_y + dx * safety_factor;
-#ifdef THREEDIM
-    T low_z  = min_z - dx * safety_factor;
-    T high_z = max_z + dx * safety_factor;
-#endif
-
-    // Eigen:  LinSpaced(size, low, high) generates 'size' equally spaced values in the closed interval [low, high]
-    grid.x = linspace(low_x, high_x, Nx);
-    grid.y = linspace(low_y, high_y, Ny);
-#ifdef THREEDIM
-    grid.z = linspace(low_z, high_z, Nz);
-#endif
+    int extra_nodes = 0;
+    grid.x = arange(-dx*(1+extra_nodes), dx+(2+extra_nodes)*dx, dx);
+    grid.y = arange(-dx*(1+extra_nodes), Ly+(2+extra_nodes)*dx, dx);
 
     grid.xc = grid.x[0];
     grid.yc = grid.y[0];
-#ifdef THREEDIM
-    grid.zc = grid.z[0];
-#endif
+
+    Nx = grid.x.size();
+    Ny = grid.y.size();
+    grid_nodes = Nx*Ny;
 
     grid.v.resize(grid_nodes);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
     grid.flip.resize(grid_nodes); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
     grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
 
-    #ifdef WARNINGS
-        #ifdef THREEDIM
-            debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
-        #else
-            debug("               grid   = (", Nx, ", ", Ny, ")"  );
-        #endif
-    #endif
 
 }
 
