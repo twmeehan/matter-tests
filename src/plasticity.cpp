@@ -6,7 +6,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == ModifiedCamClay || plastic_model == ModifiedCamClayHard || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC || plastic_model == PerzynaSinterMCC){
+    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == ModifiedCamClay || plastic_model == ModifiedCamClayHard || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC  || plastic_model == PerzynaMCCHard || plastic_model == PerzynaSinterMCC){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log(); // VonMises
@@ -416,7 +416,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaMuIMCC
 
 
-        else if (plastic_model == ModifiedCamClay || plastic_model == ModifiedCamClayHard || plastic_model == PerzynaMCC || plastic_model == PerzynaSinterMCC){
+        else if (plastic_model == ModifiedCamClay || plastic_model == ModifiedCamClayHard || plastic_model == PerzynaMCC || plastic_model == PerzynaSinterMCC || plastic_model == PerzynaMCCHard){
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -426,31 +426,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = p_stress;
             T q_trial = q_stress;
 
-            // T particle_p0 = p0;
-            // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p])); // NB small p0 may be problematic for viscous MCC
-            T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]) * (1+particles.sinter_S[p]) );
-
-
-            ///// HARDNING ALT 3
-            // T p0_aftersoft = 20e3;
-            // T p0_min = 100;
-            // T particle_p0 = p0;
-            // T particle_beta = beta;
-            // if (particles.eps_pl_vol_abs[p] > 0){ // if plastic
-            //     if (particles.fail_crit[p]){ // if finished with softening phase
-            //         particle_p0 = std::max(p0_min, (T)(p0_aftersoft * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi))));
-            //         particle_beta = 0; // ideally zero
-            //     } else { // softening continues
-            //         particle_p0 = p0 * std::exp( (1 - std::exp(xi_nonloc*particles.eps_pl_vol_abs[p])) / (rho/1000 * xi) );
-            //         particle_beta = beta;
-            //         if (particle_p0 < p0_aftersoft){ // softening should stop
-            //             particle_p0 = std::max(p0_min, (T)(p0_aftersoft * std::exp((1 - std::exp(particles.eps_pl_vol[p])) / (rho/1000 * xi))));
-            //             particle_beta = 0; // ideally zero
-            //             particles.fail_crit[p] = true;
-            //         }
-            //     }
-            // } // end if plastic
-
+            T particle_p0 = p0;
+            // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p])); // NB small p0 may be problematic for viscous MCC
+            // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]) * (1+particles.sinter_S[p]) );
 
             bool perform_rma;
             if (plastic_model == ModifiedCamClay)
@@ -465,6 +443,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             else if (plastic_model == PerzynaMCC)
             {
                 perform_rma = PerzynaMCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, dt, dim, perzyna_visc);
+            }
+            else if (plastic_model == PerzynaMCCHard)
+            {
+                perform_rma = PerzynaMCCHardRMA(p_stress, q_stress, exit, M, p00, beta, xi, mu, K, dt, dim, perzyna_visc, particles.eps_pl_vol_mcc[p]);
             }
             else if (plastic_model == PerzynaSinterMCC)
             {
@@ -483,15 +465,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_vol[p]     += eps_pl_vol_inst;
                 particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
 
-                T delta_S = dt/sinter_tc*(sinter_Sinf-particles.sinter_S[p]) - particles.sinter_S[p] * std::abs(eps_pl_vol_inst) / sinter_ec;
-                particles.sinter_S[p] = std::min(T(sinter_Sinf), std::max(T(0.0), particles.sinter_S[p] + delta_S));
-
-                // particles.eps_pl_vol_abs[p] += std::abs(eps_pl_vol_inst);
-                // if (particles.fail_crit[p]){
-                //     particles.eps_pl_vol_mcc[p] += -std::abs(eps_pl_vol_inst);
-                // }else{
-                //     particles.eps_pl_vol_mcc[p] += xi_nonloc * std::abs(eps_pl_vol_inst);
-                // }
+                // T delta_S = dt/sinter_tc*(sinter_Sinf-particles.sinter_S[p]) - particles.sinter_S[p] * std::abs(eps_pl_vol_inst) / sinter_ec;
+                // particles.sinter_S[p] = std::min(T(sinter_Sinf), std::max(T(0.0), particles.sinter_S[p] + delta_S));
 
                 hencky = q_stress / mu_sqrt6 * hencky_deviatoric - ep*TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();

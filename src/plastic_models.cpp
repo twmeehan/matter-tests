@@ -26,7 +26,7 @@ bool ModifiedCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K)
                 break;
             }
             if (iter == max_iter - 1){ // did not break loop
-                debug("ModifiedCamClayRMA: FATAL did not exit loop at iter = ", iter);
+                debug("RMA: FATAL did not exit loop at iter = ", iter);
                 debug(iter, ":  r1   = ", r1);
                 debug(iter, ":  r2   = ", r2);
                 debug(iter, ":  y    = ", y);
@@ -50,7 +50,7 @@ bool ModifiedCamClayRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K)
             T det = J11*(-J32*J23) + J13*(-J31*J22);
 
             if (abs(det) < T(1e-6)){
-                debug("ModifiedCamClayRMA: Determinant of Jacobian too small: det = ", det);
+                debug("RMA: Determinant of Jacobian too small: det = ", det);
                 p           -= 0.001*r1;
                 q           -= 0.001*r2;
                 delta_gamma -= 0.001*y / (p0*p0);
@@ -109,12 +109,11 @@ bool ModifiedCamClayHardRMA(T& p, T& q, int& exit, T M, T epv, T beta, T mu, T K
             T r2 = qt - q - 3*mu * delta_gamma * dydq;
 
             if ( iter > 4 && std::abs(y) < 1e-3 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
-                // debug("ModifiedCamClayRMA: Breaking loop bc small rx at iter = ", iter);
                 break;
             }
             if (iter == max_iter - 1){ // did not break loop
                 if (p0 > 1.01e-3){
-                    debug("ModifiedCamClayHardRMA: FATAL did not exit loop at iter = ", iter);
+                    debug("RMA: FATAL did not exit loop at iter = ", iter);
                     debug(iter, ":  r1   = ", r1);
                     debug(iter, ":  r2   = ", r2);
                     debug(iter, ":  y    = ", y);
@@ -144,7 +143,7 @@ bool ModifiedCamClayHardRMA(T& p, T& q, int& exit, T M, T epv, T beta, T mu, T K
             T det = J11*(-J32*J23) + J13*(-J31*J22);
 
             if (abs(det) < T(1e-6)){
-                debug("ModifiedCamClayHardRMA: Determinant of Jacobian too small: det = ", det);
+                debug("RMA: Determinant of Jacobian too small: det = ", det);
                 p           -= 0.001*r1;
                 q           -= 0.001*r2;
                 delta_gamma -= 0.001*y / (p0*p0);
@@ -188,11 +187,6 @@ bool PerzynaMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T 
         T max_iter = 40;
         for (int iter = 0; iter < max_iter; iter++) {
 
-            if (iter == max_iter - 1){ // did not break loop
-                debug("PerzynaMCCRMA: FATAL did not exit loop at iter = ", iter);
-                exit = 1;
-            }
-
             y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
             T k = M*M * (beta*p0 + 2*p - p0);
             T l = 2*q * (2*beta+1);
@@ -201,12 +195,16 @@ bool PerzynaMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T 
             T r2 = qt - q - Cq * y*l/n;
 
             if ( iter > 4 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
-                // debug("PerzynaMCCRMA: Breaking the loop due to small residual");
                 break;
             }
 
-            T dndp =             k*dkdp / (n*d);
-            T dndq = (3.0/2.0) * l*dldq / n;
+            if (iter == max_iter - 1){ // did not break loop
+                debug("RMA: FATAL did not exit loop at iter = ", iter);
+                exit = 1;
+            }
+
+            T dndp =   k*dkdp / (d*n);
+            T dndq = 3*l*dldq / (2*n);
 
             T tmp1 = (k*n - y*dndp) / (n*n);
             T tmp2 = (l*n - y*dndq) / (n*n);
@@ -219,7 +217,7 @@ bool PerzynaMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T 
             T det = Ja*Jd - Jb*Jc;
 
             if (abs(det) <= T(1e-6)){
-                debug("Determinant of Jacobian too small: det = ", det);
+                debug("RMA: Determinant of Jacobian too small: det = ", det);
                 p -= 0.001*r1;
                 q -= 0.001*r2;
             } else{
@@ -240,6 +238,96 @@ bool PerzynaMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T 
     } // end if outside
     return false;
 }
+
+
+bool PerzynaMCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T xi, T mu, T K, T dt, T d, T perzyna_visc, T epv)
+{
+    T p0 = std::max(T(1e-3), K*std::sinh(-xi*epv));
+    T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+
+    if (y > 0) {
+
+        T pt = p;
+        T qt = q;
+        T Cp =    K*dt / (p00*p00 * perzyna_visc);
+        T Cq = 3*mu*dt / (p00*p00 * perzyna_visc);
+        T ddydqq = 4*beta+2;
+
+        T max_iter = 40;
+        for (int iter = 0; iter < max_iter; iter++) {
+
+            T delta_epv = (p-pt) / K;
+            p0          = std::max(T(1e-3),    -K * std::sinh(xi*(epv+delta_epv)));
+            T ddp0dpp   = std::max(T(0), -xi*xi/K * std::sinh(xi*(epv+delta_epv)));
+            T dp0dp     = 0;
+            if ( (epv+delta_epv) < 0 )
+                dp0dp   = -xi * std::cosh(xi*(epv+delta_epv));
+
+            y        = M*M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+            T dydp   = M*M * ( 2*p + (beta-1)*(dp0dp*p+p0) + 2*beta*p0*dp0dp );
+            T ddydpp = M*M * ( 2 + (beta-1)*(p*ddp0dpp + 2*dp0dp) + 2*beta*(dp0dp*dp0dp + p0*ddp0dpp) );
+            T dydq   = 2*q * (2*beta+1);
+
+            T n = std::sqrt(dydp*dydp/d + 3.0/2.0*dydq*dydq);
+            T r1 = pt - p - Cp * y * dydp / n;
+            T r2 = qt - q - Cq * y * dydq / n;
+
+            if ( iter > 4 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
+                break;
+            }
+            if (iter == max_iter - 1){ // did not break loop
+                if (p0 > 1.01e-3){
+                    debug("RMA: FATAL did not exit loop at iter = ", iter);
+                    debug("     r1   = ", r1);
+                    debug("     r2   = ", r2);
+                    debug("     p0   = ", p0);
+                    debug("     pt   = ", pt);
+                    debug("     qt   = ", qt);
+                    // exit = 1;
+                }
+                else{ // p0 too small
+                    // p = 1e-15;
+                    // q = 1e-15;
+                    break;
+                }
+            }
+
+            T dndp =   dydp*ddydpp  / (d*n);
+            T dndq = 3*dydq*ddydqq  / (2*n);
+
+            T tmp1 = (ddydpp  * n - dydp * dndp) / (n*n);
+            T tmp2 = (            - dydp * dndq) / (n*n);
+            T tmp3 = (            - dydq * dndp) / (n*n);
+            T tmp4 = (ddydqq  * n - dydq * dndq) / (n*n);
+
+            T Ja = -1 - Cp * (dydp * dydp/n + y*tmp1);
+            T Jb =    - Cp * (dydq * dydp/n + y*tmp2);
+            T Jc =    - Cq * (dydp * dydq/n + y*tmp3);
+            T Jd = -1 - Cq * (dydq * dydq/n + y*tmp4);
+
+            T det = Ja*Jd - Jb*Jc;
+
+            if (abs(det) <= T(1e-6)){
+                debug("RMA: Determinant of Jacobian too small: det = ", det);
+                p -= 0.001*r1;
+                q -= 0.001*r2;
+            } else{
+                p -= ( Jd*r1 - Jb*r2) / det;
+                q -= (-Jc*r1 + Ja*r2) / det;
+            }
+
+            if (q < 1e-15){
+                q = 1e-15;
+            }
+
+        } // end for loop
+
+        return true; // if plastic, i.e., y > 0
+    } // end if outside
+    return false;
+}
+
+
 
 bool PerzynaSinterMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T epv, T S, T visc, T Sinf, T tc, T ec, T xi)
 {
@@ -285,7 +373,7 @@ bool PerzynaSinterMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T 
             T r2     = qt - q - 3*mu*dt/visc * y * dydq/n;
 
             if (iter == max_iter - 1){ // did not break loop
-                debug("PerzynaSinterMCCRMA: FATAL did not exit loop at iter = ", iter);
+                debug("RMA: FATAL did not exit loop at iter = ", iter);
                 debug("S  = ", S);
                 debug("pc = ", pc);
                 debug("y  = ", y);
@@ -320,7 +408,7 @@ bool PerzynaSinterMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T 
             T det = Ja*Jd - Jb*Jc;
 
             if (abs(det) <= T(1e-6)){
-                debug("Determinant of Jacobian too small: det = ", det);
+                debug("RMA: Determinant of Jacobian too small: det = ", det);
                 p -= 0.001*r1;
                 q -= 0.001*r2;
             } else{
