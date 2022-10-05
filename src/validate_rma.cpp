@@ -22,7 +22,7 @@ void Simulation::validateRMA(){
     // bool outside = PerzynaQuadRMA(p_trial, q_trial, exit, M, p0, beta, mu, K, dt, dim, perzyna_visc);
     // bool outside = QuadRMA(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
     // bool outside = CamClayRMA(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
-    bool outside = ModifiedCamClayRMA(p_trial, q_trial, exit, M, p0, beta, mu, K);
+    bool outside = MCCRMA(p_trial, q_trial, exit, M, p0, beta, mu, K);
 
 
     if (exit == 1){

@@ -10,11 +10,8 @@ int main(){
 
       Simulation sim;
 
-      // sim.sim_name = "pbc_muimcc_pic09995_E1e10_a25";
-      sim.sim_name = "test";
-
       sim.directory = "/media/blatny/harddrive4/larsie/";
-      sim.end_frame = 500;
+      sim.end_frame = 1500;
       sim.fps = 50;
 
       T theta = 25 * M_PI / 180;
@@ -24,25 +21,25 @@ int main(){
       sim.gravity_time = 0.0;
 
       sim.cfl = 0.5;
-      sim.flip_ratio = 0.9995;
+      sim.flip_ratio = 0.995;
       sim.n_threads = 4;
 
-      sim.initialize(/* E */ 1e10, /* nu */ 0.3, /* rho */ 1500);
+      sim.initialize(/* E */ 5e6, /* nu */ 0.3, /* rho */ 1000);
 
-      sim.pbc = true;
-      sim.Lx = 12*0.0252256756512;
-      sim.Ly = 1.0;
-      SampleParticles(sim.Lx, sim.Ly,     0.00445, 20, 0, sim);
+      // sim.pbc = true;
+      // sim.Lx = 12*0.0252256756512;
+      // sim.Ly = 1.0;
+      // SampleParticles(sim.Lx, sim.Ly,     0.00445, 20, 0, sim);
 
       // sim.pbc = true;
       // sim.Lx = 12*0.0224848121438;
       // sim.Ly = 1.0;
       // SampleParticles(sim.Lx, sim.Ly,     0.00894, 4, 0, sim);
 
-      // sim.pbc = false;
-      // sim.Lx = 0.5;
-      // sim.Ly = 0.5;
-      // SampleParticles(sim.Lx, sim.Ly,     0.0028, 6, 0, sim);
+      sim.pbc = false;
+      sim.Lx = 0.8;
+      sim.Ly = 0.5;
+      SampleParticles(sim.Lx, sim.Ly,     0.0028, 6, 0, sim);
 
       // sim.pbc = true;
       // sim.Np = 20;
@@ -59,7 +56,7 @@ int main(){
       // }
 
       sim.dt_max = 0.5 * sim.dx / sim.wave_speed;
-      // sim.dt_max = 0.5 * sim.dx / (std::sqrt(1.0e12/1500.0));
+      // sim.dt_max = 0.5 * sim.dx / (std::sqrt(1.0e8/sim.rho));
 
       T offset = -0.1 * sim.dx/2.0; // When the grid is aligned with the boundary, it is important that the object overlap a bit into the particle domain
       std::string name;
@@ -72,7 +69,7 @@ int main(){
       ///////// 2D /////////
       name = "Ground";     InfinitePlate ground     = InfinitePlate(0-offset,      1e20, -1e20, bottom, STICKY,    0.0, name,   0, 0,     1,0);  sim.objects.push_back(ground);
       // name = "Ground";     InfinitePlate ground     = InfinitePlate(0-offset,      1e20, -1e20, bottom, STICKY,    0.0, name,   -0.5, 0,     1,0);  sim.objects.push_back(ground);
-      // name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0-offset,      1e20, -1e20, left,   SEPARATE,  0.5, name,   0, 0,     1,0);  sim.objects.push_back(side_left);
+      name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0-offset,      1e20, -1e20, left,   SEPARATE,  0.5, name,   0, 0,     1,0);  sim.objects.push_back(side_left);
       // name = "SideRight";  InfinitePlate side_right = InfinitePlate(sim.Lx+offset, 1e20, -1e20, right,  SLIP, 0.0, name,   0, 0,     1,0);  sim.objects.push_back(side_right);
       // name = "Compressor"; InfinitePlate compressor = InfinitePlate(sim.Ly+offset, 1e20, -1e20, top,    SEPARATE, 0.0, name,   0, -0.005,  1,0);  sim.objects.push_back(compressor);
 
@@ -84,13 +81,15 @@ int main(){
       // sim.plastic_model = PerzynaVM;
       // sim.plastic_model = PerzynaDP;
       // sim.plastic_model = PerzynaMuIDP;
-      // sim.plastic_model = ModifiedCamClay;
-      // sim.plastic_model = ModifiedCamClayHard;
+      // sim.plastic_model = MCC;
+      // sim.plastic_model = MCCHard;
+      // sim.plastic_model = MCCHardExp;
       // sim.plastic_model = PerzynaMCC;
+      // sim.plastic_model = PerzynaMCCHard;
       sim.plastic_model = PerzynaMuIMCC;
       // sim.plastic_model = PerzynaSinterMCC;
 
-      sim.dp_slope = 0.8;    // NB NB NB NB NB NB NB NB NB
+      sim.dp_slope = 0.35;    // NB NB NB NB NB NB NB NB NB
       sim.dp_cohesion = 0;
 
       sim.vm_ptensile = -5e10;
@@ -98,13 +97,15 @@ int main(){
       sim.yield_stress_min = sim.yield_stress_orig;
 
       sim.perzyna_exp = 1;
-      sim.perzyna_visc = 0.001;
+      sim.perzyna_visc = 1;
 
-      sim.beta = 0.0;
-      sim.M = 0.35;
-      sim.p0 = 1e2;
+      sim.sim_name = "test_pmccmuihardv2_xi50_b0";
 
-      sim.xi = 1; // In case of sintering, xi = 1/(lambda*phi_0)
+      sim.beta = 0;
+      sim.M = sim.dp_slope;
+      sim.p0 = 1e3;
+
+      sim.xi = 50; // In case of sintering, xi = 1/(lambda*phi_0)
 
       sim.xi_nonloc = 0;
       sim.nonlocal_l = 0;
@@ -112,15 +113,15 @@ int main(){
       // For mu(I) rheology only
       sim.rho_s           = 2450;
       sim.grain_diameter  = 7e-4;
-      sim.in_numb_ref     = 1e-3;
-      sim.mu_1            = sim.M; //sim.M
+      sim.in_numb_ref     = 1e-3; // default: 1e-3
+      sim.mu_1            = sim.dp_slope; //sim.M
       sim.mu_2            = 0.7;
 
-      // For sintering only
-      sim.sinter_tc = 20;   // 1     // 20
-      sim.sinter_ec = 0.03; // 1e-3  // 0.03
-      sim.sinter_Sinf = 20;
-      sim.particles.sinter_S.resize(sim.Np); std::fill( sim.particles.sinter_S.begin(), sim.particles.sinter_S.end(), sim.sinter_Sinf );
+      //// For sintering only
+      // sim.sinter_tc = 20;   // 1     // 20
+      // sim.sinter_ec = 0.03; // 1e-3  // 0.03
+      // sim.sinter_Sinf = 20;
+      // sim.particles.sinter_S.resize(sim.Np); std::fill( sim.particles.sinter_S.begin(), sim.particles.sinter_S.end(), sim.sinter_Sinf );
 
       // For MCC only:
       T eps_pl_vol_init = -std::asinh(sim.p0/sim.K) / sim.xi;

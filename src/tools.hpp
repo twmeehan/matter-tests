@@ -39,7 +39,7 @@ typedef double T;
 
 enum PlateType { top, bottom, left, right, front, back };
 enum ElasticModel { StvkWithHencky, NeoHookean };
-enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, DPSoft, ModifiedCamClay, ModifiedCamClayHard, PerzynaVM, PerzynaDP, PerzynaMuIDP, PerzynaMCC, PerzynaMuIMCC, PerzynaMCCHard, PerzynaSinterMCC};
+enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, DPSoft, MCC, MCCHard, MCCHardExp, PerzynaVM, PerzynaDP, PerzynaMuIDP, PerzynaMCC, PerzynaMuIMCC, PerzynaMCCHard, PerzynaSinterMCC};
 enum BoundaryCondition { STICKY, SLIP, SEPARATE };
 
 ///////////////////// TOOLS ////////////////////////

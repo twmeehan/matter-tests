@@ -131,7 +131,6 @@ public:
   // Perzyna
   T perzyna_exp;
   T perzyna_visc;
-  T p00;
 
  // MCC
  T M;
