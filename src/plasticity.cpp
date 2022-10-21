@@ -332,13 +332,14 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 T fac_b = p_trial*(mu_2-mu_1) + mu_sqrt6*dt*fac_Q*std::sqrt(std::abs(p_trial)) - (q_trial-q_yield);
                 T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(std::abs(p_trial)); // always negative
 
+                // this is gamma_dot:
                 T delta_gamma = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always positive because a>0 and c<0
 
                 T mu_i                 = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(std::abs(p_trial)) / delta_gamma + 1.0);
                 particles.muI[p]       = mu_i;
                 particles.viscosity[p] = (mu_i - mu_1) * std::abs(p_trial) / delta_gamma;
 
-                delta_gamma *= dt;
+                delta_gamma *= dt; // this is the actual delta gamma
 
                 hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
@@ -373,6 +374,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             bool perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
             /////// EXLICIT HARDENING
             // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
+            // T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
             // bool perform_rma = MCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K);
             //////////////////////////////////////////////////////////////////////
 
@@ -428,7 +430,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T q_trial = q_stress;
 
             // T particle_p0 = p0;
-            T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p])); // NB small p0 may be problematic for viscous MCC
+            // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
+            T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
             // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]) * (1+particles.sinter_S[p]) );
 
             bool perform_rma;

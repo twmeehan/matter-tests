@@ -12,30 +12,44 @@ legendsize = 5
 
 ###########################
 
-folders = np.array([
-# "perzynaMCC/",
-# "perzynaMCCnew/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.4_xi0.05/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.5_xi0.05/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.6_xi0.05/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.7_xi0.05/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.8_xi0.05/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M1.2_xi0.05/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M2.4_xi0.05/",
-# "/media/blatny/harddrive4/larsie/mcchard_a10_f0.3_M0.6_xi0.05/",
-# "/media/blatny/harddrive4/larsie/mcchard_a20_f0.3_M0.6_xi0.05/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.6_xi0.05/",
-# "/media/blatny/harddrive4/larsie/mcchard_a40_f0.3_M0.6_xi0.05/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.6_xi0.001/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.6_xi0.01/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.6_xi0.05/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.6_xi0.1/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.6_xi1/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.6_xi2/",
-# "/media/blatny/harddrive4/larsie/mcchard_a30_f0.3_M0.6_xi5/",
-"/media/blatny/harddrive4/larsie/mcchard_a20_f0.3_M0.6_xi0.05/",
-"/media/blatny/harddrive4/larsie/mcchard_a20_f0.3_M0.6_xi0.05_r0.001/",
-])
+directory = "/media/blatny/harddrive4/larsie/"
+names = [
+# "slopestart_mccmui_a13/",
+# "slopestart_mccmui_a15/",
+# "slopestart_mccmui_a17/",
+# "slopestart_mccmui_a19/",
+# "slopestart_mccmui_a21/",
+# "slopestart_mccmui_a23/",
+# "slopestart_mccmui_a25/",
+# "test_pmccmuihardv2_xi50_b0/",
+# "test_pmccmuihardv2_xi50_b01/",
+# "test_pmccmuihardv2_xi50_b02/",
+# "test_pmccmuihardv2_xi50_b04/",
+# "test_pmccmuihardv2_xi50_b04_a50/",
+# "test_pmccmuihardv2_xi50_b06/",
+# "test_pmccmuihardv2_xi50_b06_a60/",
+# "feeder_h005_a10/",
+# "feeder_h005_a12/",
+# "feeder_h005_a14/",
+# "feeder_h005_a16/",
+# "feeder_h005_a18/",
+# "feeder_h005_a20/",
+# "feeder_h005_a22/",
+# "feeder_h005_a24/",
+# "feeder_h005_a25/",
+# "feeder_h005_a27/",
+# "feeder_h005_a29/",
+# "feeder_h005_a30/",
+# "feeder_h005_a35/",
+"feeder_h005_a0/",
+]
+
+folders = []
+for i in range(0, len(names)):
+    folders.append(directory + names[i])
+
+print("USING THE FOLLOWING SIMS:")
+print(folders)
 
 ###########################
 
@@ -48,20 +62,16 @@ def get_xmax(folder):
     dx              = float(info[2])
     Np              = int(info[7])
 
-    frames = np.arange(0, end_frame+1)
+    frames = np.arange(1, end_frame+1)
     time = frame_dt * frames
 
-    xp_max = np.zeros(end_frame+1)
+    xp_max = np.zeros(len(frames))
     for frame in frames:
         print("frame = ", frame, " / ", frames[-1])
-        # data = np.loadtxt(folder + "out_part_frame_"+str(frame)+".csv", delimiter=",", skiprows=1, usecols=(0,1,3,4) )
-        # xp  = data[:,0]
-        # yp  = data[:,1]
-        # vxp = data[:,2]
-        # vyp = data[:,3]
-        # vp = np.sqrt(vxp**2 + vyp**2)
-        # xp_max[frame] = np.max(xp)
-        xp_max[frame] = np.max( np.loadtxt(folder + "out_part_frame_"+str(frame)+".csv", delimiter=",", skiprows=1, usecols=(0)) )
+        ### ALT 1:
+        # xp_max[frame] = np.max( np.loadtxt(folder + "out_part_frame_"+str(frame)+".csv", delimiter=",", skiprows=1, usecols=(0)) )
+        ### ALT 2:
+        xp_max[frame-1] = np.max( np.loadtxt(folder + "out_grid_frame_"+str(frame)+".csv", delimiter=",", skiprows=1, usecols=(0)) ) - 2.5*dx
     return (xp_max, time, frames)
 
 
@@ -73,46 +83,11 @@ time_list   = [out.get()[1] for out in outputs]
 frames_list = [out.get()[2] for out in outputs]
 
 
-# xp_max_list = []
-# time_list = []
-# frames_list = []
-#
-# for n in range(0, len(folders)):
-#     folder = folders[n]
-#     print(folder)
-#
-#     info = np.loadtxt(folder + "info.txt")
-#     end_frame = np.loadtxt(folder + "last_written.txt").astype(int)
-#     # end_frame = 10
-#
-#     frame_dt  = 1.0 / float(info[1])
-#     dx              = float(info[2])
-#     Np              = int(info[7])
-#
-#     frames = np.arange(0, end_frame+1)
-#     time = frame_dt * frames
-#
-#     xp_max = np.zeros(end_frame+1)
-#     for frame in frames:
-#         print("frame = ", frame, " / ", frames[-1])
-#         # data = np.loadtxt(folder + "out_part_frame_"+str(frame)+".csv", delimiter=",", skiprows=1, usecols=(0,1,3,4) )
-#         # xp  = data[:,0]
-#         # yp  = data[:,1]
-#         # vxp = data[:,2]
-#         # vyp = data[:,3]
-#         # vp = np.sqrt(vxp**2 + vyp**2)
-#         # xp_max[frame] = np.max(xp)
-#         xp_max[frame] = np.max( np.loadtxt(folder + "out_part_frame_"+str(frame)+".csv", delimiter=",", skiprows=1, usecols=(0)) )
-#
-#     xp_max_list.append(xp_max)
-#     time_list.append(time)
-#     frames_list.append(frames)
-
 fig = plt.figure(figsize = figsize, dpi = dpi)
 ax1 = fig.add_subplot(111)
 ax2 = ax1.twiny()
-for n in range(0, len(folders)):
-    ax1.plot(time_list[n], xp_max_list[n], '.-', label=folders[n])
+for n in range(0, len(names)):
+    ax1.plot(time_list[n], xp_max_list[n], '.-', label=names[n])
     ax2.plot(frames_list[n], xp_max_list[n], '.-')
 ax1.set_xlabel(r'Time')
 ax2.set_xlabel(r'Frame')

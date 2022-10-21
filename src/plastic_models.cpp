@@ -50,7 +50,7 @@ bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K)
             T det = J11*(-J32*J23) + J13*(-J31*J22);
 
             if (abs(det) < T(1e-6)){
-                debug("RMA: Determinant of Jacobian too small: det = ", det);
+                debug("RMA: Determinant of Jacobian too small: det = ", det, ", iter = ", iter);
                 p           -= 0.001*r1;
                 q           -= 0.001*r2;
                 delta_gamma -= 0.001*y / (p0*p0);
@@ -68,6 +68,10 @@ bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K)
             // debug(iter, ":  y    = ", y);
 
         } // end for loop
+
+        p = std::max(p, -beta * p0);
+        p = std::min(p, p0);
+        q = M * std::sqrt((p0 - p) * (beta * p0 + p) / (1 + 2 * beta));
 
         return true; // if plastic, i.e., y > 0
     } // end if outside
@@ -143,7 +147,7 @@ bool MCCHardRMA(T& p, T& q, int& exit, T M, T beta, T mu, T K, T xi, T epv)
             T det = J11*(-J32*J23) + J13*(-J31*J22);
 
             if (abs(det) < T(1e-6)){
-                debug("RMA: Determinant of Jacobian too small: det = ", det);
+                debug("RMA: Determinant of Jacobian too small: det = ", det, ", iter = ", iter);
                 p           -= 0.001*r1;
                 q           -= 0.001*r2;
                 delta_gamma -= 0.001*y / (p0*p0);
@@ -170,7 +174,7 @@ bool MCCHardRMA(T& p, T& q, int& exit, T M, T beta, T mu, T K, T xi, T epv)
 
 bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T epv)
 {
-    T p0 = p00 * std::exp(-xi*epv);
+    T p0 = std::max(T(1e-2), p00 * std::exp(-xi*epv));
     T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
 
     if (y > 0) {
@@ -200,8 +204,8 @@ bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T
                 break;
             }
             if (iter == max_iter - 1){ // did not break loop
-                if (p0 > 1.01e-3){
-                    debug("RMA: FATAL did not exit loop at iter = ", iter);
+                if (p0 > 1.01e-1){
+                    debug("RMA: FATAL did not exit loop at iter = ", iter, ", iter = ", iter);
                     debug(iter, ":  r1   = ", r1);
                     debug(iter, ":  r2   = ", r2);
                     debug(iter, ":  y    = ", y);
@@ -231,10 +235,10 @@ bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T
             T det = J11*(-J32*J23) + J13*(-J31*J22);
 
             if (abs(det) < T(1e-6)){
-                debug("RMA: Determinant of Jacobian too small: det = ", det);
+                debug("RMA: Determinant of Jacobian too small: det = ", det, ", iter = ", iter);
                 p           -= 0.001*r1;
                 q           -= 0.001*r2;
-                delta_gamma -= 0.001*y / (p0*p0);
+                delta_gamma -= 0.001*y / (p00*p00);
             } else{
                 p           -= ( -J32*J23*r1 + J32*J13*r2 - J22*J13*y ) / det;
                 q           -= (  J31*J23*r1 - J31*J13*r2 - J11*J23*y ) / det;
@@ -305,7 +309,7 @@ bool PerzynaMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T 
             T det = Ja*Jd - Jb*Jc;
 
             if (abs(det) <= T(1e-6)){
-                debug("RMA: Determinant of Jacobian too small: det = ", det);
+                debug("RMA: Determinant of Jacobian too small: det = ", det, ", iter = ", iter);
                 p -= 0.001*r1;
                 q -= 0.001*r2;
             } else{
@@ -331,6 +335,8 @@ bool PerzynaMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T 
 bool PerzynaMCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T xi, T mu, T K, T dt, T d, T perzyna_visc, T epv)
 {
     // T p0 = std::max(T(1e-3), K*std::sinh(-xi*epv));
+    // T p0 = std::max(T(1e-2), p00 * std::exp(-xi*epv));
+    // p0 = std::min(p0, T(1e7));
     T p0 = p00 * std::exp(-xi*epv);
 
     T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
@@ -371,14 +377,20 @@ bool PerzynaMCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T xi, T mu, T 
                 break;
             }
             if (iter == max_iter - 1){ // did not break loop
-                if (p0 > 1.01e-3){
-                    debug("RMA: FATAL did not exit loop at iter = ", iter);
-                    debug("     r1   = ", r1);
-                    debug("     r2   = ", r2);
-                    debug("     p0   = ", p0);
-                    debug("     pt   = ", pt);
-                    debug("     qt   = ", qt);
+                if (p0 > 1.01e-2){
+                    debug("RMA: FATAL did not exit loop at iter = ", iter, ", iter = ", iter);
+                    debug("     r1  = ", r1);
+                    debug("     r2  = ", r2);
+                    debug("     p0  = ", p0);
+                    debug("     pt  = ", pt);
+                    debug("     qt  = ", qt);
+                    debug("     p   = ", p);
+                    debug("     q   = ", q);
+                    debug("     y   = ", y);
                     // exit = 1;
+                    p = std::max(std::min(p, T(1e8)), T(-1e8));
+                    q = std::min(q, qt);
+                    break;
                 }
                 else{ // p0 too small
                     // p = 1e-15;

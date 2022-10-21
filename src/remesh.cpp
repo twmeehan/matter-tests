@@ -88,8 +88,8 @@ void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned in
     low_y_init    = min_y - dx * safety_factor_y;
     high_y_init   = max_y + dx * safety_factor_y;
 #ifdef THREEDIM
-    T low_z_init  = min_z - dx * safety_factor_z;
-    T high_z_init = max_z + dx * safety_factor_z;
+    low_z_init  = min_z - dx * safety_factor_z;
+    high_z_init = max_z + dx * safety_factor_z;
 #endif
 
     grid.x = arange(low_x_init, high_x_init+dx, dx);
@@ -131,6 +131,12 @@ void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned in
         debug("               max_x   = ", max_x);
         debug("               min_y   = ", min_y);
         debug("               max_y   = ", max_y);
+        #ifdef THREEDIM
+        debug("               min_z   = ", min_z);
+        debug("               max_z   = ", max_z);
+        debug("               high_z_init  = ", high_z_init);
+        debug("               low_z_init   = ", low_z_init);
+        #endif
         debug("               grid.xc = ", grid.xc);
         debug("               grid.yc = ", grid.yc);
         debug("               len(grid.x) = ", grid.x.size());
@@ -279,6 +285,14 @@ void Simulation::remeshFixedCont(){
         #else
             debug("               grid   = (", Nx, ", ", Ny, ")"  );
         #endif
+
+        #ifdef THREEDIM
+        debug("               min_z   = ", min_z);
+        debug("               max_z   = ", max_z);
+        debug("               high_z  = ", high_z);
+        debug("               low_z   = ", low_z);
+        #endif
+
     #endif
 
 }

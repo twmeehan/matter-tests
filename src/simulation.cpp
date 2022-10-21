@@ -139,7 +139,7 @@ void Simulation::advanceStep(){
     updateDt();
 
     if (current_time_step == 0) {
-        remeshFixedInit(3,3,3);
+        remeshFixedInit(2,2,2);
         // remeshFixed();
     } else {
         remeshFixedCont();
