@@ -289,10 +289,12 @@ void Simulation::positionUpdate(){
         particles.x[p] = particles.x[p] + dt * particles.pic[p];
 
         //// Velicity is updated
-        if (flip_ratio < 0){ // APIC
+        if (flip_ratio < -1){ // APIC
             particles.v[p] = particles.pic[p];
+        } else if (flip_ratio < 0){ // AFLIP
+            particles.v[p] = (-flip_ratio) * ( particles.v[p] + particles.flip[p] ) + (1 - (-flip_ratio)) * particles.pic[p];
         } else{ // PIC-FLIP
-            particles.v[p] = flip_ratio * ( particles.v[p] + particles.flip[p] ) + (1 - flip_ratio) * particles.pic[p];
+            particles.v[p] =   flip_ratio  * ( particles.v[p] + particles.flip[p] ) + (1 -   flip_ratio)  * particles.pic[p];
         }
 
     } // end loop over particles
@@ -314,10 +316,12 @@ void Simulation::positionUpdatePBC(){
         }
 
         //// Velicity is updated
-        if (flip_ratio < 0){ // APIC
+        if (flip_ratio < -1){ // APIC
             particles.v[p] = particles.pic[p];
+        } else if (flip_ratio < 0){ // AFLIP
+            particles.v[p] = (-flip_ratio) * ( particles.v[p] + particles.flip[p] ) + (1 - (-flip_ratio)) * particles.pic[p];
         } else{ // PIC-FLIP
-            particles.v[p] = flip_ratio * ( particles.v[p] + particles.flip[p] ) + (1 - flip_ratio) * particles.pic[p];
+            particles.v[p] =   flip_ratio  * ( particles.v[p] + particles.flip[p] ) + (1 -   flip_ratio)  * particles.pic[p];
         }
 
     } // end loop over particles

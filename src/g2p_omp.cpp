@@ -7,7 +7,7 @@ void Simulation::G2P_Optimized_Parallel(){
     #ifdef WARNINGS
         debug("G2P_Optimized_Parallel");
     #endif
-    
+
     std::fill( particles.pic.begin(),  particles.pic.end(),  TV::Zero() );
     std::fill( particles.flip.begin(), particles.flip.end(), TV::Zero() );
     std::fill( particles.Bmat.begin(), particles.Bmat.end(), TM::Zero() );
@@ -45,7 +45,8 @@ void Simulation::G2P_Optimized_Parallel(){
                             posdiffvec(1) = yi-xp(1);
                             posdiffvec(2) = zi-xp(2);
                             Bp += grid.v[ind(i,j,k)] * posdiffvec.transpose() * weight;
-                        } else{ // PIC-FLIP
+                        }
+                        if (flip_ratio >= -1){ // PIC-FLIP or AFLIP
                             flipp += grid.flip[ind(i,j,k)] * weight;
                         }
                     } // end loop k
@@ -57,7 +58,8 @@ void Simulation::G2P_Optimized_Parallel(){
                         posdiffvec(0) = xi-xp(0);
                         posdiffvec(1) = yi-xp(1);
                         Bp += grid.v[ind(i,j)] * posdiffvec.transpose() * weight;
-                    } else{ // PIC-FLIP
+                    }
+                    if (flip_ratio >= -1){ // PIC-FLIP or AFLIP
                         flipp += grid.flip[ind(i,j)] * weight;
                     }
         #endif
@@ -66,7 +68,8 @@ void Simulation::G2P_Optimized_Parallel(){
             particles_pic_local[p] = vp;
             if (flip_ratio < 0){ // APIC
                 particles_Bmat_local[p] = Bp;
-            } else{ // PIC-FLIP
+            }
+            if (flip_ratio >= -1){ // PIC-FLIP or AFLIP
                 particles_flip_local[p] = flipp;
             }
         } // end loop p
@@ -77,7 +80,8 @@ void Simulation::G2P_Optimized_Parallel(){
                 particles.pic[p] += particles_pic_local[p];
                 if (flip_ratio < 0){ // APIC
                     particles.Bmat[p] += particles_Bmat_local[p];
-                } else{
+                }
+                if (flip_ratio >= -1){ // PIC-FLIP or AFLIP
                     particles.flip[p] += particles_flip_local[p];
                 }
             }
