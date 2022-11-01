@@ -6,7 +6,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == MCC || plastic_model == MCCHard || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC  || plastic_model == PerzynaMCCHard || plastic_model == PerzynaSinterMCC){
+    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == MCC || plastic_model == MCCHard || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC  || plastic_model == PerzynaMCCHard || plastic_model == SinterMCC){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log(); // VonMises
@@ -289,6 +289,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaDP
 
 
+        // else if ((plastic_model == PerzynaMuIMCC) && (particles.x[p](0) < 1.2*Lx)){
         else if (plastic_model == PerzynaMuIDP){
 
             // trial stresses
@@ -368,13 +369,19 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // make copies
             T q_trial = q_stress;
 
+            // T particle_xi = xi;
+            // if (particles.x[p](0) < 1.001*Lx)
+            //     particle_xi = xi*10;
+
             //////////////////////////////////////////////////////////////////////
             /////// IMPLICIT HARDENING
             // bool perform_rma = MCCHardRMA(p_stress, q_stress, exit, M, beta, mu, K, xi, particles.eps_pl_vol_mcc[p]);
             bool perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
             /////// EXLICIT HARDENING
             // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
+            // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
             // T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
+            // T particle_p0 = std::max( T(1e-2), p0*std::exp(xi*(1-std::exp(particles.eps_pl_vol[p]))) );
             // bool perform_rma = MCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K);
             //////////////////////////////////////////////////////////////////////
 
@@ -419,7 +426,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaMuIMCC
 
 
-        else if (plastic_model == MCC || plastic_model == MCCHard || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == PerzynaSinterMCC || plastic_model == PerzynaMCCHard){
+        else if (plastic_model == MCC || plastic_model == MCCHard || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == SinterMCC || plastic_model == PerzynaMCCHard){
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -456,9 +463,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 // perform_rma = PerzynaMCCHardRMA(p_stress, q_stress, exit, M, p0, beta, xi, mu, K, dt, dim, perzyna_visc, particles.eps_pl_vol_mcc[p]);
                 perform_rma = PerzynaMCCHardRMA(p_stress, q_stress, exit, M, p0, beta, xi, mu, K, dt, dim, perzyna_visc, particles.eps_pl_vol[p]);
             }
-            else if (plastic_model == PerzynaSinterMCC)
+            else if (plastic_model == SinterMCC)
             {
-                perform_rma = PerzynaSinterMCCRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, dt, dim, particles.eps_pl_vol[p], particles.sinter_S[p], perzyna_visc, sinter_Sinf, sinter_tc, sinter_ec, xi);
+                perform_rma = SinterMCCRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, dt, sinter_Sc, sinter_tc, sinter_ec, particles.eps_pl_vol[p], particles.sinter_S[p]);
             }
 
             if (perform_rma) { // returns true if it performs a return mapping

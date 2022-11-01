@@ -146,7 +146,7 @@ public:
  T fac_Q;
 
  // Sintering model
- T sinter_Sinf;
+ T sinter_Sc;
  T sinter_tc;
  T sinter_ec;
 
