@@ -375,13 +375,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
             //////////////////////////////////////////////////////////////////////
             /////// IMPLICIT HARDENING
-            // bool perform_rma = MCCHardRMA(p_stress, q_stress, exit, M, beta, mu, K, xi, particles.eps_pl_vol_mcc[p]);
+            // bool perform_rma = MCCHardRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
             bool perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
             /////// EXLICIT HARDENING
             // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
             // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
+            // T particle_p0 = std::max(T(1e-3), p0*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(1.0)));
             // T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
             // T particle_p0 = std::max( T(1e-2), p0*std::exp(xi*(1-std::exp(particles.eps_pl_vol[p]))) );
+            // T particle_p0 = std::max(T(1e-2), (particles.eps_pl_vol[p] < 0) ? p0*(1.0-std::sinh(xi*particles.eps_pl_vol[p])) : p0*(1.0-std::tanh(xi*particles.eps_pl_vol[p])) );
+            // T particle_p0 = std::max(T(1e-3), (particles.eps_pl_vol_mcc[p] < 0) ? K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]) : K*std::tanh(-xi*particles.eps_pl_vol_mcc[p]) );
             // bool perform_rma = MCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K);
             //////////////////////////////////////////////////////////////////////
 
@@ -448,7 +451,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             }
             else if (plastic_model == MCCHard)
             {
-                perform_rma = MCCHardRMA(p_stress, q_stress, exit, M, beta, mu, K, xi, particles.eps_pl_vol_mcc[p]);
+                perform_rma = MCCHardRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p]);
             }
             else if (plastic_model == MCCHardExp)
             {

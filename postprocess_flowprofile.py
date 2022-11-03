@@ -26,30 +26,26 @@ def colorFader(mix): #fade from color c1 (at mix=0) to c2 (mix=0.5) to c3 (mix=1
 ################################################
 
 plate_vel       = 0.0
-slope_angle_deg = 25
-x_slice         = 0.8  # 0.1987 + 0.19
+slope_angle_deg = 24
+x_slice         = 0.8
 
-# name = "conveyor_MCCmui_quad_ppc25_new_xi1_a" + str(slope_angle_deg)
-# name = "conveyor_MCCmui_quad_ppc25_new_xi1_a" + str(slope_angle_deg) + "_test_b3"
-# name = "pbc_flip_muimcc_ppc20_L03"
-# name = "pbc_flip_muidp_ppc20_L05"
-# name = "pbc_muimcc_pic0995_E1e10_a" + str(slope_angle_deg)
-name = "feeder_h005_a" + str(slope_angle_deg)
+# name = "feeder_ramp_nolid_a"+str(slope_angle_deg)
+name = "feeder_ramp_nolid_a"+str(slope_angle_deg)+"_dx2"
 
 folder    = "/media/blatny/harddrive4/larsie/" + name + "/"
-end_frame = 370 #int(np.asscalar(np.loadtxt(folder + "last_written.txt")))
-frames    = np.arange(1,end_frame+1,1)
+# beg_frame = 0
+# end_frame = 100 # int(np.asscalar(np.loadtxt(folder + "last_written.txt")))
+# frames = np.arange(beg_frame,end_frame+1,1)
+frames = np.arange(40, 74, 3)
 
-in_numb_ref    = 1e-3;
-grain_diameter = 7e-4
-rho            = 1500.0
-rho_s          = 2450.0
-mu_1           = 0.35
-mu_2           = 0.7
+height_fixed = 0.038 # put negative if not fixed
 
-dim = 2
-theta_1 = np.arctan(3/(np.sqrt(3)*dim) * mu_1)
-theta_2 = np.arctan(3/(np.sqrt(3)*dim) * mu_2)
+in_numb_ref    = 0.279
+grain_diameter = 0.7e-3
+rho            = 1550
+rho_s          = 2500
+theta_1        = np.radians(20.9)
+theta_2        = np.radians(32.76)
 slope_angle = np.radians(slope_angle_deg)
 
 ################################################
@@ -67,8 +63,13 @@ print("dx = ", dx)
 print("Np = ", Np)
 print("v_max_pred_prefac = ", v_max_pred_prefac)
 
-################################################
+if (height_fixed >= 0):
+    v_max_pred = v_max_pred_prefac * height_fixed**(3.0/2.0)
+    print("-----------------------------------------")
+    print("Predicted v_max       = ", v_max_pred)
+    print("-----------------------------------------")
 
+################################################
 
 cmap = plt.cm.get_cmap("rainbow", 1000)
 norm = matplotlib.colors.Normalize(vmin=min(frames)*frame_dt, vmax=max(frames)*frame_dt)
@@ -77,10 +78,17 @@ sm.set_array([])
 
 fig = plt.figure(figsize = figsize, dpi = dpi)
 plt.title(name.replace("_", " "), fontsize=10)
+
 for frame in frames:
     ax = plt.subplot(111)
     print("Frame = ", frame, " / ", frames[-1])
     data = np.loadtxt(folder + "out_grid_frame_"+str(frame)+".csv", delimiter=",", skiprows=1, usecols=(0,1,3,4) )
+
+    ### EXPERIMENTAL ####
+    # print("Before: ", data.shape)
+    # data = data[np.argwhere(data[:,1] < 0.07).flatten(),:]
+    # print("After: ", data.shape)
+    #####################
 
     xg  = data[:,0]
     inds = np.argwhere(np.abs(xg - x_slice) < 0.5*dx).flatten();
@@ -103,7 +111,7 @@ for frame in frames:
     vg  =  vg[2:-2]
     vxg = vxg[2:-2]
 
-    for i in range(0,200):
+    for i in range(0,1000):
         try:
             if (vxg[-1] < 1e-5+plate_vel):
                 yg  =  yg[0:-1]
@@ -114,20 +122,21 @@ for frame in frames:
             vg  = np.zeros(1)
             vxg = np.zeros(1)
 
-    height = yg[-1]
-
+    if (height_fixed < 0):
+        height = yg[-1]
+    else:
+        height = height_fixed
     print("    Height                = ", height)
-
     v_max_pred = v_max_pred_prefac * height**(3.0/2.0)
     print("    Predicted v_max       = ", v_max_pred)
 
     def bagnold(y, v_max_prefac): # velocity as a function of y
         return v_max_prefac * height**(3.0/2.0) * ( 1 - (1 - y/height)**(3.0/2.0) )
 
-    fit, pcov = curve_fit(bagnold, yg, vxg);
-    print("    Fitted v_max          = ", fit[0] * height**(3.0/2.0) )
-
-    yg_equi = np.linspace(np.min(yg), np.max(yg), 1000)
+    # fit, pcov = curve_fit(bagnold, yg, vxg);
+    # print("    Fitted v_max          = ", fit[0] * height**(3.0/2.0) )
+    #
+    # yg_equi = np.linspace(np.min(yg), np.max(yg), 1000)
     # ax.plot(bagnold(yg_equi, fit[0]), yg_equi, 'k--')
     # ax.plot(bagnold(yg_equi, v_max_pred), yg_equi, 'k-')
 
@@ -136,7 +145,7 @@ for frame in frames:
 
 # plt.xlabel(r'$|v|$')
 plt.xlabel(r'$v_x (m/s)$')
-plt.ylabel(r'$y (m)$', rotation=0, labelpad=10)
+plt.ylabel(r'$y (m)$', rotation=0, labelpad=25)
 plt.grid()
 
 cbaxes = inset_axes(ax, width="30%", height="3%", loc='upper left')

@@ -4,7 +4,7 @@
 #include "tools.hpp"
 
 bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K);
-bool MCCHardRMA(T& p, T& q, int& exit, T M, T beta, T mu, T K, T xi, T epv);
+bool MCCHardRMA(   T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T epv);
 bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T epv);
 bool PerzynaMCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T dt, T d, T perzyna_visc);
 bool PerzynaMCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T xi, T mu, T K, T dt, T d, T perzyna_visc, T epv);

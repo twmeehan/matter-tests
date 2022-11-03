@@ -82,9 +82,27 @@ bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K)
 
 
 
-bool MCCHardRMA(T& p, T& q, int& exit, T M, T beta, T mu, T K, T xi, T epv)
+bool MCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T epv)
 {
-    T p0 = std::max(T(1e-3), K*std::sinh(-xi*epv));
+    T p0;
+
+    //// ALT 1
+    if (epv < 0){
+        p0 = p00 * (1.0 - std::sinh(xi*epv));
+    } else{
+        p0 = p00 * (1.0 - std::tanh(xi*epv));
+    }
+
+    //// ALT 2
+    // T shift_epv = -std::asinh(p00/K) / xi;
+    // if (epv+shift_epv < 0){
+    //     p0 = K*std::sinh(-xi*(epv+shift_epv));
+    // } else{
+    //     p0 = K*std::tanh(-xi*(epv+shift_epv));
+    // }
+
+    // p0 = std::max(T(1e-2), p0);
+
     T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
 
     if (y > 0) {
@@ -98,11 +116,38 @@ bool MCCHardRMA(T& p, T& q, int& exit, T M, T beta, T mu, T K, T xi, T epv)
         for (int iter = 0; iter < max_iter; iter++) {
 
             T delta_epv = (p-pt) / K;
-            p0          = std::max(T(1e-3),    -K * std::sinh(xi*(epv+delta_epv)));
-            T ddp0dpp   = std::max(T(0), -xi*xi/K * std::sinh(xi*(epv+delta_epv)));
-            T dp0dp     = 0;
-            if ( (epv+delta_epv) < 0 )
-                dp0dp   = -xi * std::cosh(xi*(epv+delta_epv));
+            T dp0dp;
+            T ddp0dpp;
+
+            //// ALT 1
+            T s1 = std::sinh(xi*(epv+delta_epv));
+            T c1 = std::cosh(xi*(epv+delta_epv));
+            T c2 = c1 * c1;
+            T c3 = c1 * c1 * c1;
+            if ((epv+delta_epv) < 0){
+                p0      =                  p00 * (1.0 - s1);
+                dp0dp   = -(xi/K)        * p00 * c1;
+                ddp0dpp = -(xi*xi/(K*K)) * p00 * s1;
+            } else{
+                p0      =                  p00 * (1.0 - s1/c1);
+                dp0dp   = -(xi/K)        * p00 / c2;
+                ddp0dpp =  (xi*xi/(K*K)) * p00 * 2.0 * s1 / c3;
+            }
+
+            //// ALT 2
+            // T s1 = std::sinh(-xi*(epv+shift_epv+delta_epv));
+            // T c1 = std::cosh(-xi*(epv+shift_epv+delta_epv));
+            // T c2 = c1 * c1;
+            // T c3 = c1 * c1 * c1;
+            // if ((epv+shift_epv+delta_epv) < 0){
+            //     p0      =  K       * s1;
+            //     dp0dp   = -xi      * c1;
+            //     ddp0dpp =  xi*xi/K * s1;
+            // } else{
+            //     p0      =  K  * s1/c1;
+            //     dp0dp   = -xi / c2;
+            //     ddp0dpp = -xi*xi/K * 2.0*s1/c3;
+            // }
 
             y        = M*M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
             T dydp   = M*M * ( 2*p + (beta-1)*(dp0dp*p+p0) + 2*beta*p0*dp0dp );
@@ -116,7 +161,7 @@ bool MCCHardRMA(T& p, T& q, int& exit, T M, T beta, T mu, T K, T xi, T epv)
                 break;
             }
             if (iter == max_iter - 1){ // did not break loop
-                if (p0 > 1.01e-3){
+                if (p0 > 1.01e-1){
                     debug("RMA: FATAL did not exit loop at iter = ", iter);
                     debug(iter, ":  r1   = ", r1);
                     debug(iter, ":  r2   = ", r2);

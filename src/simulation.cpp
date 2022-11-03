@@ -100,7 +100,7 @@ void Simulation::simulate(){
     final_time = end_frame * frame_dt;
     saveParticleData();
     while (frame < end_frame){
-        std::cout << "Frame: "               << frame              << std::endl;
+        std::cout << "Frame: "               << frame  << " / "    << end_frame  << std::endl;
         std::cout << "               Name: " << sim_name           << std::endl;
         std::cout << "               Step: " << current_time_step  << std::endl;
         std::cout << "               Time: " << time               << std::endl;
