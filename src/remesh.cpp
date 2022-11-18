@@ -1,11 +1,10 @@
 #include "simulation.hpp"
 
-void Simulation::remeshFixed(){
-    // A fixed grid hard-coded for ever simulation
+void Simulation::remeshFixed(unsigned int extra_nodes){
+    // A fixed grid - must hard-coded for every simulation
 
-    int extra_nodes = 0;
-    grid.x = arange(-dx*(1+extra_nodes), dx+(2+extra_nodes)*dx, dx);
-    grid.y = arange(-dx*(1+extra_nodes), Ly+(2+extra_nodes)*dx, dx);
+    grid.x = arange(-dx*(1+extra_nodes), Lx+(2+extra_nodes)*dx, dx);
+    grid.y = arange(-dx,                 Ly+(2+extra_nodes)*dx, dx);
 
     grid.xc = grid.x[0];
     grid.yc = grid.y[0];

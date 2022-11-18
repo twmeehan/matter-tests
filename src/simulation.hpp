@@ -138,6 +138,7 @@ public:
  T p0;
 
  // mu(I) rheology
+ bool use_jop_definitions = false;
  T rho_s;
  T grain_diameter;
  T in_numb_ref;
@@ -167,7 +168,8 @@ public:
   // Precomputations
   T one_over_dx;
   T one_over_dx_square;
-  T mu_sqrt6;
+  T sqrt6 = std::sqrt(6.0);
+  T sqrt2 = std::sqrt(2.0);
   T apicDinverse;
 
   // Functions
@@ -181,7 +183,7 @@ public:
 
   void advanceStep();
   void updateDt();
-  void remeshFixed();
+  void remeshFixed(unsigned int extra_nodes);
   void remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned int sfz);
   void remeshFixedCont();
 

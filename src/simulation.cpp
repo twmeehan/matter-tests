@@ -70,8 +70,6 @@ void Simulation::simulate(){
     nonlocal_l_sq = nonlocal_l * nonlocal_l;
     nonlocal_support = std::ceil(nonlocal_l / dx);
 
-    mu_sqrt6 = mu * std::sqrt((T)6);
-
     fac_Q = in_numb_ref / (grain_diameter*std::sqrt(rho_s)); // NB: Use 2 * grain diameter if using the other definiton
 
     debug("Num of particles = ", Np);
@@ -103,7 +101,7 @@ void Simulation::simulate(){
         std::cout << "Frame: "               << frame  << " / "    << end_frame  << std::endl;
         std::cout << "               Name: " << sim_name           << std::endl;
         std::cout << "               Step: " << current_time_step  << std::endl;
-        std::cout << "               Time: " << time               << std::endl;
+        std::cout << "               Time: " << time   << " -> "   << (frame+1)*frame_dt << std::endl;
         advanceStep();
         if (exit == 1)
             return;
@@ -138,13 +136,16 @@ void Simulation::simulate(){
 void Simulation::advanceStep(){
     updateDt();
 
-    if (current_time_step == 0) {
-        remeshFixedInit(2,2,2);
-        // remeshFixed();
-    } else {
-        remeshFixedCont();
+    if (pbc){
+        if (current_time_step == 0)
+            remeshFixed(4);
+    }else{
+        if (current_time_step == 0) {
+            remeshFixedInit(2,2,2);
+        } else {
+            remeshFixedCont();
+        }
     }
-
 
     moveObjects();
 

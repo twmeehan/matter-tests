@@ -1,6 +1,6 @@
 #include "plastic_models.hpp"
 
-bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K)
+bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_prefac)
 {
     T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
 
@@ -18,8 +18,8 @@ bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K)
             y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
             T k = M*M * (beta*p0 + 2*p - p0);
             T l = 2*q * (2*beta+1);
-            T r1 = pt - p - K    * delta_gamma * k;
-            T r2 = qt - q - 3*mu * delta_gamma * l;
+            T r1 = pt - p - K             * delta_gamma * k;
+            T r2 = qt - q - rma_prefac*mu * delta_gamma * l;
 
             if ( iter > 4 && std::abs(y) < 1e-3 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
                 // debug("RMA: Breaking loop bc small rx at iter = ", iter);
@@ -38,11 +38,11 @@ bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K)
                 exit = 1;
             }
 
-            T J11 = -1 - K*delta_gamma*dkdp;
+            T J11 = -1 - K            *delta_gamma*dkdp;
             T J13 = -K*k;
 
-            T J22 = -1 - 3*mu*delta_gamma*dldq;
-            T J23 = -3*mu*l;
+            T J22 = -1 - rma_prefac*mu*delta_gamma*dldq;
+            T J23 = -rma_prefac*mu*l;
 
             T J31 = k;
             T J32 = l;
@@ -82,7 +82,7 @@ bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K)
 
 
 
-bool MCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T epv)
+bool MCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rma_prefac, T epv)
 {
     T p0;
 
@@ -154,8 +154,8 @@ bool MCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T ep
             T ddydpp = M*M * ( 2 + (beta-1)*(p*ddp0dpp + 2*dp0dp) + 2*beta*(dp0dp*dp0dp + p0*ddp0dpp) );
             T dydq   = 2*q * (2*beta+1);
 
-            T r1 = pt - p - K    * delta_gamma * dydp;
-            T r2 = qt - q - 3*mu * delta_gamma * dydq;
+            T r1 = pt - p - K             * delta_gamma * dydp;
+            T r2 = qt - q - rma_prefac*mu * delta_gamma * dydq;
 
             if ( iter > 4 && std::abs(y) < 1e-3 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
                 break;
@@ -180,11 +180,11 @@ bool MCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T ep
                 }
             }
 
-            T J11 = -1 - K*delta_gamma*ddydpp;
+            T J11 = -1 - K            *delta_gamma*ddydpp;
             T J13 = -K*dydp;
 
-            T J22 = -1 - 3*mu*delta_gamma*ddydqq;
-            T J23 = -3*mu*dydq;
+            T J22 = -1 - rma_prefac*mu*delta_gamma*ddydqq;
+            T J23 = -rma_prefac*mu*dydq;
 
             T J31 = dydp;
             T J32 = dydq;
@@ -217,7 +217,7 @@ bool MCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T ep
     return false;
 }
 
-bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T epv)
+bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rma_prefac, T epv)
 {
     T p0 = std::max(T(1e-2), p00 * std::exp(-xi*epv));
     T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
@@ -242,8 +242,8 @@ bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T
             T ddydpp = M*M * ( 2 + (beta-1)*(p*ddp0dpp + 2*dp0dp) + 2*beta*(dp0dp*dp0dp + p0*ddp0dpp) );
             T dydq   = 2*q * (2*beta+1);
 
-            T r1 = pt - p - K    * delta_gamma * dydp;
-            T r2 = qt - q - 3*mu * delta_gamma * dydq;
+            T r1 = pt - p - K             * delta_gamma * dydp;
+            T r2 = qt - q - rma_prefac*mu * delta_gamma * dydq;
 
             if ( iter > 4 && std::abs(y) < 1e-3 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
                 break;
@@ -268,11 +268,11 @@ bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T
                 }
             }
 
-            T J11 = -1 - K*delta_gamma*ddydpp;
+            T J11 = -1 - K            *delta_gamma*ddydpp;
             T J13 = -K*dydp;
 
-            T J22 = -1 - 3*mu*delta_gamma*ddydqq;
-            T J23 = -3*mu*dydq;
+            T J22 = -1 - rma_prefac*mu*delta_gamma*ddydqq;
+            T J23 = -rma_prefac*mu*dydq;
 
             T J31 = dydp;
             T J32 = dydq;
@@ -496,7 +496,7 @@ bool SinterMCCRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T 
 
         T delta_gamma = 0;
         T S_orig = S;
-        T mu_sqrt6 = mu * std::sqrt(6);
+        T mu_sqrt6 = mu * std::sqrt(6.0);
         T max_iter = 40;
         for (int iter = 0; iter < max_iter; iter++) {
 

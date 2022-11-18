@@ -15,9 +15,6 @@ if (USE_OMP)
 				   explicit_euler_update_omp.cpp
 				   boundary_collision.cpp
 				   validate_rma.cpp
-				   plasticity_projection.cpp
-				   p2g_nonlocal.cpp
-				   g2p_nonlocal.cpp
 				   pbc.cpp
 			       )
 	find_package(OpenMP REQUIRED)
@@ -32,7 +29,6 @@ else (USE_OMP)
 			       p2g.cpp
 			       g2p.cpp
 			       explicit_euler_update.cpp
-				   plasticity_projection.cpp
 				   remesh.cpp
 				   validate_rma.cpp
 				   boundary_collision.cpp
