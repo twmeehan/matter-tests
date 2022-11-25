@@ -11,19 +11,18 @@ int main(){
       Simulation sim;
 
       sim.directory = "/media/blatny/harddrive4/larsie/";
-      sim.end_frame = 250;
+      sim.end_frame = 200;
       // sim.fps = 238.2166843; // gran collapse, so t_star at frame 100
       // sim.fps = 50; // inc slope
-      sim.fps = 1; // 25
+      sim.fps = 7; // 25
 
       // sim.sim_name = "pbc_a28_dx4_jop_E1e9_d7mm";
-      sim.sim_name = "feeder_kam_a19_d2mm";
-      // sim.sim_name = "test_rma_p_imp_b04_po100_xi100";
+      sim.sim_name = "feeder_kam_a37_d2-5mm_dx35_Lx18";
+      // sim.sim_name = "rounded_dp_kam_a22_d500mm";
       // sim.sim_name = "inclslope0_mu25_kam_mccmui";
       // sim.sim_name = "grancoll_kam_mccmui_vgate045";
-      // sim.sim_name = "pbc_dp_flip0_E1e7_frica15";
 
-      T theta_deg = 19;
+      T theta_deg = 37;
       T theta = theta_deg * M_PI / 180;
       sim.gravity = TV::Zero();
       sim.gravity[0] = +9.81 * std::sin(theta);
@@ -32,7 +31,7 @@ int main(){
 
       sim.cfl = 0.5;
       sim.flip_ratio = -0.95;
-      sim.n_threads = 1;
+      sim.n_threads = 2;
 
       // sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1450); // gran collapse
       sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1550); // incl slope and feeder
@@ -59,6 +58,11 @@ int main(){
       //     sim.particles.x[p] = vec;
       // }
 
+      ///// Incl slope for h_stop (Rounded Edges)
+      // sim.pbc = false;
+      // sim.Lx = 0.9;
+      // sim.Ly = 0.1;
+      // SampleParticles(sim.Lx, sim.Ly,     0.001, 6, 4, sim);
 
       ///// Gran collapse:
       // sim.pbc = false;
@@ -72,24 +76,15 @@ int main(){
       // sim.Ly = 0.14;
       // SampleParticles(sim.Lx, sim.Ly,     0.001, 6, 0, sim);
 
-      ///// Feeder with column
-      // sim.pbc = false;
-      // sim.Lx = 0.1;
-      // sim.Ly = 4.0;
-      // T h_gate = 0.05;
-      // T l_gate = 0.1;
-      // SampleParticles(sim.Lx, sim.Ly,     0.002, 6, 0, sim);
-      // for(int p = 0; p < sim.Np; p++)
-      //     sim.particles.x[p](1) += 0.5*sim.dx;
-
       ///// Feeder with ramp
       sim.pbc = false;
-      sim.Lx = 2;
+      sim.Lx = 1.8;
       sim.Ly = 0.1;
       T h_gate = 0.05;
       T l_gate = 0.1;
-      SampleParticles(sim.Lx, sim.Ly,     0.002, 6, 0, sim);
+      // SampleParticles(sim.Lx, sim.Ly,     0.002, 6, 0, sim);
       // SampleParticles(sim.Lx, sim.Ly,     0.0005, 6, 0, sim); // dx3
+      SampleParticles(sim.Lx, sim.Ly,     0.0004, 6, 0, sim); // dx35
       // SampleParticles(sim.Lx, sim.Ly,     0.0003, 6, 0, sim); // dx4
       for(int p = 0; p < sim.Np; p++){
           sim.particles.x[p](0) -= sim.Lx;
@@ -127,7 +122,7 @@ int main(){
       name = "SideRight";  InfinitePlate side_right = InfinitePlate(l_gate, 1e20, h_gate, right, SEPARATE, 0.0, name,   0, 0,     1,0);  sim.objects.push_back(side_right);
       // name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0,      1e20, -1e20, left,   SEPARATE, 0.0, name,   0, 0,     1,0);  sim.objects.push_back(side_left);
       // name = "Top";        InfinitePlate lid        = InfinitePlate(h_gate, 1e20, l_gate, top,   SEPARATE, 0.0, name,   0, 0,     1,0);  sim.objects.push_back(lid);
-      name = "Ramp";       InfinitePlate ramp       = InfinitePlate(l_gate,      0, -1e20, bottom, SEPARATE, 0.2, name,   0, 0,     1,0);  sim.objects.push_back(ramp);
+      name = "Ramp";       InfinitePlate ramp       = InfinitePlate(l_gate,      0, -1e20, bottom, SEPARATE, 0.6, name,   0, 0,     1,0);  sim.objects.push_back(ramp);
       name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0,      l_gate, -1e20, left,   SEPARATE, 0.0, name,   0, 0,     1,0);  sim.objects.push_back(side_left);
 
 
@@ -172,7 +167,7 @@ int main(){
 
       // For mu(I) rheology only
       sim.rho_s           = 2500;
-      sim.grain_diameter  = 2e-3; // incl slope and feeder
+      sim.grain_diameter  = 2.5e-3; // incl slope and feeder
       // sim.grain_diameter  = 2e-3; // gran collapse
       sim.in_numb_ref     = 0.279;
       sim.mu_1            = sim.dp_slope; //sim.M

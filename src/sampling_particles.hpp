@@ -67,12 +67,34 @@
 
         /////// Quadratic Edge
         else if (front_type == 3){
+            T ym = Ly;
+            T xm = Lx - std::sqrt(ym);
             for(int p = 0; p < square_samples.size(); p++){
-                T ym = Ly;
-                T xm = Lx - std::sqrt(ym);
                 if (square_samples[p][0] < xm || square_samples[p][1] < ym - std::pow(square_samples[p][0] - xm, 2) ){
                     samples.push_back(square_samples[p]);
                 }
+            }
+        }
+
+        /////// Double Quadratic Edge
+        else if (front_type == 4){
+            T ym  = Ly;
+            T xmr = Lx - std::sqrt(ym);
+            T xml = std::sqrt(ym);
+            T xmm = Lx / 2.0;
+
+            for(int p = 0; p < square_samples.size(); p++){
+
+                if (square_samples[p][0] > xmm){
+                    if (square_samples[p][0] < xmr || square_samples[p][1] < ym - std::pow(square_samples[p][0] - xmr, 2) ){
+                        samples.push_back(square_samples[p]);
+                    }
+                } else{
+                    if (square_samples[p][0] > xml || square_samples[p][1] < ym - std::pow(xml - square_samples[p][0], 2) ){
+                        samples.push_back(square_samples[p]);
+                    }
+                }
+
             }
         }
         else{

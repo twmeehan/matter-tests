@@ -47,9 +47,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == DruckerPrager){
 
+            T e_mu_prefac;
+            if (use_jop_definitions){
+                e_mu_prefac = sqrt2 * mu;
+            } else{
+                e_mu_prefac = sqrt6 * mu;
+            }
+
             // trial stresses
             T p_trial = -K * hencky_trace;
-            T q_trial = mu*sqrt6 * hencky_deviatoric_norm;
+            T q_trial = e_mu_prefac * hencky_deviatoric_norm;
 
             T q_yield = dp_slope * p_trial + dp_cohesion;
 
@@ -65,13 +72,12 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_vol[p] += (p_proj-p_trial)/K;
             }
             else{ // right of tipe
-                T delta_gamma = hencky_deviatoric_norm - q_yield / (mu*sqrt6);
+                T delta_gamma = hencky_deviatoric_norm - q_yield / (e_mu_prefac);
 
                 if (delta_gamma > 0){ // project to yield surface
                     plastic_count++;
                     particles.delta_gamma[p] = delta_gamma;
 
-                    // NB NB NB NB The following 3 lines should be commented out as this is done in plasticity_projection
                     hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
                     particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                     particles.eps_pl_dev[p] += delta_gamma;
