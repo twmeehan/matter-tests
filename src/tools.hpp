@@ -11,16 +11,21 @@
 #include <assert.h>
 #include <iomanip>
 
-//// PARAMETERS ////
-// typedef float T;
+/////////////////// PARAMETERS ////////////////////
 typedef double T;
-#define SPLINEDEG 2
+// typedef float T;
 // #define THREEDIM // Uncomment for 2D
-// #define DIMENSION 3 // Needed for OMP collapse
-#define DIMENSION 2 // Needed for OMP collapse
 #define TINYPLY_IMPLEMENTATION // Use tinyply
+#define SPLINEDEG 2
 // #define WARNINGS // if write warnings to screen
-////////////////////////
+///////////////////////////////////////////////////
+
+// Needed for OMP collapse:
+#ifdef THREEDIM
+    #define DIMENSION 3
+#else
+    #define DIMENSION 2
+#endif
 
 #ifdef THREEDIM
     typedef Eigen::Matrix<T, 3, 3> TM;

@@ -295,21 +295,18 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaDP
 
 
-        // else if ((plastic_model == PerzynaMuIMCC) && (particles.x[p](0) < 1.2*Lx)){
         else if (plastic_model == PerzynaMuIDP){
 
-            T e_mu_prefac, g_mu_prefac, dg_prefac;
+            T q_prefac, d_prefac;
             if (use_jop_definitions){
-                e_mu_prefac = sqrt2 * mu;
-                // g_mu_prefac = 2.0 * mu;
-                // dg_prefac = 1.0 / sqrt2;
-                g_mu_prefac =  mu;
-                dg_prefac = sqrt2;
+                q_prefac = 1.0/sqrt2; //      q = factor * ||dev(tau)||
+                d_prefac = sqrt2;     //  gamma = factor * ||dev(eps)||
             } else{
-                e_mu_prefac = sqrt6 * mu;
-                g_mu_prefac = e_mu_prefac;
-                dg_prefac = 1;
+                q_prefac = 0.5*sqrt6; // = sqrt(3/2)
+                d_prefac = 1;
             }
+            T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
+            T f_mu_prefac = 2*q_prefac/d_prefac * mu;  // q^tr - q = factor * dt * gamma_dot
 
             // trial stresses
             T p_trial = -K * hencky_trace;
@@ -325,7 +322,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // if left of shifted tip,
             // => project to the original tip given by cohesion only (i.e., not the shifted tip)
             if ((p_trial+p_shift) < p_tip){
-                T delta_gamma     = dg_prefac * hencky_deviatoric_norm;
+                T delta_gamma     = d_prefac * hencky_deviatoric_norm;
                 T p_proj          = p_tip; // > p_trial
                 T eps_pl_vol_inst = (p_proj-p_trial)/K;
                 plastic_count++;
@@ -348,8 +345,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 plastic_count++;
 
-                T fac_a = g_mu_prefac * dt; // always positive
-                T fac_b = p_trial*(mu_2-mu_1) + g_mu_prefac*dt*fac_Q*std::sqrt(std::abs(p_trial)) - (q_trial-q_yield);
+                T fac_a = f_mu_prefac * dt; // always positive
+                T fac_b = p_trial*(mu_2-mu_1) + f_mu_prefac*dt*fac_Q*std::sqrt(std::abs(p_trial)) - (q_trial-q_yield);
                 T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(std::abs(p_trial)); // always negative
 
                 // this is gamma_dot:
@@ -361,7 +358,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 delta_gamma *= dt; // this is the actual delta_gamma
 
-                hencky -= (1.0/dg_prefac) * delta_gamma * hencky_deviatoric;
+                hencky -= (1.0/d_prefac) * delta_gamma * hencky_deviatoric;
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += delta_gamma;
                 particles.delta_gamma[p] = delta_gamma;
@@ -372,17 +369,17 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == PerzynaMuIMCC) {
 
-            T e_mu_prefac, g_mu_prefac, dg_prefac, rma_prefac;
+            T q_prefac, d_prefac;
             if (use_jop_definitions){
-                e_mu_prefac = sqrt2 * mu;
-                // g_mu_prefac =   2.0 * mu; // Jop
-                g_mu_prefac = mu; // Kamrin
-                rma_prefac = 1;
+                q_prefac = 1.0/sqrt2; //      q = factor * ||dev(tau)||
+                d_prefac = sqrt2;     //  gamma = factor * ||dev(eps)||
             } else{
-                e_mu_prefac = sqrt6 * mu;
-                g_mu_prefac = e_mu_prefac;
-                rma_prefac = 3;
+                q_prefac = 0.5*sqrt6; // = sqrt(3/2)
+                d_prefac = 1;
             }
+            T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
+            T f_mu_prefac = 2*q_prefac/d_prefac * mu;  // q^tr - q = factor * dt * gamma_dot
+            T rma_prefac  = 2*q_prefac*q_prefac;
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -390,10 +387,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
             // make copies
             T q_trial = q_stress;
-
-            // T particle_xi = xi;
-            // if (particles.x[p](0) < 1.001*Lx)
-            //     particle_xi = xi*10;
 
             //////////////////////////////////////////////////////////////////////
             /////// IMPLICIT HARDENING
@@ -427,20 +420,20 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     // debug("Setting q = q_yield = ", q_yield);
                 }
                 else{
-                    T fac_a = g_mu_prefac * dt; // always positive
-                    T fac_b = std::abs(p_stress)*(mu_2-mu_1) + g_mu_prefac*dt*fac_Q*std::sqrt(std::abs(p_stress)) - (q_trial-q_yield);
+                    T fac_a = f_mu_prefac * dt; // always positive
+                    T fac_b = std::abs(p_stress)*(mu_2-mu_1) + f_mu_prefac*dt*fac_Q*std::sqrt(std::abs(p_stress)) - (q_trial-q_yield);
                     T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(std::abs(p_stress)); // always negative
 
                     T gamma_dot_S = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always positive because a>0 and c<0
 
-                    q_stress = std::max(q_yield, q_trial - g_mu_prefac * dt * gamma_dot_S);
+                    q_stress = std::max(q_yield, q_trial - f_mu_prefac * dt * gamma_dot_S);
 
                     T mu_i                 = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(std::abs(p_stress)) / gamma_dot_S + 1.0);
                     particles.muI[p]       = mu_i;
                     particles.viscosity[p] = (mu_i - mu_1) * std::abs(p_stress) / gamma_dot_S;
                 }
 
-                T dg_instant = (q_trial - q_stress) / g_mu_prefac;
+                T dg_instant = (q_trial - q_stress) / f_mu_prefac;
                 particles.eps_pl_dev[p] += dg_instant;
                 particles.delta_gamma[p] = dg_instant / dt;
 

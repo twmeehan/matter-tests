@@ -17,7 +17,7 @@
         debug("Sampling particles...");
         std::vector<std::array<T, 3>> samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);
         sim.Np = samples.size();
-        debug("Number of particles samples: ", sim.Np);
+        debug("    Number of particles samples: ", sim.Np);
 
         sim.particles = Particles(sim.Np);
         for(int p = 0; p < sim.Np; p++){
@@ -46,7 +46,7 @@
         std::vector<std::array<T, 2>> square_samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);
         std::vector<std::array<T, 2>> samples;
 
-        debug("Number of square samples: ", square_samples.size());
+        debug("    Number of square samples: ", square_samples.size());
 
         /////// Triangle
         if (front_type == 1){
@@ -98,12 +98,12 @@
             }
         }
         else{
-            debug("No front type specified (1,2,3), using just a square.");
+            debug("    No front type specified (1,2,3), using just a square.");
             samples = square_samples;
         }
 
         sim.Np = samples.size();
-        debug("Number of particles samples: ", sim.Np);
+        debug("    Number of particles samples: ", sim.Np);
 
         sim.particles = Particles(sim.Np);
         for(int p = 0; p < sim.Np; p++){
@@ -115,6 +115,8 @@
         sim.dx = std::sqrt(ppc / T(square_samples.size()) * Lx*Ly);
         sim.particle_volume = sim.dx * sim.dx / ppc;
         sim.particle_mass = sim.rho * sim.particle_volume;
+
+        debug("    dx set to ", sim.dx);
     } // end SampleParticles
 
 #endif // DIMENSION

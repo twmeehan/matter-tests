@@ -49,12 +49,23 @@ void Simulation::createDirectory(){
 
 void Simulation::simulate(){
 
+    #if DIMENSION == 3
+        debug("This is a 3D simulation.");
+    #elif DIMENSION == 2
+        debug("This is a 2D simulation.");
+    #else
+        #error Unsupported spline degree
+    #endif
+
     #if SPLINEDEG == 3
       apicDinverse = 3.0/(dx*dx);
+      debug("Using cubic splines.");
     #elif SPLINEDEG == 2
       apicDinverse = 4.0/(dx*dx);
+      debug("Using quadratic splines.");
     #elif SPLINEDEG == 1
         apicDinverse = 0; // NB not implemented
+        debug("Using linear hat functions.");
     #else
         #error Unsupported spline degree
     #endif
