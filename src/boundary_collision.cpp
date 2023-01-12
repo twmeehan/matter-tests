@@ -307,6 +307,45 @@ void Simulation::boundaryCollision(T xi, T yi, TV& vi){
 
     } // end iterator over objects
 
+    for (AnalyticGround &obj : objects_anal) {
+        bool colliding = obj.inside(xi, yi);
+        if (colliding) {
+            TV v_rel;
+            v_rel(0) = vxi;
+            v_rel(1) = vyi;
+
+            if (obj.bc == STICKY) {
+                v_rel.setZero();
+            } // end STICKY
+
+            else if (obj.bc == SEPARATE) {
+                TV n = obj.normal(xi);
+                T dot = v_rel.dot(n);
+                if (dot < 0){ // if moving towards object
+                    TV v_tang = v_rel - dot * n;
+                    if (obj.friction > 0){
+                        if( -dot * obj.friction < v_tang.norm() )
+                            v_rel = v_tang + v_tang.normalized() * dot * obj.friction;
+                        else
+                            v_rel.setZero();
+                    } else{
+                        v_rel = v_tang;
+                    } // end non-zero friction
+                }
+
+            } // end SEPARATE
+            else {
+                debug("INVALID BOUNDARY CONDITION!!!");
+                exit = 1;
+                return;
+            }
+
+            vxi = v_rel(0);
+            vyi = v_rel(1);
+        } // end if colliding
+
+    } // end iterator over objects
+
 } // end boundaryCollision
 
 #endif

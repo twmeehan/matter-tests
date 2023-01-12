@@ -188,34 +188,39 @@ public:
 };
 
 
+#ifndef THREEDIM
+
+class AnalyticGround{
+public:
+
+    AnalyticGround(BoundaryCondition bc, T friction, std::string name) : bc(bc), friction(friction), name(name) {}
+
+    bool inside(T x, T y){
+
+        T y_limit = 0.0475 / std::cosh(25*(x-0.43));
+
+        if (y < y_limit)
+            return true;
+        else
+            return false;
+    }
+
+    TV normal(T x){
+        T arg = 25*(x-0.43);
+        T b_der = -25 * 0.0475 * std::tanh(arg) / std::cosh(arg);
+        TV n;
+        n(0) = -b_der;
+        n(1) = 1;
+        return n.normalized();
+    }
+
+    BoundaryCondition bc;
+    T friction;
+    std::string name;
+
+};
+
+#endif // TWODIM
+
+
 #endif  // OBJECT_HPP
-
-
-
-
-
-
-// class TopPlate : public InfinitePlate{
-// public:
-//   TopPlate(T y_object, T vy_object, BoundaryCondition bc) : InfinitePlate(0, y_object, 0, 0, vy_object, 0, top, bc, "TopPlate") {}
-//
-//   bool inside(T x, T y, T z){
-//       return distance(x,y,z) <= 0; // inside if dist is negative
-//   }
-//
-//   T distance(T x, T y, T z) {
-//       return (y_object - y);
-//   }
-//
-//   void move(T dt, T frame_dt, T time) {
-//
-//       if (time < frame_dt) {
-//           vy_object = (vy_object_original / frame_dt) * time;
-//       }
-//       else{
-//           vy_object = vy_object_original;
-//       }
-//       y_object += dt * vy_object;
-//   }
-//
-// };
