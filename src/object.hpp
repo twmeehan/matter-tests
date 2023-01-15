@@ -190,33 +190,55 @@ public:
 
 #ifndef THREEDIM
 
-class AnalyticGround{
+class AnalyticObj{
 public:
 
-    AnalyticGround(BoundaryCondition bc, T friction, std::string name) : bc(bc), friction(friction), name(name) {}
+    AnalyticObj(BoundaryCondition bc, T friction, std::string name, int type) : bc(bc), friction(friction), name(name), type(type) {}
 
     bool inside(T x, T y){
 
-        T y_limit = 0.0475 / std::cosh(25*(x-0.43));
+        if (type == 0){
+            T y_limit = 0.0475 / std::cosh(25*(x-0.43));
 
-        if (y < y_limit)
-            return true;
-        else
-            return false;
+            if (y < y_limit)
+                return true;
+            else
+                return false;
+
+        } else{
+            T y_limit = 0.016 + type * x*x;
+
+            if (y > y_limit)
+                return true;
+            else
+                return false;
+
+        }
     }
 
     TV normal(T x){
-        T arg = 25*(x-0.43);
-        T b_der = -25 * 0.0475 * std::tanh(arg) / std::cosh(arg);
+
         TV n;
-        n(0) = -b_der;
-        n(1) = 1;
+
+        if (type == 0){
+            T arg = 25*(x-0.43);
+            T b_der = -25 * 0.0475 * std::tanh(arg) / std::cosh(arg);
+            n(0) = -b_der;
+            n(1) = 1;
+        } else{
+            T b_der = 2.0 * type * x;
+            n(0) = -b_der;
+            n(1) = 1;
+            n *= -1;
+        }
+
         return n.normalized();
     }
 
     BoundaryCondition bc;
     T friction;
     std::string name;
+    int type;
 
 };
 

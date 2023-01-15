@@ -158,7 +158,7 @@ public:
 
   // Objects
   std::vector<InfinitePlate> objects;
-  std::vector<AnalyticGround> objects_anal;
+  std::vector<AnalyticObj> objects_anal;
 
   // Runtime measurements
   T runtime_p2g;
