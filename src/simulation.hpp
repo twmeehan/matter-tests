@@ -36,7 +36,8 @@ public:
   unsigned int frame;
   unsigned int end_frame;
   int exit;
-  bool pbc;
+  bool pbc = false;
+  bool pbc_special = false;
   T time;
   T final_time;
   T fps;
@@ -215,7 +216,6 @@ public:
 #endif
 
   void positionUpdate();
-  void positionUpdatePBC();
   void PBCAddParticles1D();
   void PBCAddParticles(unsigned int safety_factor);
   void PBCDelParticles();

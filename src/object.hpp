@@ -193,7 +193,7 @@ public:
 class AnalyticObj{
 public:
 
-    AnalyticObj(BoundaryCondition bc, T friction, std::string name, int type) : bc(bc), friction(friction), name(name), type(type) {}
+    AnalyticObj(BoundaryCondition bc, T friction, std::string name, int type, T h = 0.016) : bc(bc), friction(friction), name(name), type(type), h(h) {}
 
     bool inside(T x, T y){
 
@@ -206,7 +206,7 @@ public:
                 return false;
 
         } else{
-            T y_limit = 0.016 + type * x*x;
+            T y_limit = h + type * x*x;
 
             if (y > y_limit)
                 return true;
@@ -239,6 +239,7 @@ public:
     T friction;
     std::string name;
     int type;
+    T h;
 
 };
 

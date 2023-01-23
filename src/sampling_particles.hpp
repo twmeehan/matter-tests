@@ -48,6 +48,12 @@
 
         debug("    Number of square samples: ", square_samples.size());
 
+        sim.dx = std::sqrt(ppc / T(square_samples.size()) * Lx*Ly);
+        sim.particle_volume = sim.dx * sim.dx / ppc;
+        sim.particle_mass = sim.rho * sim.particle_volume;
+
+        debug("    dx set to ", sim.dx);
+
         /////// Triangle
         if (front_type == 1){
             for(int p = 0; p < square_samples.size(); p++){
@@ -97,6 +103,26 @@
 
             }
         }
+        /////// Quadratic Gate
+        else if (front_type == 5){
+            for(int p = 0; p < square_samples.size(); p++){
+                T xp = square_samples[p][0];
+                T y_gate = 0.016 + 100*(xp-Lx)*(xp-Lx);
+                if (square_samples[p][1] < (y_gate-kRadius*ppc*2)){
+                    samples.push_back(square_samples[p]);
+                }
+            }
+        }
+        /////// Quadratic Gate Version 2
+        else if (front_type == 6){
+            for(int p = 0; p < square_samples.size(); p++){
+                T xp = square_samples[p][0];
+                T y_gate = 0.05 + 100*(xp-Lx)*(xp-Lx) - 0.5*sim.dx;
+                if (square_samples[p][1] < y_gate){
+                    samples.push_back(square_samples[p]);
+                }
+            }
+        }
         else{
             debug("    No front type specified (1,2,3), using just a square.");
             samples = square_samples;
@@ -112,11 +138,7 @@
             }
         }
 
-        sim.dx = std::sqrt(ppc / T(square_samples.size()) * Lx*Ly);
-        sim.particle_volume = sim.dx * sim.dx / ppc;
-        sim.particle_mass = sim.rho * sim.particle_volume;
 
-        debug("    dx set to ", sim.dx);
     } // end SampleParticles
 
 #endif // DIMENSION

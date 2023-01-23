@@ -4,61 +4,20 @@
 
 void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
 
-    // Reference to velocity components
-    T& vxi = vi(0);
-    T& vyi = vi(1);
-    T& vzi = vi(2);
+    // Make a copy
+    TV vi_orig = vi;
 
     // New positions
-    xi += dt * vxi;
-    yi += dt * vyi;
-    zi += dt * vzi;
-
-    for (AnalyticObj &obj : objects_anal) {
-        bool colliding = obj.inside(xi, yi);
-        if (colliding) {
-            TV v_rel;
-            v_rel(0) = vxi;
-            v_rel(1) = vyi;
-
-            if (obj.bc == STICKY) {
-                v_rel.setZero();
-            } // end STICKY
-
-            else if (obj.bc == SEPARATE) {
-                TV n = obj.normal(xi);
-                T dot = v_rel.dot(n);
-                if (dot < 0){ // if moving towards object
-                    TV v_tang = v_rel - dot * n;
-                    if (obj.friction > 0){
-                        if( -dot * obj.friction < v_tang.norm() )
-                            v_rel = v_tang + v_tang.normalized() * dot * obj.friction;
-                        else
-                            v_rel.setZero();
-                    } else{
-                        v_rel = v_tang;
-                    } // end non-zero friction
-                }
-
-            } // end SEPARATE
-            else {
-                debug("INVALID BOUNDARY CONDITION!!!");
-                exit = 1;
-                return;
-            }
-
-            vxi = v_rel(0);
-            vyi = v_rel(1);
-        } // end if colliding
-
-    } // end iterator over objects
+    xi += dt * vi(0);
+    yi += dt * vi(1);
+    zi += dt * vi(2);
 
     for (InfinitePlate &obj : objects) {
         bool colliding = obj.inside(xi, yi, zi);
         if (colliding) {
-            T vx_rel = vxi - obj.vx_object;
-            T vy_rel = vyi - obj.vy_object;
-            T vz_rel = vzi - obj.vz_object;
+            T vx_rel = vi_orig(0) - obj.vx_object;
+            T vy_rel = vi_orig(1) - obj.vy_object;
+            T vz_rel = vi_orig(2) - obj.vz_object;
 
             if (obj.bc == STICKY) {
                 vx_rel = 0;
@@ -211,34 +170,67 @@ void Simulation::boundaryCollision(T xi, T yi, T zi, TV& vi){
                 return;
             }
 
-            vxi = vx_rel + obj.vx_object;
-            vyi = vy_rel + obj.vy_object;
-            vzi = vz_rel + obj.vz_object;
+            vi(0) = vx_rel + obj.vx_object;
+            vi(1) = vy_rel + obj.vy_object;
+            vi(2) = vz_rel + obj.vz_object;
         } // end if colliding
 
     } // end iterator over objects
 
 } // end boundaryCollision
 
-#else
+#else // TWODIM
 
 void Simulation::boundaryCollision(T xi, T yi, TV& vi){
 
-    // TODO: Make this a vector-based function
-
-    // Reference to velocity components
-    T& vxi = vi(0);
-    T& vyi = vi(1);
+    // Make a copy
+    TV vi_orig = vi;
 
     // New positions
-    xi += dt * vxi;
-    yi += dt * vyi;
+    xi += dt * vi(0);
+    yi += dt * vi(1);
+
+    for (AnalyticObj &obj : objects_anal) {
+        bool colliding = obj.inside(xi, yi);
+        if (colliding) {
+            TV v_rel = vi_orig;
+
+            if (obj.bc == STICKY) {
+                v_rel.setZero();
+            } // end STICKY
+
+            else if (obj.bc == SEPARATE) {
+                TV n = obj.normal(xi);
+                T dot = v_rel.dot(n);
+                if (dot < 0){ // if moving towards object
+                    TV v_tang = v_rel - dot * n;
+                    if (obj.friction > 0){
+                        if( -dot * obj.friction < v_tang.norm() )
+                            v_rel = v_tang + v_tang.normalized() * dot * obj.friction;
+                        else
+                            v_rel.setZero();
+                    } else{
+                        v_rel = v_tang;
+                    } // end non-zero friction
+                }
+
+            } // end SEPARATE
+            else {
+                debug("INVALID BOUNDARY CONDITION!!!");
+                exit = 1;
+                return;
+            }
+
+            vi = v_rel;
+        } // end if colliding
+
+    } // end iterator over objects
 
     for (InfinitePlate &obj : objects) {
         bool colliding = obj.inside(xi, yi);
         if (colliding) {
-            T vx_rel = vxi - obj.vx_object;
-            T vy_rel = vyi - obj.vy_object;
+            T vx_rel = vi_orig(0) - obj.vx_object;
+            T vy_rel = vi_orig(1) - obj.vy_object;
 
             if (obj.bc == STICKY) {
                 vx_rel = 0;
@@ -340,8 +332,8 @@ void Simulation::boundaryCollision(T xi, T yi, TV& vi){
                 return;
             }
 
-            vxi = vx_rel + obj.vx_object;
-            vyi = vy_rel + obj.vy_object;
+            vi(0) = vx_rel + obj.vx_object;
+            vi(1) = vy_rel + obj.vy_object;
         } // end if colliding
 
     } // end iterator over objects
