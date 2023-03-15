@@ -1,5 +1,24 @@
 #include "tools.hpp"
 
+
+unsigned int countlines(std::string file_name)
+{
+    std::ifstream file(file_name);
+
+    std::string line;
+    unsigned int p = 0; // particle
+
+    if ( file.is_open() ) {
+        while ( std::getline(file, line) ) {
+            p++;
+        }
+    }
+    else {
+        std::cout << "Unable to open '"<< file_name << "'" << std::endl;
+    }
+    return p;
+}
+
 unsigned int load_array(std::vector<TV>& array, std::string file_name)
 {
     std::ifstream file(file_name);

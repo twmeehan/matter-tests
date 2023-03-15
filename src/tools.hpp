@@ -265,6 +265,7 @@ inline T d2Ndu2(T u){
 
 #endif
 
+unsigned int countlines(std::string file_name);
 unsigned int load_array(std::vector<TV>& array, std::string file_name);
 std::vector<T> linspace(T a, T b, size_t N);
 std::vector<T> arange(T start, T stop, T step);
