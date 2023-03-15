@@ -22,13 +22,11 @@ void Simulation::saveInfo(){
     infoFile.close();
 }
 
-void Simulation::saveParticleData(std::string extra){
+void Simulation::saveAvgData(){
 
-    std::vector<T> pressure_vec(Np);
-    std::vector<T> devstress_vec(Np);
-    std::vector<T> Je_vec(Np);
-    // TM volavg_tau = TM::Zero();
-    // T Jsum = 0;
+    TM volavg_cauchy = TM::Zero();
+    TM volavg_kirchh = TM::Zero();
+    T Jsum = 0;
     for(int p = 0; p < Np; p++){
 
         TM Fe = particles.F[p];
@@ -41,8 +39,63 @@ void Simulation::saveParticleData(std::string extra){
 
         T Je = Fe.determinant();
         T J = Je * std::exp( particles.eps_pl_vol[p] );
-        // volavg_tau += tau * J;
-        // Jsum += J;
+        Jsum += J;
+
+        volavg_cauchy += tau;
+        volavg_kirchh += tau * J;
+    }
+
+    // T volavg_pressure = -volavg_tau.trace() / dim;
+    // TM volavg_tau_dev = volavg_tau + volavg_pressure * I;
+    // T volavg_devstress = std::sqrt(3.0/2.0 * selfDoubleDot(volavg_tau_dev));
+
+    volavg_cauchy /= Np;
+    volavg_kirchh /= Np;
+    // must later be multiplied by phi_0/(1+eps_V)
+
+    std::ofstream outFile1(directory + sim_name + "/out_avgcauchy_frame_" + std::to_string(frame) + ".csv");
+    outFile1 << volavg_cauchy(0,0)    << ","
+             << volavg_cauchy(0,1)    << ","
+             << volavg_cauchy(1,0)    << ","
+             << volavg_cauchy(1,1)    << "\n";
+    outFile1.close();
+
+    std::ofstream outFile2(directory + sim_name + "/out_avgkirchh_frame_" + std::to_string(frame) + ".csv");
+    outFile2 << volavg_kirchh(0,0)    << ","
+             << volavg_kirchh(0,1)    << ","
+             << volavg_kirchh(1,0)    << ","
+             << volavg_kirchh(1,1)    << "\n";
+    outFile2.close();
+
+    std::ofstream outFile3(directory + sim_name + "/out_avgdetF_frame_" + std::to_string(frame) + ".csv");
+    outFile3 << Jsum/Np  << "\n";
+    outFile3.close();
+
+    std::ofstream outFile4(directory + sim_name + "/last_written.txt");
+    outFile4 << std::to_string(frame) << "\n";
+    outFile4.close();
+
+}
+
+
+void Simulation::saveParticleData(std::string extra){
+
+    std::vector<T> pressure_vec(Np);
+    std::vector<T> devstress_vec(Np);
+    std::vector<T> Je_vec(Np);
+
+    for(int p = 0; p < Np; p++){
+
+        TM Fe = particles.F[p];
+
+        TM tau; // particles.tau[p];
+        if (elastic_model == NeoHookean)
+            tau = NeoHookeanPiola(Fe) * Fe.transpose();
+        else if (elastic_model == StvkWithHencky)
+            tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
+
+        T Je = Fe.determinant();
+        // T J = Je * std::exp( particles.eps_pl_vol[p] );
 
         T pressure  = -tau.trace() / dim;
         TM tau_dev = tau + pressure * TM::Identity();
@@ -256,19 +309,6 @@ void Simulation::saveParticleData(std::string extra){
     outFile.close();
 
 #endif
-
-    // UNCOMMENT IF OUTPUTTING VOL-AVG STRESS INVARIANTS:
-/*
-    volavg_tau /= Jsum;
-    T volavg_pressure = -volavg_tau.trace() / dim;
-    TM volavg_tau_dev = volavg_tau + volavg_pressure * I;
-    T volavg_devstress = std::sqrt(3.0/2.0 * selfDoubleDot(volavg_tau_dev));
-    std::ofstream outFile2(directory + sim_name + "/out_pq_frame_" + extra + std::to_string(frame) + ".csv");
-    outFile2 << volavg_pressure    << ","
-             << volavg_devstress   << ","
-             << Jsum               << "\n";
-    outFile2.close();
-*/
 
     std::ofstream outFile3(directory + sim_name + "/last_written.txt");
     outFile3 << std::to_string(frame) << "\n";

@@ -178,6 +178,7 @@ public:
   void initialize(T E, T nu, T density);
   void simulate();
   void saveInfo();
+  void saveAvgData();
   void saveParticleData(std::string extra = "");
   void saveGridData(std::string extra = "");
 
