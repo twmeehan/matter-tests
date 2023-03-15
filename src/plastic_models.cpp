@@ -104,6 +104,7 @@ bool MCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rm
     // p0 = std::max(T(1e-2), p0);
 
     T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+    // T y = M * M * (p - p0) * (p + beta * p0) + (q * q);
 
     if (y > 0) {
 
@@ -111,6 +112,7 @@ bool MCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rm
         T pt = p;
         T qt = q;
         T ddydqq = 4*beta+2;
+        // T ddydqq = 2;
 
         T max_iter = 40;
         for (int iter = 0; iter < max_iter; iter++) {
@@ -150,9 +152,11 @@ bool MCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rm
             // }
 
             y        = M*M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+            // y        = M*M * (p - p0) * (p + beta * p0) + (q * q);
             T dydp   = M*M * ( 2*p + (beta-1)*(dp0dp*p+p0) + 2*beta*p0*dp0dp );
             T ddydpp = M*M * ( 2 + (beta-1)*(p*ddp0dpp + 2*dp0dp) + 2*beta*(dp0dp*dp0dp + p0*ddp0dpp) );
             T dydq   = 2*q * (2*beta+1);
+            // T dydq   = 2*q;
 
             T r1 = pt - p - K             * delta_gamma * dydp;
             T r2 = qt - q - rma_prefac*mu * delta_gamma * dydq;
@@ -211,6 +215,7 @@ bool MCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rm
         p = std::max(p, -beta * p0);
         p = std::min(p, p0);
         q = M * std::sqrt((p0 - p) * (beta * p0 + p) / (1 + 2 * beta));
+        // q = M * std::sqrt((p0 - p) * (beta * p0 + p));
 
         return true; // if plastic, i.e., y > 0
     } // end if outside
@@ -220,14 +225,16 @@ bool MCCHardRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rm
 bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rma_prefac, T epv)
 {
     T p0 = std::max(T(1e-2), p00 * std::exp(-xi*epv));
-    T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+    // T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+    T y = M * M * (p - p0) * (p + beta * p0) + (q * q);
 
     if (y > 0) {
 
         T delta_gamma = 0;
         T pt = p;
         T qt = q;
-        T ddydqq = 4*beta+2;
+        // T ddydqq = 4*beta+2;
+        T ddydqq = 2;
 
         T max_iter = 40;
         for (int iter = 0; iter < max_iter; iter++) {
@@ -237,10 +244,12 @@ bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T
             T dp0dp     = -xi/K * p0;
             T ddp0dpp   = xi*xi / (K*K) * p0;
 
-            y        = M*M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+            // y        = M*M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+            y        = M*M * (p - p0) * (p + beta * p0) + (q * q);
             T dydp   = M*M * ( 2*p + (beta-1)*(dp0dp*p+p0) + 2*beta*p0*dp0dp );
             T ddydpp = M*M * ( 2 + (beta-1)*(p*ddp0dpp + 2*dp0dp) + 2*beta*(dp0dp*dp0dp + p0*ddp0dpp) );
-            T dydq   = 2*q * (2*beta+1);
+            // T dydq   = 2*q * (2*beta+1);
+            T dydq   = 2*q;
 
             T r1 = pt - p - K             * delta_gamma * dydp;
             T r2 = qt - q - rma_prefac*mu * delta_gamma * dydq;
@@ -298,7 +307,8 @@ bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T
 
         p = std::max(p, -beta * p0);
         p = std::min(p, p0);
-        q = M * std::sqrt((p0 - p) * (beta * p0 + p) / (1 + 2 * beta));
+        // q = M * std::sqrt((p0 - p) * (beta * p0 + p) / (1 + 2 * beta));
+        q = M * std::sqrt((p0 - p) * (beta * p0 + p));
 
         return true; // if plastic, i.e., y > 0
     } // end if outside
