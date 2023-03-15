@@ -123,6 +123,16 @@
                 }
             }
         }
+        /////// Steady mass in front of bump
+        else if (front_type == 7){
+            for(int p = 0; p < square_samples.size(); p++){
+                T xp = square_samples[p][0];
+                T y_ground = 0.0475 / std::cosh(25*(xp-0.13));
+                if (square_samples[p][1] > y_ground){
+                    samples.push_back(square_samples[p]);
+                }
+            }
+        }
         else{
             debug("    No front type specified (1,2,3), using just a square.");
             samples = square_samples;
