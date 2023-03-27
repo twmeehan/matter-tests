@@ -412,7 +412,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 T ep = p_stress / (K*dim);
                 T eps_pl_vol_inst = hencky_trace + dim * ep;
                 particles.eps_pl_vol[p]     += eps_pl_vol_inst;
-                particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
+                // particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
 
                 T q_yield = q_stress;
                 if (q_trial < (q_yield + 1e-5)) {
@@ -420,17 +420,20 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     // debug("Setting q = q_yield = ", q_yield);
                 }
                 else{
+                    // T p_special = std::abs(p_stress);
+                    T p_special = p_stress + beta * p0*std::exp(-xi*particles.eps_pl_vol[p]);
+
                     T fac_a = f_mu_prefac * dt; // always positive
-                    T fac_b = std::abs(p_stress)*(mu_2-mu_1) + f_mu_prefac*dt*fac_Q*std::sqrt(std::abs(p_stress)) - (q_trial-q_yield);
-                    T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(std::abs(p_stress)); // always negative
+                    T fac_b = p_special*(mu_2-mu_1) + f_mu_prefac*dt*fac_Q*std::sqrt(p_special) - (q_trial-q_yield);
+                    T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(p_special); // always negative
 
                     T gamma_dot_S = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always positive because a>0 and c<0
 
                     q_stress = std::max(q_yield, q_trial - f_mu_prefac * dt * gamma_dot_S);
 
-                    T mu_i                 = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(std::abs(p_stress)) / gamma_dot_S + 1.0);
+                    T mu_i                 = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(p_special) / gamma_dot_S + 1.0);
                     particles.muI[p]       = mu_i;
-                    particles.viscosity[p] = (mu_i - mu_1) * std::abs(p_stress) / gamma_dot_S;
+                    particles.viscosity[p] = (mu_i - mu_1) * p_special / gamma_dot_S;
                 }
 
                 T dg_instant = (q_trial - q_stress) / f_mu_prefac;
