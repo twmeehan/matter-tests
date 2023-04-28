@@ -188,7 +188,7 @@ public:
 };
 
 
-#ifndef THREEDIM
+// #ifndef THREEDIM
 
 class AnalyticObj{
 public:
@@ -197,15 +197,15 @@ public:
 
     bool inside(T x, T y){
 
-        if (type == 0){
-            T y_limit = 0.0475 / std::cosh(25*(x-0.43));
+        if (type == 0){     // viroulet bump
+            T y_limit = 0.0475 / std::cosh(25*(x-h));
 
             if (y < y_limit)
                 return true;
             else
                 return false;
 
-        } else if (type > 0){
+        } else if (type > 0){ // quad gate
             T y_limit = h + type * x*x;
 
             if (y > y_limit)
@@ -213,7 +213,7 @@ public:
             else
                 return false;
 
-        } else{ // type < 0
+        } else{ // type < 0   // ramp
             T y_limit = 0.1 * std::tanh(type*x);
             if (y < y_limit)
                 return true;
@@ -228,7 +228,7 @@ public:
         TV n;
 
         if (type == 0){
-            T arg = 25*(x-0.43);
+            T arg = 25*(x-h);
             T b_der = -25 * 0.0475 * std::tanh(arg) / std::cosh(arg);
             n(0) = -b_der;
             n(1) = 1;
@@ -255,7 +255,7 @@ public:
 
 };
 
-#endif // TWODIM
+// #endif // TWODIM
 
 
 #endif  // OBJECT_HPP

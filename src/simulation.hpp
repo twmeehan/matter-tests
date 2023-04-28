@@ -139,7 +139,6 @@ public:
  T p0;
 
  // mu(I) rheology
- bool use_jop_definitions = false;
  T rho_s;
  T grain_diameter;
  T in_numb_ref;

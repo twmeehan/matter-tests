@@ -123,11 +123,13 @@ void Simulation::simulate(){
             std::cout << "Saving frame " << frame << std::endl;
             saveParticleData();
             saveGridData();
+            // saveAvgData();
         }
         if (std::abs(final_time-time) < 1e-15 || final_time < time){
             std::cout << "The simulation ended successfully at time = " << time << std::endl;
             saveParticleData();
             saveGridData();
+            // saveAvgData();
             break;
         }
     }
@@ -316,16 +318,16 @@ void Simulation::positionUpdate(){
         }
 
         if (pbc_special){
-            // if (particles.x[p](0) > 0.8){
-            //     particles.x[p](0)  = -0.1;
-            //     particles.x[p](1) +=  0.27;
-            // }
-            if (particles.x[p](0) > 1.8){
-                particles.x[p](0)  = -0.18;
-                particles.x[p](1) +=  0.5;
-
-                particles.v[p](0) *= 0.1;
+            if (particles.x[p](0) > 0.8){ // 0.8 for nico bump
+                particles.x[p](0)  = -0.1;
+                particles.x[p](1) +=  0.27;
             }
+            // if (particles.x[p](0) > 1.8){
+            //     particles.x[p](0)  = -0.18;
+            //     particles.x[p](1) +=  0.5;
+
+               // particles.v[p](0) *= 0.1;
+            // }
         }
 
     } // end loop over particles

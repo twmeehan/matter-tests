@@ -49,9 +49,10 @@ void Simulation::saveAvgData(){
     // TM volavg_tau_dev = volavg_tau + volavg_pressure * I;
     // T volavg_devstress = std::sqrt(3.0/2.0 * selfDoubleDot(volavg_tau_dev));
 
-    volavg_cauchy /= Np;
-    volavg_kirchh /= Np;
-    // must later be multiplied by phi_0/(1+eps_V)
+    volavg_cauchy /= Jsum;
+    volavg_kirchh /= Jsum;
+    // In the porous case: both these terms must in the post-processing be
+    // multiplied by phi(t) = phi_0 * Javg / (1+eps_V)
 
     std::ofstream outFile1(directory + sim_name + "/out_avgcauchy_frame_" + std::to_string(frame) + ".csv");
     outFile1 << volavg_cauchy(0,0)    << ","
@@ -67,7 +68,7 @@ void Simulation::saveAvgData(){
              << volavg_kirchh(1,1)    << "\n";
     outFile2.close();
 
-    std::ofstream outFile3(directory + sim_name + "/out_avgdetF_frame_" + std::to_string(frame) + ".csv");
+    std::ofstream outFile3(directory + sim_name + "/out_Javg_frame_" + std::to_string(frame) + ".csv");
     outFile3 << Jsum/Np  << "\n";
     outFile3.close();
 

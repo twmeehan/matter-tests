@@ -12,11 +12,12 @@ int main(){
 
     Simulation sim;
 
-    sim.directory = "/media/blatny/harddrive4/larsie/";
-    sim.end_frame = 300;
+    // sim.directory = "/media/blatny/harddrive4/larsie/";
+    sim.directory = "/media/blatny/LaCie/larsie/";
+    sim.end_frame = 1500;
     T friction;
 
-    unsigned int setup = 4;
+    unsigned int setup = 5;
 
 
     if (setup == 0){      // pbc
@@ -32,23 +33,33 @@ int main(){
     else if (setup == 2){ // incl slope
         sim.fps = 50;
         // sim.sim_name = "inclslope_feedercomp_a22_d2-5mm_mu209_long";
-        // sim.sim_name = "inclslope10_mu245_kam_mccmui_comp3d";
-        sim.sim_name = "incl3Dslope22_mu245_kam_mccmui_new2";
+        // sim.sim_name = "incl3Dslope22_mu245_kam_mccmui_new2";
+        sim.sim_name = "inclslope22_cohesion05_mu245_dx25_newrma";
+        // sim.sim_name = "inclslope0_beta06";
     }
     else if (setup == 3){                 // feeder
         sim.fps = 7;
-        sim.sim_name = "feeder_kam_a24_d2-5mm_dx35_Lx18";
+        sim.sim_name = "feeder_kam_a315_d2-5mm_dx35_Lx18_new";
+        // sim.sim_name = "feeder_kam_a24_d2-5mm_Lx18_new";
+        // sim.sim_name = "feeder_kam_a32_mut40_d2-5mm_Lx18_beta0275new"; // NB adjust mu_2, h_gate, xi, beta, dx
+        sim.pbc_special = false;
+        friction = 0.5;
     }
-    else if (setup == 4){                 // feeder
+    else if (setup == 4){                 // feeder PBC
         sim.fps = 7;
-        sim.sim_name = "feeder_kam_a24_d2-5mm_pbc_big4";
+        sim.sim_name = "feeder_kam_a19_d2-5mm_pbc_dx36";
         sim.pbc_special = true;
     }
-    else if (setup == 5){                 // feeder
+    else if (setup == 5){                 // flow over bump
         sim.fps = 100;
-        sim.sim_name = "nico_a39_f053_gate_intruder_t125_dx1a_pbc"; // _intruder_t125
+        sim.sim_name = "nico_a39_f05_m245_gate_dx0a_pbc_triplebump"; // _intruder_t125 _mass
         sim.pbc_special = true;
-        friction = 0.53;
+        friction = 0.5;
+    }
+    else if (setup == 6){                 // flow over bump
+        sim.fps = 200;
+        sim.sim_name = "cohesivecollapse_a1_po500_beta03_mistake"; // _intruder_t125 _mass
+        // sim.sim_name = "cohesivecollapse_beta0_po250_new";
     }
     else {
         debug("ERROR: INVALID SETUP CHOICE!");
@@ -64,9 +75,12 @@ int main(){
 
     sim.cfl = 0.5;
     sim.flip_ratio = -0.95;
-    sim.n_threads = 8;
+    sim.n_threads = 4;
 
-    sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1550); // feeder, incl slope and gran collapse
+    if (setup == 6)
+        sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 2600*0.58);
+    else
+        sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1550);
 
     T h_gate, l_gate;
     if (setup == 0){
@@ -154,9 +168,12 @@ int main(){
     }
     else if (setup == 3){                    ///// Feeder with ramp
         sim.Lx = 1.8;
+        // sim.Lx = 3.2;       // NB
         sim.Ly = 0.1;
         h_gate = 0.05;
+        // h_gate = 0.1;       // NB
         l_gate = 0.1;
+        // l_gate = 0.0;
         #ifndef THREEDIM
             // SampleParticles(sim.Lx, sim.Ly,     0.002, 6, 0, sim);
             // SampleParticles(sim.Lx, sim.Ly,     0.0005, 6, 0, sim); // dx3
@@ -178,13 +195,13 @@ int main(){
     }
     else if (setup == 4){                    ///// Feeder PBC
         #ifndef THREEDIM
-
         h_gate = 0.05;
         l_gate = 0.18;
 
-        T k_rad = 0.002;
+        // T k_rad = 0.002;
         // T k_rad = 0.0005; // dx3
         // T k_rad = 0.0004; // dx35
+        T k_rad = 0.00036; // dx36
         // T k_rad = 0.0003; // dx4
 
         SampleParticles(l_gate, 2*l_gate,  k_rad, 6, 6, sim);
@@ -211,25 +228,72 @@ int main(){
     }
 
     else if (setup == 5){     ///// Nico
+        #ifndef THREEDIM
+
         sim.Lx = 0.3; // 0.4
         sim.Ly = 0.15; // 0.15
-        #ifndef THREEDIM
-            // SampleParticles(sim.Lx, sim.Ly,     0.0005, 6, 0, sim);
-            // SampleParticles(sim.Lx, sim.Ly,     0.0005, 6, 5, sim);   // a
-            // SampleParticles(sim.Lx, sim.Ly,     0.0003, 6, 5, sim);   // dx0a
-            SampleParticles(sim.Lx, sim.Ly,     0.0002, 6, 5, sim);      // dx1a
-            // SampleParticles(sim.Lx, sim.Ly,     0.0002, 6, 0, sim);   // dx1
-            // SampleParticles(sim.Lx, sim.Ly,     0.0001, 6, 0, sim);   // dx2
-        #endif
+
+        // T k_rad = 0.0005; // a
+        T k_rad = 0.0003; // dx0a
+        // T k_rad = 0.0002; // dx1a
+
+        ///////////////////////////////////////
+
+        SampleParticles(sim.Lx, sim.Ly,     k_rad, 6, 5, sim);
         for(int p = 0; p < sim.Np; p++){
-            sim.particles.x[p](0) -= sim.Lx; // + 0.03; // use + 0.03 if Ly=0.1
+            sim.particles.x[p](0) -= sim.Lx;
             sim.particles.x[p](1) += 0.5*sim.dx;
         }
         auto new_part_x = sim.particles.x;
-        #ifndef THREEDIM
-            TV tmp_part(l_gate, 0.0);
-            new_part_x.push_back(tmp_part);
+        TV tmp_part(l_gate, 0.0);
+        new_part_x.push_back(tmp_part);
+        sim.Np += 1;
+        sim.particles = Particles(sim.Np);
+        sim.particles.x = new_part_x;
+
+        // std::vector<TV> new_part_x;
+
+        ////////////////////////////////////////
+
+        ////// if mass in front of bump
+        // SampleParticles(0.13, 0.0475,     k_rad, 6, 7, sim);
+        // auto old_part_x = sim.particles.x;
+        // for (auto &e : old_part_x)
+        //     e(0) += 0.3;
+
+        // // sim.particles.x = new_part_x; sim.Np = 0; // if delete sampled particles
+        // // old_part_x.resize(26593);
+
+        // std::vector<TV> old_part_x(26593);
+        // int num = load_array(old_part_x, "/media/blatny/harddrive4/larsie/nico_a39_f05_m245_gate_dx1a_pbc_mass_SETUP/positions_f45.txt");
+        //
+        // new_part_x.insert( new_part_x.end(), old_part_x.begin(), old_part_x.end() );
+        // sim.Np = new_part_x.size();
+        // sim.particles = Particles(sim.Np);
+        // sim.particles.x = new_part_x;
+
         #endif
+    }
+    else if (setup == 6){     ///// Cohesive collapse
+        sim.Lx = 0.089;
+        sim.Ly = 0.089;
+        #ifdef THREEDIM
+            sim.Lz = 0.154;
+            SampleParticles(sim.Lx, sim.Ly, sim.Lz,  0.001, sim);
+        #else
+            SampleParticles(sim.Lx, sim.Ly,    0.00035, 6, 0, sim);
+            // SampleParticles(sim.Lx, sim.Ly,    0.00025, 6, 0, sim);
+        #endif
+        for(int p = 0; p < sim.Np; p++){
+            sim.particles.x[p](1) += 0.5*sim.dx;
+        }
+        auto new_part_x = sim.particles.x;
+        #ifdef THREEDIM
+            TV tmp_part(sim.Lx/2.0, 0.0, sim.Lz/2.0);
+        #else
+            TV tmp_part(sim.Lx/2.0, 0.0);
+        #endif
+        new_part_x.push_back(tmp_part);
         sim.Np += 1;
         sim.particles = Particles(sim.Np);
         sim.particles.x = new_part_x;
@@ -248,11 +312,11 @@ int main(){
     }
     else if (setup == 1){
         #ifdef THREEDIM //// 3D Grancular collapse
-            name = "Ground";     InfinitePlate ground     = InfinitePlate(0,      1e20, -1e20, bottom, STICKY,   0.0, name,   0,0,   0,   1,0);  sim.objects.push_back(ground);
             name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0,      1e20,     0, left,   SEPARATE, 0.0, name,   0,0.45,0,   1,0);  sim.objects.push_back(side_left);
             name = "SideRight";  InfinitePlate side_right = InfinitePlate(sim.Lx, 1e20,     0, right,  SEPARATE, 0.0, name,   0,0.45,0,   1,0);  sim.objects.push_back(side_right);
             name = "SideBack";   InfinitePlate side_back  = InfinitePlate(0,      1e20, -1e20, back,   SEPARATE, 0.0, name,   0,0,   0,   1,0);  sim.objects.push_back(side_back);
             name = "SideFront";  InfinitePlate side_front = InfinitePlate(sim.Lz, 1e20, -1e20, front,  SEPARATE, 0.0, name,   0,0,   0,   1,0);  sim.objects.push_back(side_front);
+            name = "Ground";     InfinitePlate ground     = InfinitePlate(0,      1e20, -1e20, bottom, STICKY,   0.0, name,   0,0,   0,   1,0);  sim.objects.push_back(ground);
         #else          //// 2D Granular collapse
             name = "Ground";     InfinitePlate ground     = InfinitePlate(0,       1e20, -1e20, bottom, STICKY,   0.0, name,   0, 0,        1,0);  sim.objects.push_back(ground);
             name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0,       1e20, 0,     left,   SEPARATE, 0.0, name,   0, 0.45,     1,0);  sim.objects.push_back(side_left);
@@ -273,12 +337,11 @@ int main(){
     else if (setup == 3){
         #ifndef THREEDIM
             //// 2D Feeder
-            name = "Ground";     InfinitePlate ground     = InfinitePlate(0,      1e20, -1e20, bottom, STICKY,   0.0, name,   0, 0,     1,0);  sim.objects.push_back(ground);
             name = "SideRight";  InfinitePlate side_right = InfinitePlate(l_gate, 1e20, h_gate, right, SEPARATE, 0.0, name,   0, 0,     1,0);  sim.objects.push_back(side_right);
-            // name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0,      1e20, -1e20, left,   SEPARATE, 0.0, name,   0, 0,     1,0);  sim.objects.push_back(side_left);
-            // name = "Top";        InfinitePlate lid        = InfinitePlate(h_gate, 1e20, l_gate, top,   SEPARATE, 0.0, name,   0, 0,     1,0);  sim.objects.push_back(lid);
-            name = "Ramp";       InfinitePlate ramp       = InfinitePlate(l_gate,      0, -1e20, bottom, SEPARATE, 0.2, name,   0, 0,     1,0);  sim.objects.push_back(ramp);
-            name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0,      l_gate, -1e20, left,   SEPARATE, 0.0, name,   0, 0,     1,0);  sim.objects.push_back(side_left);
+            name = "Ground";     InfinitePlate ground     = InfinitePlate(0,      1e20, -1e20, bottom, STICKY,   0.0, name,   0, 0,     1,0);  sim.objects.push_back(ground);
+            // name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0,      l_gate, -1e20, left,   SEPARATE, 0.0, name,   0, 0,     1,0);  sim.objects.push_back(side_left);
+            // name = "Ramp";       InfinitePlate ramp       = InfinitePlate(l_gate,      0, -1e20, bottom, SEPARATE, friction, name,   0, 0,     1,0);  sim.objects.push_back(ramp);
+            name = "Ramp";      AnalyticObj ramp   = AnalyticObj(SEPARATE, friction,  name, -100);  sim.objects_anal.push_back(ramp);
         #endif
     }
     else if (setup == 4){
@@ -292,10 +355,25 @@ int main(){
     else if (setup == 5){
         #ifndef THREEDIM
             //// Nico
-            name = "Intruder";  InfinitePlate intruder  = InfinitePlate(0.43,       1e20,  0.0470, right, SEPARATE, 0.0, name,   0, 10,     1e20, 125);  sim.objects.push_back(intruder);
+            // name = "Intruder";  InfinitePlate intruder  = InfinitePlate(0.43,       1e20,  0.0470, right, SEPARATE, 0.0, name,   0, 10,     1e20, 125);  sim.objects.push_back(intruder);
             name = "Collector"; InfinitePlate collector = InfinitePlate(1.5,        1e20,   -1e20, right, STICKY,   0.0, name,   0, 0,          1,  0);  sim.objects.push_back(collector);
-            name = "Ground";    AnalyticObj ground = AnalyticObj(SEPARATE, friction, name, 0);    sim.objects_anal.push_back(ground);
-            name = "Gate";      AnalyticObj gate   = AnalyticObj(SEPARATE, 0,        name, 100);  sim.objects_anal.push_back(gate);
+            name = "Ground";    AnalyticObj ground  = AnalyticObj(SEPARATE, friction, name, 0,   0.43);    sim.objects_anal.push_back(ground);
+            name = "Ground2";   AnalyticObj ground2 = AnalyticObj(SEPARATE, friction, name, 0,   0.68);    sim.objects_anal.push_back(ground2);
+            name = "Ground3";   AnalyticObj ground3 = AnalyticObj(SEPARATE, friction, name, 0,   0.93);    sim.objects_anal.push_back(ground3);
+            name = "Gate";      AnalyticObj gate    = AnalyticObj(SEPARATE, 0,        name, 100, 0.016);  sim.objects_anal.push_back(gate);
+        #endif
+    }
+    else if (setup == 6){ // Cohesive collapse
+        #ifdef THREEDIM  //// 3D
+            name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0,      1e20, -1e20, left,   SEPARATE, 0.0, name,  0, 0, 0,   1,0);  sim.objects.push_back(side_left);
+            name = "SideBack";   InfinitePlate side_back  = InfinitePlate(0,      1e20, -1e20, back,   SEPARATE, 0.0, name,  0, 0, 0,   1,0);  sim.objects.push_back(side_back);
+            name = "SideFront";  InfinitePlate side_front = InfinitePlate(sim.Lz, 1e20, -1e20, front,  SEPARATE, 0.0, name,  0, 0, 0,   1,0);  sim.objects.push_back(side_front);
+            name = "SideRight";  InfinitePlate side_right = InfinitePlate(sim.Lx, 1e20,     0, right,  SEPARATE, 0.0, name,  0, 5, 0,   1,0);  sim.objects.push_back(side_right);
+            name = "Ground";     InfinitePlate ground     = InfinitePlate(0,      1e20, -1e20, bottom,  STICKY,  0.0, name,  0, 0, 0,   1,0);  sim.objects.push_back(ground);
+        #else           //// 2D
+            name = "Ground";     InfinitePlate ground     = InfinitePlate(0,       1e20, -1e20, bottom,  STICKY,   0.0, name,  0, 0,   1,0);  sim.objects.push_back(ground);
+            name = "SideLeft";   InfinitePlate side_left  = InfinitePlate(0,       1e20, -1e20,  left,   SEPARATE, 0.0, name,  0, 0,   1,0);  sim.objects.push_back(side_left);
+            name = "SideRight";  InfinitePlate side_right = InfinitePlate(sim.Lx,  1e20, 0,     right,   SEPARATE, 0.0, name,  0, 50,   1,0);  sim.objects.push_back(side_right);
         #endif
     }
 
@@ -315,30 +393,25 @@ int main(){
     sim.plastic_model = PerzynaMuIMCC;
     // sim.plastic_model = PerzynaSinterMCC;
 
-    sim.use_jop_definitions = true;
-
-    if (setup == 2) // incl slope
+    if (setup == 2 || setup == 5) // incl slope and nico
         sim.dp_slope = std::tan(24.5 * M_PI / 180);
     else // feeder and gran coll
         sim.dp_slope = std::tan(20.9 * M_PI / 180);
 
-    sim.dp_cohesion = 0;
+    // sim.dp_cohesion = 0;
+    // sim.vm_ptensile = -5e10;
+    // sim.yield_stress_orig = 5e3;
+    // sim.yield_stress_min = sim.yield_stress_orig;
+    // sim.perzyna_exp = 1;
+    // sim.perzyna_visc = 1;
+    // sim.xi_nonloc = 0;
+    // sim.nonlocal_l = 0;
 
-    sim.vm_ptensile = -5e10;
-    sim.yield_stress_orig = 5e3;
-    sim.yield_stress_min = sim.yield_stress_orig;
-
-    sim.perzyna_exp = 1;
-    sim.perzyna_visc = 1;
-
-    sim.beta = 0.0;
     sim.M = sim.dp_slope;
-    sim.p0 = 1e2;
-
+    sim.beta = 0.0;
+    sim.p0 = 100;
     sim.xi = 50; // In case of sintering, xi = 1/(lambda*phi_0)
 
-    sim.xi_nonloc = 0;
-    sim.nonlocal_l = 0;
 
     // For mu(I) rheology only
     if (setup == 0)
@@ -351,11 +424,20 @@ int main(){
         sim.grain_diameter = 2.5e-3; // feeder
     else if (setup == 5)
         sim.grain_diameter = 0.7e-3; // nico
+    else if (setup == 6)
+        sim.grain_diameter = 0.8e-3; // cohesive collapse
 
     sim.rho_s           = 2500;
     sim.in_numb_ref     = 0.279;
     sim.mu_1            = sim.dp_slope; //sim.M
     sim.mu_2            = std::tan(32.76 * M_PI / 180);
+    // sim.mu_2            = std::tan(40 * M_PI / 180);
+
+    if (setup == 6){ // cohesive collapse
+        sim.rho_s           = 2600;
+        // sim.mu_2            = std::tan(39 * M_PI / 180);
+        // sim.in_numb_ref     = 0.6;
+    }
 
     //// For sintering only
     // sim.sinter_tc = 20;   // 1     // 20

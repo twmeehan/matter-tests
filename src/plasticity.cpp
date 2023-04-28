@@ -48,11 +48,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         else if (plastic_model == DruckerPrager){
 
             T e_mu_prefac;
-            if (use_jop_definitions){
-                e_mu_prefac = sqrt2 * mu;
-            } else{
-                e_mu_prefac = sqrt6 * mu;
-            }
+            // e_mu_prefac = sqrt2 * mu;
+            e_mu_prefac = sqrt6 * mu;
 
             // trial stresses
             T p_trial = -K * hencky_trace;
@@ -297,14 +294,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == PerzynaMuIDP){
 
-            T q_prefac, d_prefac;
-            if (use_jop_definitions){
-                q_prefac = 1.0/sqrt2; //      q = factor * ||dev(tau)||
-                d_prefac = sqrt2;     //  gamma = factor * ||dev(eps)||
-            } else{
-                q_prefac = 0.5*sqrt6; // = sqrt(3/2)
-                d_prefac = 1;
-            }
+            T q_prefac = 1.0/sqrt2; //      q = factor * ||dev(tau)||
+            T d_prefac = sqrt2;     //  gamma = factor * ||dev(eps)||
+
             T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
             T f_mu_prefac = 2*q_prefac/d_prefac * mu;  // q^tr - q = factor * dt * gamma_dot
 
@@ -323,10 +315,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // => project to the original tip given by cohesion only (i.e., not the shifted tip)
             if ((p_trial+p_shift) < p_tip){
                 T delta_gamma     = d_prefac * hencky_deviatoric_norm;
-                T p_proj          = p_tip; // > p_trial
-                T eps_pl_vol_inst = (p_proj-p_trial)/K;
+                T eps_pl_vol_inst = (p_tip-p_trial)/K;
                 plastic_count++;
-                hencky = -p_proj/(K*dim) * TV::Ones();
+                hencky = -p_tip/(K*dim) * TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.delta_gamma[p]          = delta_gamma;               // NB!
                 particles.eps_pl_dev[p]          += delta_gamma;
@@ -345,16 +336,18 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 plastic_count++;
 
+                T p_special = p_trial - p_tip; // recall p_tip < 0, thus p_special must be positive. Should we add p_shift as well??
+
                 T fac_a = f_mu_prefac * dt; // always positive
-                T fac_b = p_trial*(mu_2-mu_1) + f_mu_prefac*dt*fac_Q*std::sqrt(std::abs(p_trial)) - (q_trial-q_yield);
-                T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(std::abs(p_trial)); // always negative
+                T fac_b = p_trial*(mu_2-mu_1) + f_mu_prefac*dt*fac_Q*std::sqrt(p_special) - (q_trial-q_yield);
+                T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(p_special); // always negative
 
                 // this is gamma_dot:
                 T delta_gamma = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always positive because a>0 and c<0
 
-                T mu_i                 = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(std::abs(p_trial)) / delta_gamma + 1.0);
+                T mu_i                 = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(p_special) / delta_gamma + 1.0);
                 particles.muI[p]       = mu_i;
-                particles.viscosity[p] = (mu_i - mu_1) * std::abs(p_trial) / delta_gamma;
+                particles.viscosity[p] = (mu_i - mu_1) * p_special / delta_gamma;
 
                 delta_gamma *= dt; // this is the actual delta_gamma
 
@@ -369,14 +362,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == PerzynaMuIMCC) {
 
-            T q_prefac, d_prefac;
-            if (use_jop_definitions){
-                q_prefac = 1.0/sqrt2; //      q = factor * ||dev(tau)||
-                d_prefac = sqrt2;     //  gamma = factor * ||dev(eps)||
-            } else{
-                q_prefac = 0.5*sqrt6; // = sqrt(3/2)
-                d_prefac = 1;
-            }
+            T q_prefac = 1.0/sqrt2; //      q = factor * ||dev(tau)||
+            T d_prefac = sqrt2;     //  gamma = factor * ||dev(eps)||
+
             T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
             T f_mu_prefac = 2*q_prefac/d_prefac * mu;  // q^tr - q = factor * dt * gamma_dot
             T rma_prefac  = 2*q_prefac*q_prefac;
@@ -420,11 +408,13 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     // debug("Setting q = q_yield = ", q_yield);
                 }
                 else{
-                    // T p_special = std::abs(p_stress);
-                    T p_special = p_stress + beta * p0*std::exp(-xi*particles.eps_pl_vol[p]);
+                    T p_c = p0 * std::exp(-xi*particles.eps_pl_vol[p]);
+                    T p_special = p_stress + beta * p_c;
 
                     T fac_a = f_mu_prefac * dt; // always positive
-                    T fac_b = p_special*(mu_2-mu_1) + f_mu_prefac*dt*fac_Q*std::sqrt(p_special) - (q_trial-q_yield);
+
+                    T fac_b = std::sqrt((p_c-p_stress)*p_special)*(mu_2-mu_1) + f_mu_prefac*dt*fac_Q*std::sqrt(p_special) - (q_trial-q_yield);
+
                     T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(p_special); // always negative
 
                     T gamma_dot_S = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always positive because a>0 and c<0
@@ -433,7 +423,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                     T mu_i                 = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(p_special) / gamma_dot_S + 1.0);
                     particles.muI[p]       = mu_i;
-                    particles.viscosity[p] = (mu_i - mu_1) * p_special / gamma_dot_S;
+                    particles.viscosity[p] = (mu_i - mu_1) * std::sqrt((p_c-p_stress)*p_special) / gamma_dot_S;
                 }
 
                 T dg_instant = (q_trial - q_stress) / f_mu_prefac;
