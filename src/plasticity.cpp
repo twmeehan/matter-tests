@@ -167,52 +167,61 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.F[p] = svd.matrixU() * svd.matrixV().transpose();
                 particles.eps_pl_vol[p] += eps_pl_vol_inst;
                 particles.eps_pl_dev[p] += delta_gamma;
-                particles.delta_gamma[p] = delta_gamma /dt;
+                particles.delta_gamma[p] = delta_gamma / dt;
             }
             ////////////////////////////////////
 
             else if (stress > yield_stress) {
-
                 plastic_count++;
+                T delta_gamma;
 
-                T delta_gamma = 0.1 * (stress - yield_stress) / (mu*sqrt6); // initial guess
-
-                int max_iter = 60;
-                for (int iter = 0; iter < max_iter; iter++) {
-                    if (iter == max_iter - 1){ // did not break loop
-                        debug("PerzynaVM: FATAL did not exit loop at iter = ", iter);
+                if (perzyna_exp == 1 && xi == 0){
+                    delta_gamma = (stress-yield_stress) / (mu*sqrt6 + yield_stress*perzyna_visc/dt);
+                    if (delta_gamma < 0){
+                        debug("PerzynaVM: FATAL negative delta_gamma = ", delta_gamma);
                         exit = 1;
                     }
+                }
+                else{
 
-                    if (delta_gamma < 0) // not possible and can also lead to division by zero
-                        delta_gamma = 1e-10;
+                    delta_gamma = 0.1 * (stress - yield_stress) / (mu*sqrt6); // initial guess
+                    int max_iter = 60;
+                    for (int iter = 0; iter < max_iter; iter++) {
+                        if (iter == max_iter - 1){ // did not break loop
+                            debug("PerzynaVM: FATAL did not exit loop at iter = ", iter);
+                            exit = 1;
+                        }
 
-                    T tm = perzyna_visc * delta_gamma + dt;
-                    T tmp = dt / tm;
-                    T tmp1 = std::pow(tmp, perzyna_exp);
+                        if (delta_gamma < 0) // not possible and can also lead to division by zero
+                            delta_gamma = 1e-10;
 
-                    T yield_stress_new = yield_stress_min + (yield_stress_orig - yield_stress_min) * exp(-xi * (particles.eps_pl_dev[p] + delta_gamma));
+                        T tm = perzyna_visc * delta_gamma + dt;
+                        T tmp = dt / tm;
+                        T tmp1 = std::pow(tmp, perzyna_exp);
 
-                    T residual = (stress - mu*sqrt6 * delta_gamma) * tmp1 - yield_stress_new;
-                    if (std::abs(residual) < 1e-1) {
-                        break;
-                    }
+                        T yield_stress_new = yield_stress_min + (yield_stress_orig - yield_stress_min) * exp(-xi * (particles.eps_pl_dev[p] + delta_gamma));
 
-                    T yield_stress_new_diff = -xi * (yield_stress_orig - yield_stress_min) * exp(-xi * (particles.eps_pl_dev[p] + delta_gamma));
-                    T residual_diff         = -mu*sqrt6 * tmp1 + (stress - mu*sqrt6 * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm) - yield_stress_new_diff;
+                        T residual = (stress - mu*sqrt6 * delta_gamma) * tmp1 - yield_stress_new;
+                        if (std::abs(residual) < 1e-1) {
+                            break;
+                        }
 
-                    if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
-                        debug("PerzynaVM: residual_diff too small in abs value = ", residual_diff);
-                        exit = 1;
-                    }
+                        T yield_stress_new_diff = -xi * (yield_stress_orig - yield_stress_min) * exp(-xi * (particles.eps_pl_dev[p] + delta_gamma));
+                        T residual_diff         = -mu*sqrt6 * tmp1 + (stress - mu*sqrt6 * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm) - yield_stress_new_diff;
 
-                    delta_gamma -= residual / residual_diff;
-                } // end N-R iterations
+                        if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
+                            debug("PerzynaVM: residual_diff too small in abs value = ", residual_diff);
+                            exit = 1;
+                        }
 
-                hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
+                        delta_gamma -= residual / residual_diff;
+                    } // end N-R iterations
+                } // end if perzyna_exp > 1
+
+                hencky -= delta_gamma * hencky_deviatoric;
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += delta_gamma;
-                particles.delta_gamma[p] = delta_gamma;
+                particles.delta_gamma[p] = delta_gamma / dt;
             } // end plastic projection projection
         } // end PerzynaVM
 
