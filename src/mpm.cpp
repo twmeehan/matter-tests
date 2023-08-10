@@ -14,16 +14,16 @@ int main(){
 
     // sim.directory = "/media/blatny/harddrive4/larsie/";
     sim.directory = "/media/blatny/LaCie/larsie/";
-    sim.end_frame = 1500;
+    sim.end_frame = 150;
     T friction;
 
-    unsigned int setup = 5;
+    unsigned int setup = 0;
 
 
     if (setup == 0){      // pbc
         sim.pbc = true;
         sim.fps = 20;
-        sim.sim_name = "pbc_kam_a28_d2-5mm_initv";
+        sim.sim_name = "pbc_a28_mutwo40_nu0";
     }
     else if (setup == 1){ // gran coll
         sim.fps = 238.2166843;
@@ -39,7 +39,7 @@ int main(){
     }
     else if (setup == 3){                 // feeder
         sim.fps = 7;
-        sim.sim_name = "feeder_kam_a315_d2-5mm_dx35_Lx18_new";
+        sim.sim_name = "feeder_kam_a31_d2-5mm_dx35_Lx18_new";
         // sim.sim_name = "feeder_kam_a24_d2-5mm_Lx18_new";
         // sim.sim_name = "feeder_kam_a32_mut40_d2-5mm_Lx18_beta0275new"; // NB adjust mu_2, h_gate, xi, beta, dx
         sim.pbc_special = false;
@@ -52,13 +52,13 @@ int main(){
     }
     else if (setup == 5){                 // flow over bump
         sim.fps = 100;
-        sim.sim_name = "nico_a39_f05_m245_gate_dx0a_pbc_triplebump"; // _intruder_t125 _mass
+        sim.sim_name = "nico_a39_f05_m245_gate_dx1a_pbc_mass_muone23"; // _intruder_t125 _mass
         sim.pbc_special = true;
         friction = 0.5;
     }
     else if (setup == 6){                 // flow over bump
         sim.fps = 200;
-        sim.sim_name = "cohesivecollapse_a1_po500_beta03_mistake"; // _intruder_t125 _mass
+        sim.sim_name = "cohesivecollapse_a1_po500_beta025"; // _intruder_t125 _mass
         // sim.sim_name = "cohesivecollapse_beta0_po250_new";
     }
     else {
@@ -66,7 +66,7 @@ int main(){
         return 0;
     }
 
-    T theta_deg = 39;
+    T theta_deg = 28;
     T theta = theta_deg * M_PI / 180;
     sim.gravity = TV::Zero();
     sim.gravity[0] = +9.81 * std::sin(theta);
@@ -75,12 +75,12 @@ int main(){
 
     sim.cfl = 0.5;
     sim.flip_ratio = -0.95;
-    sim.n_threads = 4;
+    sim.n_threads = 8;
 
     if (setup == 6)
         sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 2600*0.58);
     else
-        sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1550);
+        sim.initialize(/* E */ 1e6, /* nu */ 0.0, /* rho */ 1550);
 
     T h_gate, l_gate;
     if (setup == 0){
@@ -234,8 +234,8 @@ int main(){
         sim.Ly = 0.15; // 0.15
 
         // T k_rad = 0.0005; // a
-        T k_rad = 0.0003; // dx0a
-        // T k_rad = 0.0002; // dx1a
+        // T k_rad = 0.0003; // dx0a
+        T k_rad = 0.0002; // dx1a
 
         ///////////////////////////////////////
 
@@ -260,17 +260,15 @@ int main(){
         // auto old_part_x = sim.particles.x;
         // for (auto &e : old_part_x)
         //     e(0) += 0.3;
-
         // // sim.particles.x = new_part_x; sim.Np = 0; // if delete sampled particles
         // // old_part_x.resize(26593);
 
-        // std::vector<TV> old_part_x(26593);
-        // int num = load_array(old_part_x, "/media/blatny/harddrive4/larsie/nico_a39_f05_m245_gate_dx1a_pbc_mass_SETUP/positions_f45.txt");
-        //
-        // new_part_x.insert( new_part_x.end(), old_part_x.begin(), old_part_x.end() );
-        // sim.Np = new_part_x.size();
-        // sim.particles = Particles(sim.Np);
-        // sim.particles.x = new_part_x;
+        std::vector<TV> old_part_x(26593);
+        int num = load_array(old_part_x, "/media/blatny/harddrive4/larsie/nico_a39_f05_m245_gate_dx1a_pbc_mass_SETUP/positions_f45.txt");
+        new_part_x.insert( new_part_x.end(), old_part_x.begin(), old_part_x.end() );
+        sim.Np = new_part_x.size();
+        sim.particles = Particles(sim.Np);
+        sim.particles.x = new_part_x;
 
         #endif
     }
@@ -357,10 +355,8 @@ int main(){
             //// Nico
             // name = "Intruder";  InfinitePlate intruder  = InfinitePlate(0.43,       1e20,  0.0470, right, SEPARATE, 0.0, name,   0, 10,     1e20, 125);  sim.objects.push_back(intruder);
             name = "Collector"; InfinitePlate collector = InfinitePlate(1.5,        1e20,   -1e20, right, STICKY,   0.0, name,   0, 0,          1,  0);  sim.objects.push_back(collector);
-            name = "Ground";    AnalyticObj ground  = AnalyticObj(SEPARATE, friction, name, 0,   0.43);    sim.objects_anal.push_back(ground);
-            name = "Ground2";   AnalyticObj ground2 = AnalyticObj(SEPARATE, friction, name, 0,   0.68);    sim.objects_anal.push_back(ground2);
-            name = "Ground3";   AnalyticObj ground3 = AnalyticObj(SEPARATE, friction, name, 0,   0.93);    sim.objects_anal.push_back(ground3);
-            name = "Gate";      AnalyticObj gate    = AnalyticObj(SEPARATE, 0,        name, 100, 0.016);  sim.objects_anal.push_back(gate);
+            name = "Ground";    AnalyticObj ground = AnalyticObj(SEPARATE, friction, name,   0, 0.43);   sim.objects_anal.push_back(ground);
+            name = "Gate";      AnalyticObj gate   = AnalyticObj(SEPARATE, 0,        name, 100, 0.016);  sim.objects_anal.push_back(gate);
         #endif
     }
     else if (setup == 6){ // Cohesive collapse
@@ -395,6 +391,7 @@ int main(){
 
     if (setup == 2 || setup == 5) // incl slope and nico
         sim.dp_slope = std::tan(24.5 * M_PI / 180);
+        // sim.dp_slope = std::tan(23 * M_PI / 180);            // NB NB NB
     else // feeder and gran coll
         sim.dp_slope = std::tan(20.9 * M_PI / 180);
 
@@ -430,8 +427,9 @@ int main(){
     sim.rho_s           = 2500;
     sim.in_numb_ref     = 0.279;
     sim.mu_1            = sim.dp_slope; //sim.M
-    sim.mu_2            = std::tan(32.76 * M_PI / 180);
-    // sim.mu_2            = std::tan(40 * M_PI / 180);
+    // sim.mu_2            = std::tan(32.76 * M_PI / 180);
+    // sim.mu_2            = std::tan(30 * M_PI / 180);
+    sim.mu_2            = std::tan(40 * M_PI / 180);
 
     if (setup == 6){ // cohesive collapse
         sim.rho_s           = 2600;

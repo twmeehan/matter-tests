@@ -273,12 +273,24 @@ void Simulation::updateDt(){
     //     return;
     // }
 
-    if (time < gravity_time){
-        gravity = gravity_final * time/gravity_time;
+
+    if (gravity_special){
+        // if (time < gravity_time){
+        //     gravity = gravity_final * time/gravity_time;
+        // }
+        // else{
+        //     gravity = gravity_final;
+        // }
+
+        T theta_i = 16 * M_PI / 180;
+        T theta_f = 24 * M_PI / 180;
+        T theta = theta_i + (theta_f-theta_i) * std::min(time/gravity_time, T(1.0));
+        gravity = TV::Zero();
+        gravity[0] = +9.81 * std::sin(theta);
+        gravity[1] = -9.81 * std::cos(theta);
     }
-    else{
-        gravity = gravity_final;
-    }
+
+
 
 } // end updateDt
 

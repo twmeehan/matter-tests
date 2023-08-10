@@ -376,7 +376,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
             T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
             T f_mu_prefac = 2*q_prefac/d_prefac * mu;  // q^tr - q = factor * dt * gamma_dot
-            T rma_prefac  = 2*q_prefac*q_prefac;
+            T rma_prefac  = 2*q_prefac*q_prefac; // = 1
 
             // the trial stress states
             T p_stress = -K * hencky_trace;

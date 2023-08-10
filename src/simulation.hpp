@@ -38,6 +38,7 @@ public:
   int exit;
   bool pbc = false;
   bool pbc_special = false;
+  bool gravity_special = false;
   T time;
   T final_time;
   T fps;
