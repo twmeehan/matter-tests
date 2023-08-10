@@ -6,21 +6,24 @@ A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C
 
 * **2D** and **3D**
 
-* Explicit Euler adaptive time stepping
+* Symplectic Euler adaptive time stepping
 
 * Adaptive background grid extension/reduction to particle domain
 
-* Supports a linearly weighted combination of **PIC** and **FLIP** with **quadratic** and **cubic B-splines** for particle-grid interplation
+* Particle <-> grid interplation with **quadratic** and **cubic B-splines**
+
+* Supports a linearly weighted combination of **PIC** and **FLIP**
+
+* Supoorts **APIC** and **AFLIP**
 
 * A nonlocal plasticity scheme is available for regularizing problems involving strain localization
 
-
 * The following **elasticity models** are currently available:
-    * Neo-Hookean
-    * Saint Venant-Kirchhoff with Hencky strain
+    * Neo-Hookean model
+    * Hencky's elasticity model
 
 
-* The following **(visco)plastic models** are currently available and compatible with the SVK-Hencky model above:
+* The following **(visco)plastic models** are currently available and compatible with Hencky's elasticity model:
     * Von Mises
     * Drucker-Prager
     * Modified Cam-Clay
@@ -32,7 +35,13 @@ A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C
     * Implementing other (visco)plastic models is easy due to the general framework of the code
 
 
-* Analytic objects formulated as levelsets are supported with 1) **sticky**, 2) **slipping** or 3) **separating** boundary conditions. Currently, the only implemented objects are axis-aligned plates which can move with a prescribed velocity.
+* Supports boundaries/objects formulated analytically as levelsets
+
+* The supported boundary conditions are (the last two requiring a Coulomb friction parameter to be specified)
+    1) **sticky**
+    2) **slipping** 
+    3) **separating** 
+
 
 * Supports parallelization on shared memory with **OpenMP**
 
@@ -54,7 +63,6 @@ A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C
 
 The only required dependencies are **[CMake](https://cmake.org/)** and the linear algebra library **[Eigen](https://eigen.tuxfamily.org/)**.
 
-The parallelized version with **[OpenMP](https://www.openmp.org/)** is optional. To use this version, make sure to set the CMake option `-DUSE_OMP=True`, and select the appropriate parallelized functions you want to use in `simulation.cpp`.
 
 ### Output data
 
@@ -63,7 +71,3 @@ Particle data is saved as binary PLY-files (using [tinyply](https://github.com/d
 This data format can be efficiently processed by SideFX's Houdini for visualization.
 The optional outputting of the grid data saves only the positions, velocities and mass of the grid nodes in a CSV-file for each frame (`out_grid_X.csv`).
 
-
-### Validation
-
-The code offers the possibility for a user-defined external force which may depend on the Lagrangian coordinates of the particles. This allows for the creation of manufactured solutions, which can be used to validate the code in the pure elastic case.
