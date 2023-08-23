@@ -8,14 +8,37 @@
 #ifdef THREEDIM
 
     template <typename S>
-    void SampleParticles(const T Lx, const T Ly, const T Lz, T kRadius, S& sim){
+    void SampleParticles(const T Lx, const T Ly, const T Lz, T kRadius, T ppc, unsigned int front_type, S& sim){
         std::uint32_t kAttempts = 30;
         std::uint32_t kSeed = 42;
         std::array<T, 3> kXMin = std::array<T, 3>{{0, 0, 0}};
         std::array<T, 3> kXMax = std::array<T, 3>{{Lx, Ly, Lz}};
 
         debug("Sampling particles...");
-        std::vector<std::array<T, 3>> samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);
+        std::vector<std::array<T, 3>> square_samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);
+        std::vector<std::array<T, 3>> samples;
+        
+        debug("    Number of square samples: ", square_samples.size());
+
+        sim.dx = std::cbrt(ppc / T(square_samples.size()) * Lx*Ly*Lz);
+        sim.particle_volume = sim.dx * sim.dx * sim.dx / ppc;
+        sim.particle_mass = sim.rho * sim.particle_volume;
+
+        debug("    dx set to ", sim.dx);
+
+         /////// Cylinder
+        if (front_type == 1){
+            for(int p = 0; p < square_samples.size(); p++){
+                if ( (square_samples[p][0]-Lx/2.0)*(square_samples[p][0]-Lx/2.0) + (square_samples[p][2]-Lz/2.0)*(square_samples[p][2]-Lz/2.0) < (Lx/2.0)*(Lx/2.0) ){
+                    samples.push_back(square_samples[p]);
+                }
+            }
+        }
+        else{
+            debug("    No front type specified, using just a square.");
+            samples = square_samples;
+        }
+
         sim.Np = samples.size();
         debug("    Number of particles samples: ", sim.Np);
 
@@ -26,11 +49,12 @@
             }
         }
 
-        unsigned int Npx = Lx / (Lx*Ly*Lz) * std::pow( std::pow(Lx*Ly*Lz, 2) * sim.Np, 1.0/3.0);
-        T dx_p = (Lx / Npx);
-        sim.dx = 2 * dx_p;
-        sim.particle_volume = std::pow(dx_p, 3);
-        sim.particle_mass = sim.rho * sim.particle_volume;
+        // unsigned int Npx = Lx / (Lx*Ly*Lz) * std::pow( std::pow(Lx*Ly*Lz, 2) * sim.Np, 1.0/3.0);
+        // T dx_p = (Lx / Npx);
+        // sim.dx = 2 * dx_p;
+        // sim.particle_volume = std::pow(dx_p, 3);
+        // sim.particle_mass = sim.rho * sim.particle_volume;
+
     } // end SampleParticles
 
 #else // TWODIM
