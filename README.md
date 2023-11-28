@@ -39,8 +39,8 @@ A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C
 
 * The supported boundary conditions are (the last two requiring a Coulomb friction parameter to be specified)
     1) **sticky**
-    2) **slipping** 
-    3) **separating** 
+    2) **slipping**
+    3) **separating**
 
 
 * Supports parallelization on shared memory with **OpenMP**
@@ -53,7 +53,7 @@ A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C
 
 2. Create a build directory: `mkdir build`
 
-3. From the build directory (`cd build`), specify CMake options: `cmake -DCMAKE_BUILD_TYPE=Release -DUSE_OMP=True ..`
+3. From the build directory (`cd build`), specify CMake options: `cmake -DCMAKE_BUILD_TYPE=Release ..`
 
 4. Compile with `make -j <number of cores>`
 
@@ -70,4 +70,3 @@ The location of the output data is specified by the user.
 Particle data is saved as binary PLY-files (using [tinyply](https://github.com/ddiakopoulos/tinyply)) with the format (`out_part_X.ply`) where X represents the frame number (from 0 to `end_frame` as specified by the user).
 This data format can be efficiently processed by SideFX's Houdini for visualization.
 The optional outputting of the grid data saves only the positions, velocities and mass of the grid nodes in a CSV-file for each frame (`out_grid_X.csv`).
-

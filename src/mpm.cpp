@@ -14,16 +14,16 @@ int main(){
 
     // sim.directory = "/media/blatny/harddrive4/larsie/";
     sim.directory = "/media/blatny/LaCie/larsie/";
-    sim.end_frame = 150;
+    sim.end_frame = 700;
     T friction;
 
-    unsigned int setup = 0;
+    unsigned int setup = 5;
 
 
     if (setup == 0){      // pbc
         sim.pbc = true;
         sim.fps = 20;
-        sim.sim_name = "pbc_a28_mutwo40_nu0";
+        sim.sim_name = "pbc_kam_a28_d2-5mm_initv";
     }
     else if (setup == 1){ // gran coll
         sim.fps = 238.2166843;
@@ -52,7 +52,7 @@ int main(){
     }
     else if (setup == 5){                 // flow over bump
         sim.fps = 100;
-        sim.sim_name = "nico_a39_f05_m245_gate_dx1a_pbc_mass_muone23"; // _intruder_t125 _mass
+        sim.sim_name = "nico_a39_f05_gate_dx1a_pbc_muconst26"; // _intruder_t125 _mass
         sim.pbc_special = true;
         friction = 0.5;
     }
@@ -66,7 +66,7 @@ int main(){
         return 0;
     }
 
-    T theta_deg = 28;
+    T theta_deg = 39;
     T theta = theta_deg * M_PI / 180;
     sim.gravity = TV::Zero();
     sim.gravity[0] = +9.81 * std::sin(theta);
@@ -80,7 +80,7 @@ int main(){
     if (setup == 6)
         sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 2600*0.58);
     else
-        sim.initialize(/* E */ 1e6, /* nu */ 0.0, /* rho */ 1550);
+        sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1550);
 
     T h_gate, l_gate;
     if (setup == 0){
@@ -251,24 +251,22 @@ int main(){
         sim.particles = Particles(sim.Np);
         sim.particles.x = new_part_x;
 
-        // std::vector<TV> new_part_x;
-
         ////////////////////////////////////////
 
         ////// if mass in front of bump
-        // SampleParticles(0.13, 0.0475,     k_rad, 6, 7, sim);
-        // auto old_part_x = sim.particles.x;
-        // for (auto &e : old_part_x)
-        //     e(0) += 0.3;
-        // // sim.particles.x = new_part_x; sim.Np = 0; // if delete sampled particles
-        // // old_part_x.resize(26593);
+        //    // SampleParticles(0.13, 0.0475,     k_rad, 6, 7, sim);
+        //    // auto old_part_x = sim.particles.x;
+        //    // for (auto &e : old_part_x)
+        //    //     e(0) += 0.3;
+        //    // // sim.particles.x = new_part_x; sim.Np = 0; // if delete sampled particles
+        //    // // old_part_x.resize(26593);
 
-        std::vector<TV> old_part_x(26593);
-        int num = load_array(old_part_x, "/media/blatny/harddrive4/larsie/nico_a39_f05_m245_gate_dx1a_pbc_mass_SETUP/positions_f45.txt");
-        new_part_x.insert( new_part_x.end(), old_part_x.begin(), old_part_x.end() );
-        sim.Np = new_part_x.size();
-        sim.particles = Particles(sim.Np);
-        sim.particles.x = new_part_x;
+        // std::vector<TV> old_part_x(26593);
+        // int num = load_array(old_part_x, "/media/blatny/harddrive4/larsie/nico_a39_f05_m245_gate_dx1a_pbc_mass_SETUP/positions_f45.txt");
+        // new_part_x.insert( new_part_x.end(), old_part_x.begin(), old_part_x.end() );
+        // sim.Np = new_part_x.size();
+        // sim.particles = Particles(sim.Np);
+        // sim.particles.x = new_part_x;
 
         #endif
     }
@@ -390,8 +388,8 @@ int main(){
     // sim.plastic_model = PerzynaSinterMCC;
 
     if (setup == 2 || setup == 5) // incl slope and nico
-        sim.dp_slope = std::tan(24.5 * M_PI / 180);
-        // sim.dp_slope = std::tan(23 * M_PI / 180);            // NB NB NB
+        // sim.dp_slope = std::tan(24.5 * M_PI / 180);
+        sim.dp_slope = std::tan(26 * M_PI / 180);                    // NB NB NB
     else // feeder and gran coll
         sim.dp_slope = std::tan(20.9 * M_PI / 180);
 
@@ -427,9 +425,9 @@ int main(){
     sim.rho_s           = 2500;
     sim.in_numb_ref     = 0.279;
     sim.mu_1            = sim.dp_slope; //sim.M
+    sim.mu_2            = std::tan(26 * M_PI / 180);                 // NB NB NB
     // sim.mu_2            = std::tan(32.76 * M_PI / 180);
-    // sim.mu_2            = std::tan(30 * M_PI / 180);
-    sim.mu_2            = std::tan(40 * M_PI / 180);
+    // sim.mu_2            = std::tan(40 * M_PI / 180);
 
     if (setup == 6){ // cohesive collapse
         sim.rho_s           = 2600;
