@@ -61,7 +61,15 @@ A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C
 
 ### Dependencies
 
-The only required dependencies are **[CMake](https://cmake.org/)** and the linear algebra library **[Eigen](https://eigen.tuxfamily.org/)**.
+The only required dependencies are **[CMake](https://cmake.org/)**, **[OpenMP](https://www.openmp.org/)** and the linear algebra library **[Eigen](https://eigen.tuxfamily.org/)**.
+
+On Mac, you can install OpenMP through Homebrew with 
+
+`brew install libomp`    
+
+You might need to use the following CMake options depending on your version:   
+
+`cmake -DCMAKE_BUILD_TYPE=Release -DOpenMP_CXX_FLAG="-Xclang -fopenmp" -DOpenMP_CXX_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_C_FLAG="-Xclang -fopenmp" -DOpenMP_C_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/opt/homebrew/opt/libomp/lib/libomp.dylib ..`
 
 
 ### Output data
