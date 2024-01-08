@@ -413,12 +413,11 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 T q_yield = q_stress;
                 if (q_trial < (q_yield + 1e-5)) {
-                    q_stress = q_yield;
-                    // debug("Setting q = q_yield = ", q_yield);
+                    q_stress = q_yield; // this is to ensure that fac_c below becomes negative and thus gamma_dot_S positive
                 }
                 else{
                     T p_c = p0 * std::exp(-xi*particles.eps_pl_vol[p]);
-                    T p_special = p_stress + beta * p_c;
+                    T p_special = p_stress + beta * p_c; // always equal or larger than 0
 
                     T fac_a = f_mu_prefac * dt; // always positive
 
@@ -430,7 +429,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                     q_stress = std::max(q_yield, q_trial - f_mu_prefac * dt * gamma_dot_S);
 
-                    T mu_i                 = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(p_special) / gamma_dot_S + 1.0);
+                    T mu_i = mu_2; // if p_special = 0 then mu = mu_2
+                    if (p_special > 1e-5){
+                        mu_i = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(p_special) / gamma_dot_S + 1.0);
+                    }
                     particles.muI[p]       = mu_i;
                     particles.viscosity[p] = (mu_i - mu_1) * std::sqrt((p_c-p_stress)*p_special) / gamma_dot_S;
                 }
