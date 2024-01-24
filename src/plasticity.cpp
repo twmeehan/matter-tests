@@ -64,7 +64,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 plastic_count++;
                 hencky = -p_proj/(K*dim) * TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                particles.delta_gamma[p] = delta_gamma;
+                particles.delta_gamma[p] = delta_gamma / dt;
                 particles.eps_pl_dev[p] += delta_gamma;
                 particles.eps_pl_vol[p] += (p_proj-p_trial)/K;
             }
@@ -73,9 +73,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 if (delta_gamma > 0){ // project to yield surface
                     plastic_count++;
-                    particles.delta_gamma[p] = delta_gamma;
+                    particles.delta_gamma[p] = delta_gamma / dt;
 
-                    hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
+                    hencky -= delta_gamma * hencky_deviatoric;
                     particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                     particles.eps_pl_dev[p] += delta_gamma;
                 }

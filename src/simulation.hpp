@@ -124,19 +124,19 @@ public:
   // Von Mises:
   T yield_stress_orig;
   T yield_stress_min;
-  T vm_ptensile;
+  T vm_ptensile = -1e20;
 
   // Drucker Prager
   T dp_slope;
-  T dp_cohesion;
+  T dp_cohesion = 0;
 
   // Perzyna
-  T perzyna_exp;
-  T perzyna_visc;
+  T perzyna_exp = 1;
+  T perzyna_visc = 0;
 
  // MCC
  T M;
- T beta;
+ T beta = 0;
  T p0;
 
  // mu(I) rheology
