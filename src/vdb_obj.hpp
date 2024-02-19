@@ -1,0 +1,90 @@
+#ifndef VDB_OBJ_H
+#define VDB_OBJ_H
+
+#include "tools.hpp"
+#include <string>
+
+#include <openvdb/openvdb.h>
+#include <openvdb/io/File.h>
+#include <openvdb/tools/GridOperators.h>
+#include <openvdb/tools/Interpolation.h>
+
+// Make sure to fill the interor when creating the levelset, otherwise normals
+// and signed distances are not computed correctly
+
+class VdbObj {
+public:
+    typedef typename openvdb::Grid<typename openvdb::tree::Tree4<float, 5, 4, 3>::Type> GridT;
+    typedef typename GridT::TreeType TreeT;
+    typedef typename openvdb::tools::ScalarToVectorConverter<GridT>::Type GradientGridT;
+    typedef typename GradientGridT::TreeType GradientTreeT;
+
+    typename GridT::Ptr grid;
+    typename GradientGridT::Ptr grad_phi;
+
+    VdbObj(std::string filename, BoundaryCondition bc_in, T friction_in, std::string name_in){
+        openvdb::io::File file(filename);
+        file.open();
+        openvdb::GridPtrVecPtr my_grids = file.getGrids();
+        file.close();
+        int count = 0;
+        for (openvdb::GridPtrVec::iterator iter = my_grids->begin(); iter != my_grids->end(); ++iter) {
+            grid = openvdb::gridPtrCast<GridT>(*iter);
+            count++;
+        }
+
+        openvdb::tools::Gradient<GridT> mg(*grid);
+        grad_phi = mg.process();
+
+
+        bc = bc_in;
+        friction = friction_in;
+        name = name_in;
+    }
+
+    VdbObj(){}
+
+    ~VdbObj(){}
+
+    bool inside(const TV& X_in){
+        int dim = X_in.size();
+        Eigen::Matrix<T, 3, 1> X;
+        X.setZero();
+        for (int d = 0; d < dim; d++)
+            X(d) = X_in(d);
+
+        openvdb::tools::GridSampler<TreeT, openvdb::tools::BoxSampler> interpolator(grid->constTree(), grid->transform());
+        openvdb::math::Vec3<T> P(X(0), X(1), X(2));
+        float phi = interpolator.wsSample(P); // this is the signed distance
+
+        return ((T)phi <= 0);
+    }
+
+    TV normal(const TV& X_in){
+        int dim = X_in.size();
+        Eigen::Matrix<T, 3, 1> X;
+        X.setZero();
+        for (int d = 0; d < dim; d++)
+            X(d) = X_in(d);
+
+        openvdb::tools::GridSampler<GradientTreeT, openvdb::tools::BoxSampler> interpolator(grad_phi->constTree(), grad_phi->transform());
+        openvdb::math::Vec3<T> P(X(0), X(1), X(2));
+        auto grad_phi = interpolator.wsSample(P);
+        TV result;
+        for (int d = 0; d < dim; d++)
+            result(d) = grad_phi(d);
+        T norm = result.norm();
+        if (norm != 0)
+            return result / norm;
+        else
+            return TV::Zero();
+    }
+
+
+    BoundaryCondition bc;
+    T friction;
+    std::string name;
+
+}; // End class VdbObj
+
+#endif // VDB_OBJ_H

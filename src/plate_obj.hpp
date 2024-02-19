@@ -1,15 +1,15 @@
-#ifndef OBJECT_HPP
-#define OBJECT_HPP
+#ifndef PLATEOBJECT_HPP
+#define PLATEOBJECT_HPP
 
 #include "tools.hpp"
 #include <string>
 
-class InfinitePlate{
+class PlateObj{
 public:
 
 #ifdef THREEDIM
 
-    InfinitePlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object, T vy_object, T vz_object, T vmin_factor, T load_factor) :
+    PlateObj(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object, T vy_object, T vz_object, T vmin_factor, T load_factor) :
               pos_object(pos_object),
               pos_upper(pos_upper),
               pos_lower(pos_lower),
@@ -75,7 +75,7 @@ public:
 
 #else // TWODIM
 
-    InfinitePlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object, T vy_object, T vmin_factor, T load_factor) :
+    PlateObj(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object, T vy_object, T vmin_factor, T load_factor) :
               pos_object(pos_object),
               pos_upper(pos_upper),
               pos_lower(pos_lower),
@@ -188,74 +188,4 @@ public:
 };
 
 
-// #ifndef THREEDIM
-
-class AnalyticObj{
-public:
-
-    AnalyticObj(BoundaryCondition bc, T friction, std::string name, int type, T h = 0.016) : bc(bc), friction(friction), name(name), type(type), h(h) {}
-
-    bool inside(T x, T y){
-
-        if (type == 0){     // viroulet bump
-            T y_limit = 0.0475 / std::cosh(25*(x-h));
-
-            if (y < y_limit)
-                return true;
-            else
-                return false;
-
-        } else if (type > 0){ // quad gate
-            T y_limit = h + type * x*x;
-
-            if (y > y_limit)
-                return true;
-            else
-                return false;
-
-        } else{ // type < 0   // ramp
-            T y_limit = 0.1 * std::tanh(type*x);
-            if (y < y_limit)
-                return true;
-            else
-                return false;
-
-        }
-    }
-
-    TV normal(T x){
-
-        TV n;
-
-        if (type == 0){
-            T arg = 25*(x-h);
-            T b_der = -25 * 0.0475 * std::tanh(arg) / std::cosh(arg);
-            n(0) = -b_der;
-            n(1) = 1;
-        } else if (type > 0){
-            T b_der = 2.0 * type * x;
-            n(0) = -b_der;
-            n(1) = 1;
-            n *= -1;
-        } else{ // type < 0
-            T tmp = std::cosh(type*x);
-            T b_der = 0.1*type/(tmp*tmp);
-            n(0) = -b_der;
-            n(1) = 1;
-        }
-
-        return n.normalized();
-    }
-
-    BoundaryCondition bc;
-    T friction;
-    std::string name;
-    int type;
-    T h;
-
-};
-
-// #endif // TWODIM
-
-
-#endif  // OBJECT_HPP
+#endif  // PLATEOBJECT_HPP

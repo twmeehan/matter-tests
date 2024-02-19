@@ -275,19 +275,28 @@ void Simulation::updateDt(){
 
 
     if (gravity_special){
-        // if (time < gravity_time){
-        //     gravity = gravity_final * time/gravity_time;
-        // }
-        // else{
-        //     gravity = gravity_final;
-        // }
+        if (time < gravity_time){
+            gravity = gravity_final * time/gravity_time;
+        }
+        else{
+            gravity = gravity_final;
+            if (no_liftoff){
+                for(int p=0; p<Np; p++){
+                    if (particles.x[p](0) > 0.5*Lx){
+                        particles.x[p](0) -= 0.5*Lx;
+                        particles.x[p](1) -= Ly+10*dx;
+                    }
+                }
+                no_liftoff = false;
+            }
+        }
 
-        T theta_i = 16 * M_PI / 180;
-        T theta_f = 24 * M_PI / 180;
-        T theta = theta_i + (theta_f-theta_i) * std::min(time/gravity_time, T(1.0));
-        gravity = TV::Zero();
-        gravity[0] = +9.81 * std::sin(theta);
-        gravity[1] = -9.81 * std::cos(theta);
+        // T theta_i = 16 * M_PI / 180;
+        // T theta_f = 24 * M_PI / 180;
+        // T theta = theta_i + (theta_f-theta_i) * std::min(time/gravity_time, T(1.0));
+        // gravity = TV::Zero();
+        // gravity[0] = +9.81 * std::sin(theta);
+        // gravity[1] = -9.81 * std::cos(theta);
     }
 
 
@@ -297,7 +306,7 @@ void Simulation::updateDt(){
 
 
 void Simulation::moveObjects(){
-    for (InfinitePlate &obj : objects) {
+    for (PlateObj &obj : objects_plate) {
         obj.move(dt, frame_dt, time);
     }
 }
@@ -358,7 +367,7 @@ void Simulation::positionUpdate(){
 //     T y_next = yi + vyi * dt;
 //     moveObjects();
 //
-//     for (InfinitePlate &obj : objects) {
+//     for (PlateObj &obj : objects_plate) {
 //         bool colliding = obj.inside(x_next, y_next);
 //         if (colliding) {
 //             if (obj.plate_type == upper ){

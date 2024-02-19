@@ -35,15 +35,18 @@ A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C
     * Implementing other (visco)plastic models is easy due to the general framework of the code
 
 
-* Supports boundaries/objects formulated analytically as levelsets
+* Supports boundaries/objects
+    * formulated analytically as level sets (signed distance functions)   
+    * imported as `.vdb` level sets files using OpenVDB   
 
-* The supported boundary conditions are (the last two requiring a Coulomb friction parameter to be specified)
+
+* The supported boundary conditions are (the last two requiring a Coulomb friction parameter to be specified)   
     1) **sticky**
     2) **slipping**
     3) **separating**
 
 
-* Supports parallelization on shared memory with **OpenMP**
+* Supports **parallelization** on shared memory with OpenMP
 
 * Initial particle positions can be sampled using the Poisson disk sampling scheme by R. Bridson, ACM SIGGRAPH 2007, here based on the implementation by [Tommy Hinks](https://github.com/thinks/poisson-disk-sampling)
 
@@ -53,7 +56,7 @@ A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C
 
 2. Create a build directory: `mkdir build`
 
-3. From the build directory (`cd build`), specify CMake options: `cmake -DCMAKE_BUILD_TYPE=Release ..`
+3. From the build directory (`cd build`), specify CMake options: `cmake -DCMAKE_BUILD_TYPE=Release -DUSE_VDB=ON ..`
 
 4. Compile with `make -j <number of cores>`
 
@@ -61,13 +64,17 @@ A General Finite Strain Elasto-Viscoplastic Material Point Method Framework in C
 
 ### Dependencies
 
-The only required dependencies are **[CMake](https://cmake.org/)**, **[OpenMP](https://www.openmp.org/)** and the linear algebra library **[Eigen](https://eigen.tuxfamily.org/)**.
+The only required dependencies are **[CMake](https://cmake.org/)**, **[OpenMP](https://www.openmp.org/)** and the C++ linear algebra template library **[Eigen](https://eigen.tuxfamily.org/)**. The option `-DUSE_VDB=ON` also requires **[OpenVDB](https://www.openvdb.org/)**, however, this can be turned off if objects/terrains.
 
-On Mac, you can install OpenMP through Homebrew with 
+On Mac, you can install OpenMP through Homebrew with
 
 `brew install libomp`    
 
-You might need to use the following CMake options depending on your version:   
+and Eigen can be obtained through
+
+`brew install eigen`
+
+If OpenMP was installed through Homebrew, you might need to use the following CMake options when building on Mac, depending on your version:   
 
 `cmake -DCMAKE_BUILD_TYPE=Release -DOpenMP_CXX_FLAG="-Xclang -fopenmp" -DOpenMP_CXX_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_C_FLAG="-Xclang -fopenmp" -DOpenMP_C_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/opt/homebrew/opt/libomp/lib/libomp.dylib ..`
 

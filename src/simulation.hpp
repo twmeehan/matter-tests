@@ -7,14 +7,17 @@
 #include <sys/types.h>
 #include <cmath>
 #include <assert.h>
-
 #include <vector>
 #include <chrono>
+
 #include "tools.hpp"
 #include "plastic_models.hpp"
 #include "data_structures.hpp"
-#include "object.hpp"
 #include "timer.hpp"
+
+#include "plate_obj.hpp"
+#include "analytic_obj.hpp"
+#include "vdb_obj.hpp"
 
 #define OMP //comment out if not using omp
 
@@ -60,6 +63,7 @@ public:
   TV gravity;
   TV gravity_final;
   T gravity_time;
+  bool no_liftoff = true;
 
   T amplitude;
 
@@ -158,8 +162,9 @@ public:
   unsigned int nonlocal_support;
 
   // Objects
-  std::vector<InfinitePlate> objects;
-  std::vector<AnalyticObj> objects_anal;
+  std::vector<PlateObj> objects_plate;
+  std::vector<AnalyticObj> objects_analytic;
+  std::vector<VdbObj> objects_vdb;
 
   // Runtime measurements
   T runtime_p2g;
