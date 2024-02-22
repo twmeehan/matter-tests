@@ -19,8 +19,6 @@
 #include "analytic_obj.hpp"
 #include "vdb_obj.hpp"
 
-#define OMP //comment out if not using omp
-
 class Simulation{
 public:
   Simulation();
@@ -200,26 +198,22 @@ public:
   void G2P();
   void deformationUpdate();
 
-#ifdef OMP
-      void P2G_Optimized_Parallel();
-      void G2P_Optimized_Parallel();
-      void deformationUpdate_Parallel();
-      void explicitEulerUpdate_Optimized_Parallel();
-      void plasticity_projection();
-      void G2P_nonlocal();
-      void P2G_nonlocal();
-#else
-    void P2G_Baseline();
-    void P2G_Optimized();
 
-    void explicitEulerUpdate_Baseline();
-    void explicitEulerUpdate_Optimized();
+  void P2G_Optimized_Parallel();
+  void G2P_Optimized_Parallel();
+  void deformationUpdate_Parallel();
+  void explicitEulerUpdate_Optimized_Parallel();
+  void plasticity_projection();
+  void G2P_nonlocal();
+  void P2G_nonlocal();
 
-    void G2P_Baseline();
-    void G2P_Optimized();
-
-    void deformationUpdate_Baseline();
-#endif
+    // void P2G_Baseline();
+    // void P2G_Optimized();
+    // void deformationUpdate_Baseline();
+    // void explicitEulerUpdate_Baseline();
+    // void explicitEulerUpdate_Optimized();
+    // void G2P_Baseline();
+    // void G2P_Optimized();
 
   void positionUpdate();
   void PBCAddParticles1D();
