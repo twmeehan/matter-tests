@@ -1,8 +1,7 @@
 #ifndef VDB_OBJ_H
 #define VDB_OBJ_H
 
-#include "tools.hpp"
-#include <string>
+#include "general_obj.hpp"
 
 #include <openvdb/openvdb.h>
 #include <openvdb/io/File.h>
@@ -12,7 +11,7 @@
 // Make sure to fill the interor when creating the levelset, otherwise normals
 // and signed distances are not computed correctly
 
-class VdbObj {
+class VdbObj : public GeneralObj {
 public:
     typedef typename openvdb::Grid<typename openvdb::tree::Tree4<float, 5, 4, 3>::Type> GridT;
     typedef typename GridT::TreeType TreeT;
@@ -22,7 +21,10 @@ public:
     typename GridT::Ptr grid;
     typename GradientGridT::Ptr grad_phi;
 
-    VdbObj(std::string filename, BoundaryCondition bc_in, T friction_in, std::string name_in){
+    ~VdbObj(){}
+
+    VdbObj(std::string filename, BoundaryCondition bc_in, T friction_in, std::string name_in) : GeneralObj(bc_in, friction_in, name_in) {
+
         openvdb::io::File file(filename);
         file.open();
         openvdb::GridPtrVecPtr my_grids = file.getGrids();
@@ -35,18 +37,9 @@ public:
 
         openvdb::tools::Gradient<GridT> mg(*grid);
         grad_phi = mg.process();
-
-
-        bc = bc_in;
-        friction = friction_in;
-        name = name_in;
     }
 
-    VdbObj(){}
-
-    ~VdbObj(){}
-
-    bool inside(const TV& X_in){
+    bool inside(const TV& X_in) override {
         int dim = X_in.size();
         Eigen::Matrix<T, 3, 1> X;
         X.setZero();
@@ -60,7 +53,7 @@ public:
         return ((T)phi <= 0);
     }
 
-    TV normal(const TV& X_in){
+    TV normal(const TV& X_in) override {
         int dim = X_in.size();
         Eigen::Matrix<T, 3, 1> X;
         X.setZero();
@@ -79,11 +72,6 @@ public:
         else
             return TV::Zero();
     }
-
-
-    BoundaryCondition bc;
-    T friction;
-    std::string name;
 
 }; // End class VdbObj
 

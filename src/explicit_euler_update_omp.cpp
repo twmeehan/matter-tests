@@ -7,7 +7,7 @@ void Simulation::explicitEulerUpdate_Optimized_Parallel(){
     #ifdef WARNINGS
         debug("explicitEulerUpdate_Optimized_Parallel");
     #endif
-    
+
     std::vector<TV> grid_force(grid_nodes, TV::Zero());
 
     #pragma omp parallel num_threads(n_threads)
@@ -99,11 +99,14 @@ void Simulation::explicitEulerUpdate_Optimized_Parallel(){
 
                     TV old_vi = grid.v[index];
                     TV new_vi = old_vi + velocity_increment;
+
 #ifdef THREEDIM
-                    boundaryCollision(grid.x[i], grid.y[j], grid.z[k], new_vi);
+                    TV Xi(grid.x[i], grid.y[j], grid.z[k]);
 #else
-                    boundaryCollision(grid.x[i], grid.y[j], new_vi);
+                    TV Xi(grid.x[i], grid.y[j]);
 #endif
+
+                    boundaryCollision(Xi, new_vi);
 
                     // Currently not working:
                     // boundaryCorrection(new_xi, new_yi, new_vxi, new_vyi);

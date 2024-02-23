@@ -17,11 +17,12 @@
 
 #include "plate_obj.hpp"
 #include "analytic_obj.hpp"
-#include "vdb_obj.hpp"
+#include "general_obj.hpp"
 
 class Simulation{
 public:
   Simulation();
+  ~Simulation(){};
 
 #ifdef THREEDIM
   const unsigned int dim = 3;
@@ -160,9 +161,8 @@ public:
   unsigned int nonlocal_support;
 
   // Objects
-  std::vector<PlateObj> objects_plate;
-  std::vector<AnalyticObj> objects_analytic;
-  std::vector<VdbObj> objects_vdb;
+  std::vector<PlateObj> plates;
+  std::vector<GeneralObj*> objects;
 
   // Runtime measurements
   T runtime_p2g;
@@ -227,13 +227,8 @@ public:
 
   void moveObjects();
 
-#ifdef THREEDIM
-  void boundaryCollision(T xi, T yi, T zi, TV& vi);
-  void overwriteGridVelocity(T xi, T yi, T zi, TV& vi);
-#else
-  void boundaryCollision(T xi, T yi, TV& vi);
-  void overwriteGridVelocity(T xi, T yi, TV& vi);
-#endif
+  void boundaryCollision(TV Xi, TV& vi);
+  void overwriteGridVelocity(TV Xi, TV& vi);
 
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();

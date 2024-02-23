@@ -306,7 +306,7 @@ void Simulation::updateDt(){
 
 
 void Simulation::moveObjects(){
-    for (PlateObj &obj : objects_plate) {
+    for (PlateObj &obj : plates) {
         obj.move(dt, frame_dt, time);
     }
 }
@@ -389,17 +389,13 @@ void Simulation::positionUpdate(){
 
 
 // This function is to be used in explicitEulerUpdate after boundaryCollision
-#ifdef THREEDIM
-    void Simulation::overwriteGridVelocity(T xi, T yi, T zi, TV& vi){
-#else
-    void Simulation::overwriteGridVelocity(T xi, T yi, TV& vi){
-#endif
+void Simulation::overwriteGridVelocity(TV Xi, TV& vi){
     T y_start = Ly - 0.25*dx;
     T width = 2*dx;
     T v_imp = 0.1; // positive value means tension
-    if (yi > y_start - width + v_imp * time)
+    if (Xi(1) > y_start - width + v_imp * time)
         vi(1) = v_imp;
-    if (yi < 0       + width - v_imp * time)
+    if (Xi(1) < 0       + width - v_imp * time)
         vi(1) = -v_imp;
 }
 

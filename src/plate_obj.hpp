@@ -26,44 +26,44 @@ public:
               vmin_factor(vmin_factor),
               load_factor(load_factor) {}
 
-      bool inside(T x, T y, T z){
+      bool inside(const TV& X_in){
           if (plate_type == left){
-              if (y < pos_upper && y > pos_lower && (x - pos_object) <= 0){
+              if (X_in(1) < pos_upper && X_in(1) > pos_lower && (X_in(0) - pos_object) <= 0){
                   return true;
               } else{
                   return false;
               }
           }
           if (plate_type == right){
-              if (y < pos_upper && y > pos_lower && (pos_object - x) <= 0){
+              if (X_in(1) < pos_upper && X_in(1) > pos_lower && (pos_object - X_in(0)) <= 0){
                   return true;
               } else{
                   return false;
               }
           }
           if (plate_type == bottom){
-              if (x < pos_upper && x > pos_lower && (y - pos_object) <= 0){
+              if (X_in(0) < pos_upper && X_in(0) > pos_lower && (X_in(1) - pos_object) <= 0){
                   return true;
               } else{
                   return false;
               }
           }
           if (plate_type == top){
-              if (x < pos_upper && x > pos_lower && (pos_object - y) <= 0){
+              if (X_in(0) < pos_upper && X_in(0) > pos_lower && (pos_object - X_in(1)) <= 0){
                   return true;
               } else{
                   return false;
               }
           }
           if (plate_type == back){
-              if (z - pos_object <= 0){
+              if (X_in(2) - pos_object <= 0){
                   return true;
               } else{
                   return false;
               }
           }
           if (plate_type == front){
-              if (pos_object - z <= 0){
+              if (pos_object - X_in(2) <= 0){
                   return true;
               } else{
                   return false;
@@ -90,30 +90,30 @@ public:
               vmin_factor(vmin_factor),
               load_factor(load_factor) {}
 
-    bool inside(T x, T y){
+    bool inside(const TV& X_in){
         if (plate_type == left){
-            if (y < pos_upper && y > pos_lower && (x - pos_object) <= 0){
+            if (X_in(1) < pos_upper && X_in(1) > pos_lower && (X_in(0) - pos_object) <= 0){
                 return true;
             } else{
                 return false;
             }
         }
         if (plate_type == right){
-            if (y < pos_upper && y > pos_lower && (pos_object - x) <= 0){
+            if (X_in(1) < pos_upper && X_in(1) > pos_lower && (pos_object - X_in(0)) <= 0){
                 return true;
             } else{
                 return false;
             }
         }
         if (plate_type == bottom){
-            if (x < pos_upper && x > pos_lower && (y - pos_object) <= 0){
+            if (X_in(0) < pos_upper && X_in(0) > pos_lower && (X_in(1) - pos_object) <= 0){
                 return true;
             } else{
                 return false;
             }
         }
         if (plate_type == top){
-            if (x < pos_upper && x > pos_lower && (pos_object - y) <= 0){
+            if (X_in(0) < pos_upper && X_in(0) > pos_lower && (pos_object - X_in(1)) <= 0){
                 return true;
             } else{
                 return false;

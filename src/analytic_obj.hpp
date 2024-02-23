@@ -1,16 +1,18 @@
 #ifndef ANALYTICOBJECT_HPP
 #define ANALYTICOBJECT_HPP
 
-#include "tools.hpp"
-#include <string>
+#include "general_obj.hpp"
 
-
-class AnalyticObj{
+class AnalyticObj : public GeneralObj {
 public:
+    int type;
+    T h;
 
-    AnalyticObj(BoundaryCondition bc, T friction, std::string name, int type, T h = 0.016) : bc(bc), friction(friction), name(name), type(type), h(h) {}
+    ~AnalyticObj(){}
 
-    bool inside(const TV& X_in){
+    AnalyticObj(BoundaryCondition bc_in, T friction_in, std::string name_in, int type_in, T h_in = 0.016) : GeneralObj(bc_in, friction_in, name_in), type(type_in), h(h_in) {}
+
+    bool inside(const TV& X_in) override {
 
         T x = X_in(0);
         T y = X_in(1);
@@ -41,7 +43,7 @@ public:
         }
     }
 
-    TV normal(const TV& X_in){
+    TV normal(const TV& X_in) override {
 
         T x = X_in(0);
         TV n;
@@ -65,12 +67,6 @@ public:
 
         return n.normalized();
     }
-
-    BoundaryCondition bc;
-    T friction;
-    std::string name;
-    int type;
-    T h;
 
 };
 
