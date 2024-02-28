@@ -152,9 +152,13 @@ void Simulation::advanceStep(){
     if (pbc){
         if (current_time_step == 0)
             remeshFixed(4);
-    }else{
+            if (delete_last_particle)
+                deleteLastParticle();
+    }else{ //  not pbc
         if (current_time_step == 0) {
             remeshFixedInit(2,2,2);
+            if (delete_last_particle)
+                deleteLastParticle();
         } else {
             remeshFixedCont();
         }
@@ -358,6 +362,23 @@ void Simulation::positionUpdate(){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////// EXTRA FUNCTIONS //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void Simulation::deleteLastParticle(){
+    auto new_part_x = particles.x;
+    new_part_x.pop_back();
+
+    Np -= 1;
+
+    if (new_part_x.size() != Np){
+        debug("PARTICLE NUMBER MISMATCH!!!");
+        exit = 1;
+        return;
+    }
+
+    particles = Particles(Np);
+    particles.x = new_part_x;
+}
 
 // // Currently not working!!
 // void Simulation::boundaryCorrection(T xi, T yi, T& vxi, T& vyi){

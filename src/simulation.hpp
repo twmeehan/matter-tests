@@ -39,6 +39,7 @@ public:
   unsigned int end_frame;
   int exit;
   bool pbc = false;
+  bool delete_last_particle = false;
   bool pbc_special = false;
   bool gravity_special = false;
   T time;
@@ -229,6 +230,8 @@ public:
 
   void boundaryCollision(TV Xi, TV& vi);
   void overwriteGridVelocity(TV Xi, TV& vi);
+
+  void deleteLastParticle();
 
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();
