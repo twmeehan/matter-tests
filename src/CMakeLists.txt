@@ -22,9 +22,6 @@ if (USE_VDB)
 
 	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
-	find_package(Half QUIET)
-	include_directories(${HALF_INCLUDE_DIRS} SYSTEM)
-
 	find_package(OpenVDB 3.1 QUIET)
 	include_directories(${OPENVDB_INCLUDE_DIRS} SYSTEM)
 
@@ -34,7 +31,7 @@ if (USE_VDB)
 	find_package(Boost REQUIRED)
 	include_directories(${Boost_INCLUDE_DIRS} SYSTEM)
 
-	target_link_libraries (mpm OpenMP::OpenMP_CXX Eigen3::Eigen ${HALF_LIBRARIES} ${OPENVDB_LIBRARIES} ${OpenEXR_LIBRARIES} ${TBB_LIBRARIES} ${Boost_LIBRARIES})
+	target_link_libraries (mpm OpenMP::OpenMP_CXX Eigen3::Eigen ${OPENVDB_LIBRARIES} ${OpenEXR_LIBRARIES} ${TBB_LIBRARIES} ${Boost_LIBRARIES})
 
 else (USE_VDB)
 
