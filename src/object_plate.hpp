@@ -1,15 +1,15 @@
-#ifndef PLATEOBJECT_HPP
-#define PLATEOBJECT_HPP
+#ifndef OBJECTPLATE_HPP
+#define OBJECTPLATE_HPP
 
 #include "tools.hpp"
 #include <string>
 
-class PlateObj{
+class ObjectPlate{
 public:
 
 #ifdef THREEDIM
 
-    PlateObj(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object, T vy_object, T vz_object, T vmin_factor, T load_factor) :
+    ObjectPlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object, T vy_object, T vz_object, T vmin_factor, T load_factor) :
               pos_object(pos_object),
               pos_upper(pos_upper),
               pos_lower(pos_lower),
@@ -75,7 +75,7 @@ public:
 
 #else // TWODIM
 
-    PlateObj(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object, T vy_object, T vmin_factor, T load_factor) :
+    ObjectPlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object, T vy_object, T vmin_factor, T load_factor) :
               pos_object(pos_object),
               pos_upper(pos_upper),
               pos_lower(pos_lower),
@@ -188,4 +188,4 @@ public:
 };
 
 
-#endif  // PLATEOBJECT_HPP
+#endif  // OBJECTPLATE_HPP

@@ -47,7 +47,7 @@ void Simulation::boundaryCollision(TV Xi, TV& vi){
 
 #ifdef THREEDIM
 
-    for (PlateObj &obj : plates) {
+    for (ObjectPlate &obj : plates) {
         bool colliding = obj.inside(Xi);
         if (colliding) {
             T vx_rel = vi_orig(0) - obj.vx_object;
@@ -216,7 +216,7 @@ void Simulation::boundaryCollision(TV Xi, TV& vi){
 #else // TWODIM
 
 
-    for (PlateObj &obj : plates) {
+    for (ObjectPlate &obj : plates) {
         bool colliding = obj.inside(Xi);
         if (colliding) {
             T vx_rel = vi_orig(0) - obj.vx_object;

@@ -310,7 +310,7 @@ void Simulation::updateDt(){
 
 
 void Simulation::moveObjects(){
-    for (PlateObj &obj : plates) {
+    for (ObjectPlate &obj : plates) {
         obj.move(dt, frame_dt, time);
     }
 }
@@ -388,7 +388,7 @@ void Simulation::deleteLastParticle(){
 //     T y_next = yi + vyi * dt;
 //     moveObjects();
 //
-//     for (PlateObj &obj : objects_plate) {
+//     for (ObjectPlate &obj : objects_plate) {
 //         bool colliding = obj.inside(x_next, y_next);
 //         if (colliding) {
 //             if (obj.plate_type == upper ){

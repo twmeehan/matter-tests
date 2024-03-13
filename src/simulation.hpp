@@ -15,9 +15,9 @@
 #include "data_structures.hpp"
 #include "timer.hpp"
 
-#include "plate_obj.hpp"
-#include "analytic_obj.hpp"
-#include "general_obj.hpp"
+#include "object_plate.hpp"
+#include "object_analytic.hpp"
+#include "object_general.hpp"
 
 class Simulation{
 public:
@@ -162,8 +162,8 @@ public:
   unsigned int nonlocal_support;
 
   // Objects
-  std::vector<PlateObj> plates;
-  std::vector<GeneralObj*> objects;
+  std::vector<ObjectPlate> plates;
+  std::vector<ObjectGeneral*> objects;
 
   // Runtime measurements
   T runtime_p2g;

@@ -1,16 +1,16 @@
-#ifndef ANALYTICOBJECT_HPP
-#define ANALYTICOBJECT_HPP
+#ifndef OBJECTANALYTIC_HPP
+#define OBJECTANALYTIC_HPP
 
-#include "general_obj.hpp"
+#include "object_general.hpp"
 
-class AnalyticObj : public GeneralObj {
+class ObjectAnalytic : public ObjectGeneral {
 public:
     int type;
     T h;
 
-    ~AnalyticObj(){}
+    ~ObjectAnalytic(){}
 
-    AnalyticObj(BoundaryCondition bc_in, T friction_in, std::string name_in, int type_in, T h_in = 0.016) : GeneralObj(bc_in, friction_in, name_in), type(type_in), h(h_in) {}
+    ObjectAnalytic(BoundaryCondition bc_in, T friction_in, std::string name_in, int type_in, T h_in = 0.016) : ObjectGeneral(bc_in, friction_in, name_in), type(type_in), h(h_in) {}
 
     bool inside(const TV& X_in) override {
 
@@ -70,4 +70,4 @@ public:
 
 };
 
-#endif  // ANALYTICOBJECT_HPP
+#endif  // OBJECTANALYTIC_HPP

@@ -1,7 +1,7 @@
 #ifndef VDB_OBJ_H
 #define VDB_OBJ_H
 
-#include "general_obj.hpp"
+#include "object_general.hpp"
 
 #include <openvdb/openvdb.h>
 #include <openvdb/io/File.h>
@@ -11,7 +11,7 @@
 // Make sure to fill the interor when creating the levelset, otherwise normals
 // and signed distances are not computed correctly
 
-class VdbObj : public GeneralObj {
+class ObjectVdb : public ObjectGeneral {
 public:
     typedef typename openvdb::Grid<typename openvdb::tree::Tree4<float, 5, 4, 3>::Type> GridT;
     typedef typename GridT::TreeType TreeT;
@@ -21,9 +21,9 @@ public:
     typename GridT::Ptr grid;
     typename GradientGridT::Ptr grad_phi;
 
-    ~VdbObj(){}
+    ~ObjectVdb(){}
 
-    VdbObj(std::string filename, BoundaryCondition bc_in, T friction_in, std::string name_in) : GeneralObj(bc_in, friction_in, name_in) {
+    ObjectVdb(std::string filename, BoundaryCondition bc_in, T friction_in, std::string name_in) : ObjectGeneral(bc_in, friction_in, name_in) {
 
         openvdb::io::File file(filename);
         file.open();
@@ -73,6 +73,6 @@ public:
             return TV::Zero();
     }
 
-}; // End class VdbObj
+}; // End class ObjectVdb
 
 #endif // VDB_OBJ_H
