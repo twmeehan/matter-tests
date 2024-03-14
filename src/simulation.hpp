@@ -125,6 +125,8 @@ public:
   T xi;
   T xi_nonloc;
 
+  bool use_von_mises_q = false;
+
   // Von Mises:
   T yield_stress_orig;
   T yield_stress_min;

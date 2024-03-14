@@ -100,7 +100,12 @@ void Simulation::saveParticleData(std::string extra){
 
         T pressure  = -tau.trace() / dim;
         TM tau_dev = tau + pressure * TM::Identity();
-        T devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
+
+        T devstress;
+        if (use_von_mises_q)
+            devstress = std::sqrt(3.0/2.0 * selfDoubleDot(tau_dev));
+        else
+            devstress = std::sqrt(1.0/2.0 * selfDoubleDot(tau_dev));
 
         pressure_vec[p] = pressure;
         devstress_vec[p] = devstress;
