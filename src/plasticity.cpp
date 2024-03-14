@@ -239,11 +239,11 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             if ((p_trial+p_shift) < p_tip){
                 T delta_gamma     = hencky_deviatoric_norm;
                 T p_proj          = p_tip; // > p_trial
-                T eps_pl_vol_inst = (p_proj-p_trial)/K;
+                T eps_pl_vol_inst = (p_proj-p_trial)/K; // this can be both positive and negative when using Pradhana!
                 plastic_count++;
                 hencky = -p_proj/(K*dim) * TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                particles.delta_gamma[p]          = delta_gamma;
+                particles.delta_gamma[p]          = delta_gamma / dt;
                 particles.eps_pl_dev[p]          += delta_gamma;
                 particles.eps_pl_vol[p]          += eps_pl_vol_inst;
                 particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
@@ -256,47 +256,59 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
             T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion; // not sure if we should really shift this intersection!!!
 
-            // right of tip AND outside yield surface
+            // right of tip AND outside the shifted yield surface
             if ((p_trial+p_shift) > p_tip && q_trial > q_yield) {
-
                 plastic_count++;
 
-                T delta_gamma = 0.01 * (q_trial - q_yield) / (mu*sqrt6); // initial guess
+                T delta_gamma;
 
-                int max_iter = 60;
-                for (int iter = 0; iter < max_iter; iter++) {
-                    if (iter == max_iter - 1){ // did not break loop
-                        debug("PerzynaDP: FATAL did not exit loop at iter = ", iter);
+                if (perzyna_exp == 1){
+                    delta_gamma = (q_trial-q_yield) / (mu*sqrt6 + q_yield*perzyna_visc/dt);
+                    if (delta_gamma < 0){
+                        debug("PerzynaDP: FATAL negative delta_gamma = ", delta_gamma);
                         exit = 1;
                     }
+                }
+                else{
 
-                    T tm = perzyna_visc * delta_gamma + dt;
-                    T tmp = dt / tm;
-                    T tmp1 = std::pow(tmp, perzyna_exp);
+                    delta_gamma = 0.01 * (q_trial - q_yield) / (mu*sqrt6); // initial guess
 
-                    T residual = (q_trial - mu*sqrt6 * delta_gamma) * tmp1 - q_yield;
-                    if (std::abs(residual) < 1e-1) {
-                        break;
-                    }
+                    int max_iter = 60;
+                    for (int iter = 0; iter < max_iter; iter++) {
+                        if (iter == max_iter - 1){ // did not break loop
+                            debug("PerzynaDP: FATAL did not exit loop at iter = ", iter);
+                            exit = 1;
+                        }
 
-                    T residual_diff = -mu*sqrt6 * tmp1 + (q_trial - mu*sqrt6 * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
+                        T tm = perzyna_visc * delta_gamma + dt;
+                        T tmp = dt / tm;
+                        T tmp1 = std::pow(tmp, perzyna_exp);
 
-                    if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
-                        debug("PerzynaDP: residual_diff too small in abs value = ", residual_diff);
-                        exit = 1;
-                    }
+                        T residual = (q_trial - mu*sqrt6 * delta_gamma) * tmp1 - q_yield;
+                        if (std::abs(residual) < 1e-2) {
+                            break;
+                        }
 
-                    delta_gamma -= residual / residual_diff;
+                        T residual_diff = -mu*sqrt6 * tmp1 + (q_trial - mu*sqrt6 * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
 
-                    if (delta_gamma < 0) // not possible and can also lead to division by zero
-                        delta_gamma = 1e-10;
+                        if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
+                            debug("PerzynaDP: FATAL residual_diff too small in abs value = ", residual_diff);
+                            exit = 1;
+                        }
 
-                } // end N-R iterations
+                        delta_gamma -= residual / residual_diff;
+
+                        if (delta_gamma < 0) // not possible and can also lead to division by zero
+                            delta_gamma = 1e-10;
+
+                    } // end N-R iterations
+
+                } // end if perzyna_exp == 1
 
                 hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += delta_gamma;
-                particles.delta_gamma[p] = delta_gamma;
+                particles.delta_gamma[p] = delta_gamma / dt;
             } // end plastic projection projection
         } // end PerzynaDP
 
