@@ -6,7 +6,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == MCC || plastic_model == MCCHard || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC  || plastic_model == PerzynaMCCHard || plastic_model == SinterMCC){
+    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == MCC || plastic_model == MCCHard || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC  || plastic_model == SinterMCC){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log(); // VonMises
@@ -460,42 +460,46 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaMuIMCC
 
 
-        else if (plastic_model == MCC || plastic_model == MCCHard || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == SinterMCC || plastic_model == PerzynaMCCHard){
+        else if (plastic_model == MCC || plastic_model == MCCHard || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == SinterMCC){
+
+            T q_prefac; // q     = factor * ||dev(tau)||
+            T d_prefac; // gamma = factor * ||dev(eps)||
+            if (use_von_mises_q){
+                q_prefac = sqrt3/sqrt2;
+                d_prefac = sqrt2/sqrt3;
+            } else {
+                q_prefac = 1.0/sqrt2;
+                d_prefac = sqrt2;
+            }
+
+            T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
+            T f_mu_prefac = 2*q_prefac/d_prefac * mu;  // q^tr - q = factor * dt * gamma_dot
+            T rma_prefac  = 2*q_prefac*q_prefac;
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
-            T q_stress = mu*sqrt6 * hencky_deviatoric_norm;
+            T q_stress = e_mu_prefac * hencky_deviatoric_norm;
 
             // make copies
             T p_trial = p_stress;
             T q_trial = q_stress;
 
-            // T particle_p0 = p0;
-            // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
-            T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
-            // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]) * (1+particles.sinter_S[p]) );
-
             bool perform_rma;
-            if (plastic_model == MCC)
+            if (plastic_model == MCC) // Explicit hardening (no hardening used in return mapping)
             {
-                perform_rma = MCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, 1);
+                // T particle_p0 = p0;
+                T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
+                // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
+                // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]) * (1+particles.sinter_S[p]) );
+                perform_rma = MCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
             }
-            else if (plastic_model == MCCHard)
+            else if (plastic_model == MCCHard) // Sinh hardening, implicit
             {
-                perform_rma = MCCHardRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, 1, particles.eps_pl_vol[p]);
+                perform_rma = MCCHardRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
             }
-            else if (plastic_model == MCCHardExp)
+            else if (plastic_model == MCCHardExp || plastic_model == PerzynaMCC) // Exponential hardening, implicit, assuming the factor in front of q^2 in the yield criterion is 1
             {
-                perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, 1, particles.eps_pl_vol[p]);
-            }
-            else if (plastic_model == PerzynaMCC)
-            {
-                perform_rma = PerzynaMCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, dt, dim, perzyna_visc);
-            }
-            else if (plastic_model == PerzynaMCCHard)
-            {
-                // perform_rma = PerzynaMCCHardRMA(p_stress, q_stress, exit, M, p0, beta, xi, mu, K, dt, dim, perzyna_visc, particles.eps_pl_vol_mcc[p]);
-                perform_rma = PerzynaMCCHardRMA(p_stress, q_stress, exit, M, p0, beta, xi, mu, K, dt, dim, perzyna_visc, particles.eps_pl_vol[p]);
+                perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
             }
             else if (plastic_model == SinterMCC)
             {
@@ -505,19 +509,75 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             if (perform_rma) { // returns true if it performs a return mapping
                 plastic_count++;
 
-                T eps_pl_dev_instant = (q_trial - q_stress) / (mu*sqrt6);
-                particles.eps_pl_dev[p] += eps_pl_dev_instant;
-                particles.delta_gamma[p] = eps_pl_dev_instant / dt;
-
                 T ep = p_stress / (K*dim);
                 T eps_pl_vol_inst = hencky_trace + dim * ep;
                 particles.eps_pl_vol[p]     += eps_pl_vol_inst;
-                particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
+                // particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
+
+                ////////////////////////////////////////////////////////////////
+                if (plastic_model == PerzynaMCC){
+
+                    T q_yield = q_stress;
+
+                    T delta_gamma;
+
+                    if (perzyna_exp == 1){
+                        delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*perzyna_visc/dt);
+                        if (delta_gamma < 0){
+                            debug("PerzynaMCC: FATAL negative delta_gamma = ", delta_gamma);
+                            exit = 1;
+                        }
+                    }
+                    else{
+
+                        delta_gamma = 0.01 * (q_trial - q_yield) / f_mu_prefac; // initial guess
+
+                        int max_iter = 60;
+                        for (int iter = 0; iter < max_iter; iter++) {
+                            if (iter == max_iter - 1){ // did not break loop
+                                debug("PerzynaMCC: FATAL did not exit loop at iter = ", iter);
+                                exit = 1;
+                            }
+
+                            T tm = perzyna_visc * delta_gamma + dt;
+                            T tmp = dt / tm;
+                            T tmp1 = std::pow(tmp, perzyna_exp);
+
+                            T residual = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
+                            if (std::abs(residual) < 1e-2) {
+                                break;
+                            }
+
+                            T residual_diff = -f_mu_prefac * tmp1 + (q_trial - mu*sqrt6 * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
+
+                            if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
+                                debug("PerzynaMCC: FATAL residual_diff too small in abs value = ", residual_diff);
+                                exit = 1;
+                            }
+
+                            delta_gamma -= residual / residual_diff;
+
+                            if (delta_gamma < 0) // not possible and can also lead to division by zero
+                                delta_gamma = 1e-10;
+
+                        } // end N-R iterations
+
+                    } // end if perzyna_exp == 1
+
+                    q_stress = std::max(q_yield, q_trial - f_mu_prefac * delta_gamma); // delta_gamma = dt * gamma_dot_S
+
+                } //  end if PerzynaMCC
+                ////////////////////////////////////////////////////////////////
+
+
+                T eps_pl_dev_instant = (q_trial - q_stress) / f_mu_prefac;
+                particles.eps_pl_dev[p] += eps_pl_dev_instant;
+                particles.delta_gamma[p] = eps_pl_dev_instant / dt;
 
                 // T delta_S = dt/sinter_tc*(sinter_Sinf-particles.sinter_S[p]) - particles.sinter_S[p] * std::abs(eps_pl_vol_inst) / sinter_ec;
                 // particles.sinter_S[p] = std::min(T(sinter_Sinf), std::max(T(0.0), particles.sinter_S[p] + delta_S));
 
-                hencky = q_stress / (mu*sqrt6) * hencky_deviatoric - ep*TV::Ones();
+                hencky = q_stress / e_mu_prefac * hencky_deviatoric - ep*TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
             }
         }

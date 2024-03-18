@@ -177,6 +177,7 @@ public:
   T one_over_dx;
   T one_over_dx_square;
   T sqrt6 = std::sqrt(6.0);
+  T sqrt3 = std::sqrt(3.0);
   T sqrt2 = std::sqrt(2.0);
   T apicDinverse;
 
