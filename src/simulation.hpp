@@ -181,6 +181,12 @@ public:
   T sqrt2 = std::sqrt(2.0);
   T apicDinverse;
 
+  T q_prefac;
+  T d_prefac;
+  T e_mu_prefac;
+  T f_mu_prefac;
+  T rma_prefac;
+
   // Functions
   void initialize(T E, T nu, T density);
   void simulate();

@@ -1,0 +1,110 @@
+#ifndef SAMPLING_PARTICLES_FROM_VDB_HPP
+#define SAMPLING_PARTICLES_FROM_VDB_HPP
+
+#include "tools.hpp"
+#include "data_structures.hpp"
+#include "poisson_disk_sampling.hpp"
+
+#include "object_vdb.hpp"
+
+#ifdef THREEDIM
+
+    template <typename S>
+    void SampleParticlesFromVdb(T kRadius, T ppc, ObjectVdb& obj, S& sim){
+        debug("Sampling particles from VDB...");
+
+        std::uint32_t kAttempts = 30;
+        std::uint32_t kSeed = 42;
+
+        TV min_corner, max_corner;
+        obj.bounds(min_corner, max_corner);
+        debug("    Min corner: \n", min_corner);
+        debug("    Max corner: \n", max_corner);
+        TV L = max_corner - min_corner;
+        debug("    Extent: \n", L);
+
+        T factor = 100;
+        L /= factor;
+        kRadius /= factor;
+
+        debug("    Scaled extent: \n", L);
+
+        std::array<T, 3> kXMin = std::array<T, 3>{{0.0, 0.0, 0.0}};
+        std::array<T, 3> kXMax = std::array<T, 3>{{L(0), L(1), L(2)}};
+        std::vector<std::array<T, 3>> square_samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);
+
+        debug("    Number of square samples: ", square_samples.size());
+
+        L *= factor;
+
+        sim.dx = std::cbrt(ppc / T(square_samples.size()) * L(0)*L(1)*L(2));
+        sim.particle_volume = sim.dx * sim.dx * sim.dx / ppc;
+        sim.particle_mass = sim.rho * sim.particle_volume;
+
+        debug("    dx set to ", sim.dx);
+
+        std::vector<TV> samples;
+        for(int p = 0; p < square_samples.size(); p++){
+            TV point(square_samples[p][0], square_samples[p][1], square_samples[p][2]);
+            point *= factor;
+            point += min_corner;
+            if ( obj.inside(point) ){
+                samples.push_back(point);
+            }
+        }
+
+        sim.Np = samples.size();
+        debug("    Number of particles samples: ", sim.Np);
+
+        sim.particles = Particles(sim.Np);
+        sim.particles.x = samples;
+
+    } // end SampleParticles
+
+#else // TWODIM
+
+    template <typename S>
+    void SampleParticlesFromVdb(T kRadius, T ppc, ObjectVdb& obj, S& sim){
+        debug("Sampling particles from VDB...");
+
+        std::uint32_t kAttempts = 30;
+        std::uint32_t kSeed = 42;
+
+        TV min_corner, max_corner;
+        obj.bounds(min_corner, max_corner);
+        debug("    Min corner: \n", min_corner);
+        debug("    Max corner: \n", max_corner);
+
+        std::array<T, 2> kXMin = std::array<T, 2>{{min_corner(0), min_corner(1)}};
+        std::array<T, 2> kXMax = std::array<T, 2>{{max_corner(0), max_corner(1)}};
+        std::vector<std::array<T, 2>> square_samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);
+
+        debug("    Number of square samples: ", square_samples.size());
+
+        TV L = max_corner - min_corner;
+        sim.dx = std::sqrt(ppc / T(square_samples.size()) * L(0)*L(1));
+        sim.particle_volume = sim.dx * sim.dx / ppc;
+        sim.particle_mass = sim.rho * sim.particle_volume;
+
+        debug("    dx set to ", sim.dx);
+
+        std::vector<TV> samples;
+        for(int p = 0; p < square_samples.size(); p++){
+            TV point(square_samples[p][0], square_samples[p][1]);
+            if ( obj.inside(point) ){
+                samples.push_back(point);
+            }
+        }
+
+        sim.Np = samples.size();
+        debug("    Number of particles samples: ", sim.Np);
+
+        sim.particles = Particles(sim.Np);
+        sim.particles.x = samples;
+
+    } // end SampleParticles
+
+#endif // DIMENSION
+
+
+#endif  // SAMPLING_PARTICLES_FROM_VDB_HPP

@@ -73,6 +73,21 @@ public:
             return TV::Zero();
     }
 
+    void bounds(TV& min_bbox, TV& max_bbox){
+        int dim = min_bbox.size();
+        min_bbox.setZero();
+        max_bbox.setZero();
+        openvdb::CoordBBox bbox = grid->evalActiveVoxelBoundingBox();
+        auto wmin = grid->indexToWorld(bbox.min());
+        auto wmax = grid->indexToWorld(bbox.max());
+
+        for (int d = 0; d < dim; d++) {
+            min_bbox(d) = (T)wmin(d);
+            max_bbox(d) = (T)wmax(d);
+        }
+    }
+
+
 }; // End class ObjectVdb
 
 #endif // VDB_OBJ_H

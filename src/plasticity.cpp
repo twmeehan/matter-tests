@@ -22,18 +22,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         if (plastic_model == VonMises){
 
-            T q_prefac; // q     = factor * ||dev(tau)||
-            T d_prefac; // gamma = factor * ||dev(eps)||
-            if (use_von_mises_q){
-                q_prefac = sqrt3/sqrt2;
-                d_prefac = sqrt2/sqrt3;
-            } else {
-                q_prefac = 1.0/sqrt2;
-                d_prefac = sqrt2;
-            }
-
-            T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
-
             // NB: yield stress is q
             T yield_stress = yield_stress_orig;
             // T yield_stress = std::max( (T)1e-3, particles.yield_stress_orig[p] + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
@@ -57,18 +45,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end VonMises
 
         else if (plastic_model == DruckerPrager){
-
-            T q_prefac; // q     = factor * ||dev(tau)||
-            T d_prefac; // gamma = factor * ||dev(eps)||
-            if (use_von_mises_q){
-                q_prefac = sqrt3/sqrt2;
-                d_prefac = sqrt2/sqrt3;
-            } else {
-                q_prefac = 1.0/sqrt2;
-                d_prefac = sqrt2;
-            }
-
-            T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
 
             // trial stresses
             T p_trial = -K * hencky_trace;
@@ -172,19 +148,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == PerzynaVM){
 
-            T q_prefac; // q     = factor * ||dev(tau)||
-            T d_prefac; // gamma = factor * ||dev(eps)||
-            if (use_von_mises_q){
-                q_prefac = sqrt3/sqrt2;
-                d_prefac = sqrt2/sqrt3;
-            } else {
-                q_prefac = 1.0/sqrt2;
-                d_prefac = sqrt2;
-            }
-
-            T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
-            T f_mu_prefac = 2*q_prefac/d_prefac * mu;  // q^tr - q = factor * dt * gamma_dot
-
             // trial q-stress (in q format)
             T stress = e_mu_prefac * hencky_deviatoric_norm;
 
@@ -258,19 +221,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaVM
 
         else if (plastic_model == PerzynaDP){
-
-            T q_prefac; // q     = factor * ||dev(tau)||
-            T d_prefac; // gamma = factor * ||dev(eps)||
-            if (use_von_mises_q){
-                q_prefac = sqrt3/sqrt2;
-                d_prefac = sqrt2/sqrt3;
-            } else {
-                q_prefac = 1.0/sqrt2;
-                d_prefac = sqrt2;
-            }
-
-            T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
-            T f_mu_prefac = 2*q_prefac/d_prefac * mu;  // q^tr - q = factor * dt * gamma_dot
 
             // trial stresses
             T p_trial = -K * hencky_trace;
@@ -360,12 +310,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == PerzynaMuIDP){
 
-            T q_prefac = 1.0/sqrt2; //      q = factor * ||dev(tau)||
-            T d_prefac = sqrt2;     //  gamma = factor * ||dev(eps)||
-
-            T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
-            T f_mu_prefac = 2*q_prefac/d_prefac * mu;  // q^tr - q = factor * dt * gamma_dot
-
             // trial stresses
             T p_trial = -K * hencky_trace;
             T q_trial = e_mu_prefac * hencky_deviatoric_norm;
@@ -427,13 +371,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaMuIDP
 
         else if (plastic_model == PerzynaMuIMCC) {
-
-            T q_prefac = 1.0/sqrt2; //      q = factor * ||dev(tau)||
-            T d_prefac = sqrt2;     //  gamma = factor * ||dev(eps)||
-
-            T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
-            T f_mu_prefac = 2*q_prefac/d_prefac * mu;  // q^tr - q = factor * dt * gamma_dot
-            T rma_prefac  = 2*q_prefac*q_prefac; // = 1
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -506,20 +443,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
 
         else if (plastic_model == MCC || plastic_model == MCCHard || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == SinterMCC){
-
-            T q_prefac; // q     = factor * ||dev(tau)||
-            T d_prefac; // gamma = factor * ||dev(eps)||
-            if (use_von_mises_q){
-                q_prefac = sqrt3/sqrt2;
-                d_prefac = sqrt2/sqrt3;
-            } else {
-                q_prefac = 1.0/sqrt2;
-                d_prefac = sqrt2;
-            }
-
-            T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
-            T f_mu_prefac = 2*q_prefac/d_prefac * mu;  // q^tr - q = factor * dt * gamma_dot
-            T rma_prefac  = 2*q_prefac*q_prefac;
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
