@@ -81,8 +81,6 @@ void Simulation::simulate(){
     nonlocal_l_sq = nonlocal_l * nonlocal_l;
     nonlocal_support = std::ceil(nonlocal_l / dx);
 
-    T q_prefac; // q     = factor * ||dev(tau)||
-    T d_prefac; // gamma = factor * ||dev(eps)||
     if (use_von_mises_q){
         q_prefac = sqrt3/sqrt2;
         d_prefac = sqrt2/sqrt3;
@@ -90,9 +88,9 @@ void Simulation::simulate(){
         q_prefac = 1.0/sqrt2;
         d_prefac = sqrt2;
     }
-    T e_mu_prefac = 2*q_prefac          * mu;  // q = factor * ||dev(eps)||
-    T f_mu_prefac = 2*q_prefac/d_prefac * mu;  // q^tr - q = factor * dt * gamma_dot
-    T rma_prefac  = 2*q_prefac*q_prefac;
+    e_mu_prefac = 2*q_prefac          * mu;
+    f_mu_prefac = 2*q_prefac/d_prefac * mu;
+    rma_prefac  = 2*q_prefac*q_prefac;
 
     fac_Q = in_numb_ref / (grain_diameter*std::sqrt(rho_s));
 

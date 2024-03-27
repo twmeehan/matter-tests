@@ -125,6 +125,7 @@ public:
   T xi;
   T xi_nonloc;
 
+  bool use_pradhana = true;
   bool use_von_mises_q = false;
 
   // Von Mises:
@@ -181,10 +182,10 @@ public:
   T sqrt2 = std::sqrt(2.0);
   T apicDinverse;
 
-  T q_prefac;
-  T d_prefac;
-  T e_mu_prefac;
-  T f_mu_prefac;
+  T q_prefac;    // q        = factor * ||dev(tau)||
+  T d_prefac;    // gamma    = factor * ||dev(eps)||
+  T e_mu_prefac; // q        = factor * ||dev(eps)||
+  T f_mu_prefac; // q^tr - q = factor * dt * gamma_dot
   T rma_prefac;
 
   // Functions

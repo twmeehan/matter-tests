@@ -33,7 +33,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.delta_gamma[p] = delta_gamma / dt;
 
                 // NB! If using the NONLOCAL approach: The following 3 lines should be commented out as this is done in plasticity_projection
-                hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
+                hencky -= (1.0 / d_prefac) * delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += delta_gamma;
 
@@ -227,7 +227,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T q_trial = e_mu_prefac * hencky_deviatoric_norm;
 
             T p_tip   = -dp_cohesion/dp_slope;
-            T p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain! Force to be zero if using classical volume-expanding non-ass. DP
+            T p_shift = 0;
+            if (use_pradhana)
+                p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain! Force to be zero if using classical volume-expanding non-ass. DP
 
             // if left of shifted tip,
             // => project to the original tip given by cohesion only (i.e., not the shifted tip)
@@ -315,7 +317,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T q_trial = e_mu_prefac * hencky_deviatoric_norm;
 
             T p_tip   = -dp_cohesion/dp_slope;
-            T p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain! Force to be zero if using classical volume-expanding non-ass. DP
+            T p_shift = 0;
+            if (use_pradhana)
+                p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain! Force to be zero if using classical volume-expanding non-ass. DP
 
             particles.muI[p]         = mu_1;
             particles.viscosity[p]   = 0;
