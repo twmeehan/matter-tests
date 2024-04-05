@@ -4,7 +4,6 @@ find_package(OpenMP REQUIRED)
 add_executable(mpm
 			   mpm.cpp
 			   tools.cpp
-			   plastic_models.cpp
 			   simulation.cpp
 			   save_data.cpp
 			   remesh.cpp
@@ -14,7 +13,6 @@ add_executable(mpm
 			   g2p_omp.cpp
 			   explicit_euler_update_omp.cpp
 			   boundary_collision.cpp
-			   validate_rma.cpp
 			   pbc.cpp
 			   )
 
