@@ -1,11 +1,11 @@
 #ifndef SAMPLING_PARTICLES_FROM_VDB_HPP
 #define SAMPLING_PARTICLES_FROM_VDB_HPP
 
-#include "tools.hpp"
-#include "data_structures.hpp"
+#include "../tools.hpp"
+#include "../data_structures.hpp"
 #include "poisson_disk_sampling.hpp"
 
-#include "object_vdb.hpp"
+#include "../objects/object_vdb.hpp"
 
 
 template <typename S>

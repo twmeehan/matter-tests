@@ -10,6 +10,7 @@
 #include <vector>
 #include <assert.h>
 #include <iomanip>
+#include <string>
 
 /////////////////// PARAMETERS ////////////////////
 // typedef double T;

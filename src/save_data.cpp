@@ -9,16 +9,14 @@ void Simulation::saveInfo(){
              << dx                  << "\n"   // 2
              << mu                  << "\n"   // 3
              << lambda              << "\n"   // 4
-             << vmin_factor         << "\n"   // 5
-             << load_factor         << "\n"   // 6
-             << Np                  << "\n"   // 7
-             << particle_volume     << "\n"   // 8
-             << rho                 << "\n"   // 9
-             << grain_diameter      << "\n"   // 10
-             << in_numb_ref         << "\n"   // 11
-             << rho_s               << "\n"   // 12
-             << mu_1                << "\n"   // 13
-             << mu_2                << "\n";  // 14
+             << Np                  << "\n"   // 5
+             << particle_volume     << "\n"   // 6
+             << rho                 << "\n"   // 7
+             << grain_diameter      << "\n"   // 8
+             << in_numb_ref         << "\n"   // 9
+             << rho_s               << "\n"   // 10
+             << mu_1                << "\n"   // 11
+             << mu_2                << "\n";  // 12
     infoFile.close();
 }
 

@@ -1,8 +1,7 @@
 #ifndef OBJECTPLATE_HPP
 #define OBJECTPLATE_HPP
 
-#include "tools.hpp"
-#include <string>
+#include "../tools.hpp"
 
 class ObjectPlate{
 public:

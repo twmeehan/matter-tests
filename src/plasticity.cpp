@@ -1,5 +1,10 @@
 #include "simulation.hpp"
 
+#include "plasticity_helpers/mccrma.hpp"
+#include "plasticity_helpers/mcchardrma.hpp"
+#include "plasticity_helpers/mcchardexprma.hpp"
+#include "plasticity_helpers/mccsinterrma.hpp"
+
 void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & Fe_trial){
 
     if (plastic_model == NoPlasticity){
@@ -26,14 +31,14 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T yield_stress = yield_stress_orig;
             // T yield_stress = std::max( (T)1e-3, particles.yield_stress_orig[p] + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
 
-            T delta_gamma = d_prefac * (hencky_deviatoric_norm - yield_stress / e_mu_prefac);
+            T delta_gamma = hencky_deviatoric_norm - yield_stress / e_mu_prefac; // this is not delta_gamma, this is eps_pl_dev_instant
 
             if (delta_gamma > 0){ // project to yield surface
                 plastic_count++;
-                particles.delta_gamma[p] = delta_gamma / dt;
+                particles.delta_gamma[p] = d_prefac * delta_gamma / dt;
 
                 // NB! If using the NONLOCAL approach: The following 3 lines should be commented out as this is done in plasticity_projection
-                hencky -= (1.0 / d_prefac) * delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
+                hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += delta_gamma;
 
@@ -475,7 +480,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             }
             else if (plastic_model == SinterMCC) // Sintering model under development
             {
-                perform_rma = SinterMCCRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, dt, sinter_Sc, sinter_tc, sinter_ec, particles.eps_pl_vol[p], particles.sinter_S[p]);
+                perform_rma = MCCSinterRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, dt, sinter_Sc, sinter_tc, sinter_ec, particles.eps_pl_vol[p], particles.sinter_S[p]);
             }
 
             if (perform_rma) { // returns true if it performs a return mapping

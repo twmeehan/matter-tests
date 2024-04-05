@@ -105,20 +105,22 @@ void Simulation::simulate(){
     std::cout << "---------------- This is Larsie ---------------- " << std::endl;
     std::cout << "------------------------------------------------ " << std::endl;
 
-    createDirectory();
-
-    saveInfo();
-
-    // Total runtime of simulation
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
     // Lagrangian coordinates. Using assignment operator to copy
     particles.x0 = particles.x;
 
     time = 0;
     frame = 0;
     final_time = end_frame * frame_dt;
-    saveParticleData();
+
+    if (save_sim){
+        createDirectory();
+        saveInfo();
+        saveParticleData();
+    }
+
+    // Total runtime of simulation
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
     while (frame < end_frame){
         std::cout << "Frame: "               << frame  << " / "    << end_frame  << std::endl;
         std::cout << "               Name: " << sim_name           << std::endl;
@@ -132,15 +134,20 @@ void Simulation::simulate(){
         if( std::abs(time - frame_dt*(frame+1)) < 1e-15 ){
             frame++;
             std::cout << "Saving frame " << frame << std::endl;
-            saveParticleData();
-            saveGridData();
-            // saveAvgData();
+            if (save_sim){
+                saveParticleData();
+                saveGridData();
+                // saveAvgData();
+            }
+
         }
         if (std::abs(final_time-time) < 1e-15 || final_time < time){
-            std::cout << "The simulation ended successfully at time = " << time << std::endl;
-            saveParticleData();
-            saveGridData();
-            // saveAvgData();
+            std::cout << "The simulation ended at time = " << time << std::endl;
+            if (save_sim){
+                saveParticleData();
+                saveGridData();
+                // saveAvgData();
+            }
             break;
         }
     }

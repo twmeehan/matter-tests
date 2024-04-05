@@ -11,13 +11,14 @@
 #include <chrono>
 
 #include "tools.hpp"
-#include "plastic_models.hpp"
 #include "data_structures.hpp"
 #include "timer.hpp"
 
-#include "object_plate.hpp"
-#include "object_analytic.hpp"
-#include "object_general.hpp"
+#include "objects/object_plate.hpp"
+#include "objects/object_general.hpp"
+#include "objects/object_bump.hpp"
+#include "objects/object_gate.hpp"
+#include "objects/object_ramp.hpp"
 
 class Simulation{
 public:
@@ -30,19 +31,27 @@ public:
   const unsigned int dim = 2;
 #endif
 
-  std::string sim_name;
-  std::string directory;
+  // These must all be zero at beginning
+  unsigned int current_time_step = 0;
+  unsigned int frame = 0;
+  int exit = 0;
+  T time = 0;
+  T runtime_p2g = 0;
+  T runtime_g2p = 0;
+  T runtime_euler = 0;
+  T runtime_defgrad = 0;
 
-  unsigned int n_threads;
-  unsigned int current_time_step;
-  unsigned int frame;
-  unsigned int end_frame;
-  int exit;
+  std::string sim_name = "my_simulation";
+  std::string directory = "output/";
+  bool save_sim = true;
+
+  unsigned int n_threads = 1;
+  unsigned int end_frame = 1;
   bool pbc = false;
   bool delete_last_particle = false;
   bool pbc_special = false;
   bool gravity_special = false;
-  T time;
+
   T final_time;
   T fps;
   T frame_dt;
@@ -92,9 +101,6 @@ public:
     }
 #endif
 
-  unsigned int vmin_factor;
-  unsigned int load_factor;
-
   // Remeshing Fixed Grid
   T min_x_init;
   T max_x_init;
@@ -117,16 +123,23 @@ public:
 #endif
 
   // Elastoplasticity
+  ElasticModel elastic_model;
+  PlasticModel plastic_model;
+
   T mu;
   T lambda;
   T K;
-  ElasticModel elastic_model;
-  PlasticModel plastic_model;
+
   T xi;
-  T xi_nonloc;
 
   bool use_pradhana = true;
   bool use_von_mises_q = false;
+
+  T q_prefac;    // q        = factor * ||dev(tau)||
+  T d_prefac;    // gamma    = factor * ||dev(eps)||
+  T e_mu_prefac; // q        = factor * ||dev(eps)||
+  T f_mu_prefac; // q^tr - q = factor * dt * gamma_dot
+  T rma_prefac;
 
   // Von Mises:
   T yield_stress_orig;
@@ -160,6 +173,7 @@ public:
  T sinter_ec;
 
   // Regularization by Laplacian
+  T xi_nonloc;
   T nonlocal_l;
   T nonlocal_l_sq;
   unsigned int nonlocal_support;
@@ -168,12 +182,6 @@ public:
   std::vector<ObjectPlate> plates;
   std::vector<ObjectGeneral*> objects;
 
-  // Runtime measurements
-  T runtime_p2g;
-  T runtime_g2p;
-  T runtime_euler;
-  T runtime_defgrad;
-
   // Precomputations
   T one_over_dx;
   T one_over_dx_square;
@@ -181,12 +189,6 @@ public:
   T sqrt3 = std::sqrt(3.0);
   T sqrt2 = std::sqrt(2.0);
   T apicDinverse;
-
-  T q_prefac;    // q        = factor * ||dev(tau)||
-  T d_prefac;    // gamma    = factor * ||dev(eps)||
-  T e_mu_prefac; // q        = factor * ||dev(eps)||
-  T f_mu_prefac; // q^tr - q = factor * dt * gamma_dot
-  T rma_prefac;
 
   // Functions
   void initialize(T E, T nu, T density);
@@ -208,7 +210,6 @@ public:
   void explicitEulerUpdate();
   void G2P();
   void deformationUpdate();
-
 
   void P2G_Optimized_Parallel();
   void G2P_Optimized_Parallel();

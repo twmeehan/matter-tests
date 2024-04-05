@@ -1,8 +1,8 @@
 #ifndef SAMPLING_PARTICLES_HPP
 #define SAMPLING_PARTICLES_HPP
 
-#include "tools.hpp"
-#include "data_structures.hpp"
+#include "../tools.hpp"
+#include "../data_structures.hpp"
 #include "poisson_disk_sampling.hpp"
 
 #ifdef THREEDIM
@@ -17,7 +17,7 @@
         debug("Sampling particles...");
         std::vector<std::array<T, 3>> square_samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);
         std::vector<std::array<T, 3>> samples;
-        
+
         debug("    Number of square samples: ", square_samples.size());
 
         sim.dx = std::cbrt(ppc / T(square_samples.size()) * Lx*Ly*Lz);

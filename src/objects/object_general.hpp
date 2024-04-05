@@ -1,9 +1,7 @@
 #ifndef OBJECTGENERAL_HPP
 #define OBJECTGENERAL_HPP
 
-#include "tools.hpp"
-#include <string>
-
+#include "../tools.hpp"
 
 class ObjectGeneral{
 public:
