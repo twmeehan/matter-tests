@@ -12,8 +12,8 @@ find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(OpenMP REQUIRED)
 
 add_executable(
-  elasticity
-  elasticity.cpp
+  tests
+  tests.cpp
   ../src/tools.cpp
   ../src/simulation.cpp
   ../src/save_data.cpp
@@ -27,11 +27,11 @@ add_executable(
   ../src/pbc.cpp
 )
 target_link_libraries(
-  elasticity
+  tests
   GTest::gtest_main
   OpenMP::OpenMP_CXX
   Eigen3::Eigen
 )
 
 include(GoogleTest)
-gtest_discover_tests(elasticity)
+gtest_discover_tests(tests)

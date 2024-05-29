@@ -20,10 +20,11 @@ void Simulation::saveInfo(){
     infoFile.close();
 }
 
-void Simulation::saveAvgData(){
+void Simulation::computeAvgData(TM& volavg_cauchy, TM& volavg_kirchh, T& Javg){
 
-    TM volavg_cauchy = TM::Zero();
-    TM volavg_kirchh = TM::Zero();
+    volavg_cauchy = TM::Zero();
+    volavg_kirchh = TM::Zero();
+
     T Jsum = 0;
     for(int p = 0; p < Np; p++){
 
@@ -52,6 +53,18 @@ void Simulation::saveAvgData(){
     // In the porous case: both these terms must in the post-processing be
     // multiplied by phi(t) = phi_0 * Javg / (1+eps_V)
 
+    Javg = Jsum / Np;
+
+}
+
+void Simulation::saveAvgData(){
+
+    TM volavg_cauchy = TM::Zero();
+    TM volavg_kirchh = TM::Zero();
+    T Javg;
+
+    computeAvgData(volavg_cauchy, volavg_kirchh, Javg);
+
     std::ofstream outFile1(directory + sim_name + "/out_avgcauchy_frame_" + std::to_string(frame) + ".csv");
     outFile1 << volavg_cauchy(0,0)    << ","
              << volavg_cauchy(0,1)    << ","
@@ -67,7 +80,7 @@ void Simulation::saveAvgData(){
     outFile2.close();
 
     std::ofstream outFile3(directory + sim_name + "/out_Javg_frame_" + std::to_string(frame) + ".csv");
-    outFile3 << Jsum/Np  << "\n";
+    outFile3 << Javg  << "\n";
     outFile3.close();
 
     std::ofstream outFile4(directory + sim_name + "/last_written.txt");

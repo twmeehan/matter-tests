@@ -69,7 +69,7 @@ public:
 #endif
 
   T rho;
-  TV gravity;
+  TV gravity = TV::Zero();
   TV gravity_final;
   T gravity_time;
   bool no_liftoff = true;
@@ -195,6 +195,7 @@ public:
   void simulate();
   void saveInfo();
   void saveAvgData();
+  void computeAvgData(TM& volavg_cauchy, TM& volavg_kirchh, T& Javg);
   void saveParticleData(std::string extra = "");
   void saveGridData(std::string extra = "");
 
