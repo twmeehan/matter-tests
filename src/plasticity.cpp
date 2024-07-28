@@ -524,7 +524,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                                 break;
                             }
 
-                            T residual_diff = -f_mu_prefac * tmp1 + (q_trial - mu*sqrt6 * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
+                            T residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
 
                             if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
                                 debug("PerzynaMCC: FATAL residual_diff too small in abs value = ", residual_diff);
