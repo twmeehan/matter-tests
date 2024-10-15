@@ -61,7 +61,7 @@
 
     template <typename S>
     void SampleParticles(const T Lx, const T Ly, T kRadius, T ppc, unsigned int front_type, S& sim){
-        std::uint32_t kAttempts = 30;
+        std::uint32_t kAttempts = 200;
         std::uint32_t kSeed = 42;
         std::array<T, 2> kXMin = std::array<T, 2>{{0, 0}};
         std::array<T, 2> kXMax = std::array<T, 2>{{Lx, Ly}};

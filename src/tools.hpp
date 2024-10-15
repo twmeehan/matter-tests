@@ -13,9 +13,9 @@
 #include <string>
 
 /////////////////// PARAMETERS ////////////////////
-// typedef double T;
-typedef float T;
-#define THREEDIM // Uncomment for 2D
+typedef double T;
+// typedef float T;
+// #define THREEDIM // Uncomment for 2D
 #define TINYPLY_IMPLEMENTATION // Use tinyply
 #define SPLINEDEG 2
 // #define WARNINGS // if write warnings to screen
