@@ -24,6 +24,8 @@ add_executable(
   ../src/g2p_omp.cpp
   ../src/explicit_euler_update_omp.cpp
   ../src/boundary_collision.cpp
+  ../src/updateDt.cpp
+  ../src/positionUpdate.cpp
   ../src/pbc.cpp
 )
 target_link_libraries(

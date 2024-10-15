@@ -171,12 +171,12 @@ void Simulation::advanceStep(){
         if (current_time_step == 0)
             remeshFixed(4);
             if (delete_last_particle)
-                deleteLastParticle();
+                deleteLastParticle(delete_last_particle);
     }else{ //  not pbc
         if (current_time_step == 0) {
             remeshFixedInit(2,2,2);
             if (delete_last_particle)
-                deleteLastParticle();
+                deleteLastParticle(delete_last_particle);
         } else {
             remeshFixedCont();
         }
@@ -239,141 +239,10 @@ void Simulation::G2P(){
     t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
 }
 
-
-
-
-
-
-void Simulation::updateDt(){
-
-    // T max_speed = std::sqrt((particles.vx.array().square() + particles.vy.array().square()).maxCoeff());
-    auto max_velocity_it = std::max_element( particles.v.begin(), particles.v.end(),
-                                             []( const TV &v1, const TV &v2 )
-                                             {
-                                                 return v1.squaredNorm() < v2.squaredNorm();
-                                             } );
-    T max_speed = (*max_velocity_it).norm();
-
-    if (max_speed >= wave_speed){
-        debug("DETECTED SPEED LARGER THAN ELASTIC WAVE SPEED!!!");
-        exit = 1;
-        return;
-    }
-
-#ifdef WARNINGS
-    debug("               dt_max = ", dt_max);
-#endif
-
-    if (std::abs(max_speed) > 1e-10){
-        T dt_cfl = cfl * dx / max_speed;
-#ifdef WARNINGS
-        debug("               dt_cfl = ", dt_cfl);
-#endif
-        dt = std::min(dt_cfl, dt_max);
-    } else {
-        dt = dt_max;
-#ifdef WARNINGS
-        debug("               dt_cfl = not computed, max_speed too low");
-#endif
-    }
-
-    dt = std::min(dt, frame_dt*(frame+1) - time);
-    dt = std::min(dt, final_time         - time);
-
-#ifdef WARNINGS
-    debug("               dt     = ", dt    );
-#endif
-
-    // if (dt > dt_cfl){
-    //     debug("TIME STEP IS TOO BIG COMPARED TO CFL!!!");
-    //     exit = 1;
-    //     return;
-    // }
-    // if (dt > dt_max){
-    //     debug("TIME STEP IS TOO BIG COMPARED TO ELASTIC WAVE SPEED!!!");
-    //     exit = 1;
-    //     return;
-    // }
-
-
-    if (gravity_special){
-        if (time < gravity_time){
-            gravity = gravity_final * time/gravity_time;
-        }
-        else{
-            gravity = gravity_final;
-            if (no_liftoff){
-                for(int p=0; p<Np; p++){
-                    if (particles.x[p](0) > 0.5*Lx){
-                        particles.x[p](0) -= 0.5*Lx;
-                        particles.x[p](1) -= Ly+10*dx;
-                    }
-                }
-                no_liftoff = false;
-            }
-        }
-
-        // T theta_i = 16 * M_PI / 180;
-        // T theta_f = 24 * M_PI / 180;
-        // T theta = theta_i + (theta_f-theta_i) * std::min(time/gravity_time, T(1.0));
-        // gravity = TV::Zero();
-        // gravity[0] = +9.81 * std::sin(theta);
-        // gravity[1] = -9.81 * std::cos(theta);
-    }
-
-
-
-} // end updateDt
-
-
-
 void Simulation::moveObjects(){
     for (ObjectPlate &obj : plates) {
         obj.move(dt, frame_dt, time);
     }
-}
-
-void Simulation::positionUpdate(){
-
-    #pragma omp parallel for num_threads(n_threads)
-    for(int p=0; p<Np; p++){
-
-        //// Position is updated according to PIC velocities
-        particles.x[p] = particles.x[p] + dt * particles.pic[p];
-
-        //// Velicity is updated
-        if (flip_ratio < -1){ // APIC
-            particles.v[p] = particles.pic[p];
-        } else if (flip_ratio < 0){ // AFLIP
-            particles.v[p] = (-flip_ratio) * ( particles.v[p] + particles.flip[p] ) + (1 - (-flip_ratio)) * particles.pic[p];
-        } else{ // PIC-FLIP
-            particles.v[p] =   flip_ratio  * ( particles.v[p] + particles.flip[p] ) + (1 -   flip_ratio)  * particles.pic[p];
-        }
-
-
-        if (pbc){
-            if (particles.x[p](0) > Lx){
-                particles.x[p](0) = particles.x[p](0) - Lx;
-            }
-            else if (particles.x[p](0) < 0){
-                particles.x[p](0) = Lx + particles.x[p](0);
-            }
-        }
-
-        if (pbc_special){
-            if (particles.x[p](0) > 0.8){ // 0.8 for nico bump
-                particles.x[p](0)  = -0.1;
-                particles.x[p](1) +=  0.27;
-            }
-            // if (particles.x[p](0) > 1.8){
-            //     particles.x[p](0)  = -0.18;
-            //     particles.x[p](1) +=  0.5;
-
-               // particles.v[p](0) *= 0.1;
-            // }
-        }
-
-    } // end loop over particles
 }
 
 
@@ -382,23 +251,28 @@ void Simulation::positionUpdate(){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void Simulation::deleteLastParticle(){
-    auto new_part_x = particles.x;
-    new_part_x.pop_back();
+void Simulation::deleteLastParticle(unsigned int n){
 
-    Np -= 1;
+    for (unsigned int i = 0; i < n; i++) {
 
-    if (new_part_x.size() != Np){
-        debug("PARTICLE NUMBER MISMATCH!!!");
-        exit = 1;
-        return;
+        auto new_part_x = particles.x;
+        new_part_x.pop_back();
+
+        Np -= 1;
+
+        if (new_part_x.size() != Np){
+            debug("PARTICLE NUMBER MISMATCH!!!");
+            exit = 1;
+            return;
+        }
+
+        particles = Particles(Np);
+        particles.x = new_part_x;
+
     }
-
-    particles = Particles(Np);
-    particles.x = new_part_x;
 }
 
-// // Currently not working!!
+// // TODO:
 // void Simulation::boundaryCorrection(T xi, T yi, T& vxi, T& vyi){
 //
 //     // trial step

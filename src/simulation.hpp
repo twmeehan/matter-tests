@@ -48,9 +48,10 @@ public:
   unsigned int n_threads = 1;
   unsigned int end_frame = 1;
   bool pbc = false;
-  bool delete_last_particle = false;
   bool pbc_special = false;
   bool gravity_special = false;
+
+  unsigned int delete_last_particle = 0;
 
   T final_time;
   T fps;
@@ -243,7 +244,7 @@ public:
   void boundaryCollision(TV Xi, TV& vi);
   void overwriteGridVelocity(TV Xi, TV& vi);
 
-  void deleteLastParticle();
+  void deleteLastParticle(unsigned int n);
 
   void calculateMomentumOnParticles();
   void calculateMomentumOnGrid();
