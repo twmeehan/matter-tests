@@ -21,17 +21,13 @@ public:
         T x = X_in(0);
         T y = X_in(1);
 
-        T L1 = l1;
-        T L2 = l2*std::cos(a1);
-        T L3 = l3*std::cos(a2);
-
-        if ( (x < L1)            && (y < 0) )
+        if     ( (x <  0)                       && (y < -x*std::tan(a1)) )
             return true;
-        else if( (x < L1+L2)     && (y < std::tan(a1)*(x-L1)) )
+        else if( (x <  l2)                      && (y < 0) )
             return true;
-        else if( (x < L1+L2+L3)  && (y < std::tan(a2)*(x-L1-L2) + l2*std::sin(a1)) )
+        else if( (x <  l2 + l3*std::cos(a2-a1)) && (y < (x-l2)*std::tan(a2-a1)) )
             return true;
-        else if( (x >= L1+L2+L3) && (y < std::tan(a3)*(x-L1-L2-L3) + l2*std::sin(a1) + l3*std::sin(a2)) )
+        else if( (x >= l2 + l3*std::cos(a2-a1)) && (y < l3*std::sin(a2-a1) + (x-l2-l3)*std::tan(a3-a1)) )
             return true;
         else
             return false;
@@ -44,25 +40,20 @@ public:
         T y = X_in(1);
         TV n;
 
-
-        T L1 = l1;
-        T L2 = l2*std::cos(a1);
-        T L3 = l3*std::cos(a2);
-
-        if ( (x < L1)            && (y < 0) ){
+        if     ( (x <  0)                       && (y < -x*std::tan(a1)) ) {
+            n(0) = std::tan(a1);
+            n(1) = 1;
+        }
+        else if( (x <  l2)                      && (y < 0) ) {
             n(0) = 0;
             n(1) = 1;
         }
-        else if( (x < L1+L2)     && (y < std::tan(a1)*(x-L1)) ){
-            n(0) = -std::tan(a1);
+        else if( (x <  l2 + l3*std::cos(a2-a1)) && (y < (x-l2)*std::tan(a2-a1)) ) {
+            n(0) = -std::tan(a2-a1);
             n(1) = 1;
         }
-        else if( (x < L1+L2+L3)  && (y < std::tan(a2)*(x-L1-L2) + l2*std::sin(a1)) ){
-            n(0) = -std::tan(a2);
-            n(1) = 1;
-        }
-        else if( (x >= L1+L2+L3) && (y < std::tan(a3)*(x-L1-L2-L3) + l2*std::sin(a1) + l3*std::sin(a2)) ){
-            n(0) = -std::tan(a3);
+        else if( (x >= l2 + l3*std::cos(a2-a1)) && (y < l3*std::sin(a2-a1) + (x-l2-l3)*std::tan(a3-a1)) ) {
+            n(0) = -std::tan(a3-a1);
             n(1) = 1;
         }
         else{ // should not occur
