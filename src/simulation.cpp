@@ -193,7 +193,8 @@ void Simulation::advanceStep(){
     t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
 
 
-    // calculateMassConservation();
+    // checkMassConservation();
+    // checkMomentumConservation();
 
     timer t_euler; t_euler.start();
     explicitEulerUpdate();
@@ -233,8 +234,51 @@ void Simulation::moveObjects(){
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////// EXTRA FUNCTIONS //////////////////////////////////////////////////
+////////////////////////////////////// EXTRA HELPER FUNCTIONS //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void Simulation::checkMomentumConservation(){
+    TV momentum_grid = TV::Zero();
+    for(int i=0; i<Nx; i++){
+        for(int j=0; j<Ny; j++){
+        #ifdef THREEDIM
+            for(int k=0; k<Nz; k++)
+                momentum_grid += grid.mass[ind(i,j,k)] * grid.v[ind(i,j,k)];
+        #else
+            momentum_grid += grid.mass[ind(i,j)] * grid.v[ind(i,j)];
+        #endif
+        }
+    }
+
+    TV momentum_particle = TV::Zero();
+    for(int p=0; p<Np; p++){
+        momentum_particle += particle_mass * particles.v[p];
+    }
+    debug("               Total part momentum = ", momentum_grid.norm());
+    debug("               Total grid momentum = ", momentum_particle.norm());
+
+    if ( (momentum_grid-momentum_particle).norm() > 1e-5 * momentum_particle.norm() ){
+        debug("MOMENTUM NOT CONSERVED!!!");
+        exit = 1;
+        return;
+    }
+}
+
+void Simulation::checkMassConservation(){
+    T particle_mass_total = particle_mass*Np;
+    T grid_mass_total = 0;
+    for(auto&& m: grid.mass)
+        grid_mass_total += m;
+
+    debug("               Total grid mass = ", grid_mass_total    );
+    debug("               Total part mass = ", particle_mass_total);
+
+    if ( std::abs(grid_mass_total-particle_mass_total) > 1e-5 * particle_mass_total ){
+        debug("MASS NOT CONSERVED!!!");
+        exit = 1;
+        return;
+    }
+}
 
 
 void Simulation::deleteLastParticle(unsigned int n){
@@ -257,6 +301,32 @@ void Simulation::deleteLastParticle(unsigned int n){
 
     }
 }
+
+
+// This function is to be used in explicitEulerUpdate after boundaryCollision
+// It must be hard-coded to choice
+void Simulation::overwriteGridVelocity(TV Xi, TV& vi){
+    T y_start = Ly - 0.25*dx;
+    T width = 2*dx;
+    T v_imp = 0.1; // positive value means tension
+    if (Xi(1) > y_start - width + v_imp * time)
+        vi(1) = v_imp;
+    if (Xi(1) < 0       + width - v_imp * time)
+        vi(1) = -v_imp;
+}
+
+
+// This function must be hard-coded to choice
+void Simulation::addExternalParticleGravity(){
+    // 1. Transfer grid velocity to particles
+    G2P();
+    // 2. Apply gravity on particle velocity
+    for(int p=0; p<Np; p++)
+        particles.v[p] += dt * (-2.0*amplitude*particles.x0[p]);
+    // 3. Transfer particle velocity back to grid
+    P2G();
+} // end addExternalParticleGravity
+
 
 // // TODO:
 // void Simulation::boundaryCorrection(T xi, T yi, T& vxi, T& vyi){
@@ -285,62 +355,3 @@ void Simulation::deleteLastParticle(unsigned int n){
 //     moveObjects(-dt);
 //
 // } // end boundaryCorrection
-
-
-// This function is to be used in explicitEulerUpdate after boundaryCollision
-void Simulation::overwriteGridVelocity(TV Xi, TV& vi){
-    T y_start = Ly - 0.25*dx;
-    T width = 2*dx;
-    T v_imp = 0.1; // positive value means tension
-    if (Xi(1) > y_start - width + v_imp * time)
-        vi(1) = v_imp;
-    if (Xi(1) < 0       + width - v_imp * time)
-        vi(1) = -v_imp;
-}
-
-void Simulation::addExternalParticleGravity(){
-    // 1. Transfer grid velocity to particles
-    G2P();
-    // 2. Apply gravity on particle velocity
-    for(int p=0; p<Np; p++)
-        particles.v[p] += dt * (-2.0*amplitude*particles.x0[p]);
-    // 3. Transfer particle velocity back to grid
-    P2G();
-} // end addExternalParticleGravity
-
-
-// These functions are only for validating conservation laws
-void Simulation::calculateMomentumOnParticles(){
-    TV momentum = TV::Zero();
-    for(int p=0; p<Np; p++){
-        momentum += particle_mass * particles.v[p];
-    }
-    debug("               total part momentum = ", momentum.norm());
-}
-void Simulation::calculateMomentumOnGrid(){
-    TV momentum = TV::Zero();
-    for(int i=0; i<Nx; i++)
-        for(int j=0; j<Ny; j++)
-        #ifdef THREEDIM
-            for(int k=0; k<Nz; k++)
-                momentum += grid.mass[ind(i,j,k)] * grid.v[ind(i,j,k)];
-        #else
-            momentum += grid.mass[ind(i,j)] * grid.v[ind(i,j)];
-        #endif
-
-    debug("               total grid momentum = ", momentum.norm());
-}
-
-void Simulation::calculateMassConservation(){
-    T particle_mass_total = particle_mass*Np;
-    T grid_mass_total = 0;
-    for(auto&& m: grid.mass)
-        grid_mass_total += m;
-    debug("               total grid mass = ", grid_mass_total    );
-    debug("               total part mass = ", particle_mass_total);
-    if ( std::abs(grid_mass_total-particle_mass_total) > 1e-5 * particle_mass_total ){
-        debug("MASS NOT CONSERVED!!!");
-        exit = 1;
-        return;
-    }
-}

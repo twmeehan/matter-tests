@@ -234,9 +234,8 @@ public:
 
   void deleteLastParticle(unsigned int n);
 
-  void calculateMomentumOnParticles();
-  void calculateMomentumOnGrid();
-  void calculateMassConservation();
+  void checkMomentumConservation();
+  void checkMassConservation();
 
   void validateRMA();
 
