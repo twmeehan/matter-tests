@@ -2,10 +2,10 @@
 #include <omp.h>
 
 
-void Simulation::G2P_Optimized_Parallel(){
+void Simulation::G2P(){
 
     #ifdef WARNINGS
-        debug("G2P_Optimized_Parallel");
+        debug("G2P");
     #endif
 
     std::fill( particles.pic.begin(),  particles.pic.end(),  TV::Zero() );
@@ -89,4 +89,4 @@ void Simulation::G2P_Optimized_Parallel(){
 
     } // end omp paralell
 
-} // end G2P_Optimized_Parallel
+} // end G2P

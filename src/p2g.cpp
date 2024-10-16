@@ -1,10 +1,10 @@
 #include "simulation.hpp"
 #include <omp.h>
 
-void Simulation::P2G_Optimized_Parallel(){
+void Simulation::P2G(){
 
     #ifdef WARNINGS
-        debug("P2G_Optimized_Parallel");
+        debug("P2G");
     #endif
 
     grid.v.resize(grid_nodes); std::fill( grid.v.begin(), grid.v.end(), TV::Zero() );
@@ -88,4 +88,4 @@ void Simulation::P2G_Optimized_Parallel(){
         m *= particle_mass;
     }
 
-} // end P2G_Optimized_Parallel
+} // end P2G

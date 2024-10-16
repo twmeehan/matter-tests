@@ -2,10 +2,10 @@
 #include <omp.h>
 
 
-void Simulation::explicitEulerUpdate_Optimized_Parallel(){
+void Simulation::explicitEulerUpdate(){
 
     #ifdef WARNINGS
-        debug("explicitEulerUpdate_Optimized_Parallel");
+        debug("explicitEulerUpdate");
     #endif
 
     std::vector<TV> grid_force(grid_nodes, TV::Zero());
@@ -124,4 +124,4 @@ void Simulation::explicitEulerUpdate_Optimized_Parallel(){
         } // end for j
     } // end for i
 
-} // end explicitEulerUpdate_Optimized_Parallel
+} // end explicitEulerUpdate

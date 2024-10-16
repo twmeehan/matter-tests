@@ -7,11 +7,11 @@ add_executable(mpm
 			   simulation.cpp
 			   save_data.cpp
 			   remesh.cpp
-			   deformation_update_omp.cpp
+			   deformation_update.cpp
 			   plasticity.cpp
-			   p2g_omp.cpp
-			   g2p_omp.cpp
-			   explicit_euler_update_omp.cpp
+			   p2g.cpp
+			   g2p.cpp
+			   explicit_euler_update.cpp
 			   boundary_collision.cpp
 			   updateDt.cpp
 			   positionUpdate.cpp

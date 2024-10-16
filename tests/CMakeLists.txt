@@ -18,11 +18,11 @@ add_executable(
   ../src/simulation.cpp
   ../src/save_data.cpp
   ../src/remesh.cpp
-  ../src/deformation_update_omp.cpp
+  ../src/deformation_update.cpp
   ../src/plasticity.cpp
-  ../src/p2g_omp.cpp
-  ../src/g2p_omp.cpp
-  ../src/explicit_euler_update_omp.cpp
+  ../src/p2g.cpp
+  ../src/g2p.cpp
+  ../src/explicit_euler_update.cpp
   ../src/boundary_collision.cpp
   ../src/updateDt.cpp
   ../src/positionUpdate.cpp

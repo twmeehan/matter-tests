@@ -185,63 +185,45 @@ void Simulation::advanceStep(){
     moveObjects();
 
     if (pbc){
-        // PBCAddParticles1D();
         PBCAddParticles(4);
     }
 
+    timer t_p2g; t_p2g.start();
     P2G();
+    t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
+
+
     // calculateMassConservation();
+
+    timer t_euler; t_euler.start();
     explicitEulerUpdate();
+    t_euler.stop(); runtime_euler += t_euler.get_timing();
+
     // addExternalParticleGravity();
 
     if (pbc){
         PBCDelParticles();
     }
 
+
+    timer t_g2p; t_g2p.start();
     G2P();
+    t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
 
     if (musl == true)
         MUSL();
 
+    timer t_defgrad; t_defgrad.start();
     deformationUpdate();
-    // plasticity_projection();   // if nonlocal approach
+    t_defgrad.stop(); runtime_defgrad += t_defgrad.get_timing();
+
+    // plasticity_projection(); // if nonlocal approach (deprecated)
 
     positionUpdate();
 
 } // end advanceStep
 
 
-
-void Simulation::P2G(){
-    timer t_p2g; t_p2g.start();
-    // P2G_Baseline();
-    // P2G_Optimized();
-    P2G_Optimized_Parallel();
-    t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
-} // end P2G
-
-void Simulation::explicitEulerUpdate(){
-    timer t_euler; t_euler.start();
-    // explicitEulerUpdate_Baseline();
-    // explicitEulerUpdate_Optimized();
-    explicitEulerUpdate_Optimized_Parallel();
-    t_euler.stop(); runtime_euler += t_euler.get_timing();
-}
-
-void Simulation::deformationUpdate(){
-    timer t_defgrad; t_defgrad.start();
-    // deformationUpdate_Baseline();
-    deformationUpdate_Parallel();
-    t_defgrad.stop(); runtime_defgrad += t_defgrad.get_timing();
-}
-
-void Simulation::G2P(){
-    timer t_g2p; t_g2p.start();
-    // G2P_Baseline();
-    // G2P_Optimized();
-    G2P_Optimized_Parallel();
-    t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
-}
 
 void Simulation::moveObjects(){
     for (ObjectPlate &obj : plates) {

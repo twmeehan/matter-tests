@@ -2,10 +2,10 @@
 #include <omp.h>
 
 // Deformation gradient is updated based on the NEW GRID VELOCITIES and the OLD PARTICLE POSITIONS
-void Simulation::deformationUpdate_Parallel(){
+void Simulation::deformationUpdate(){
 
     #ifdef WARNINGS
-        debug("deformationUpdate_Parallel");
+        debug("deformationUpdate");
     #endif
 
     std::fill( particles.delta_gamma.begin(), particles.delta_gamma.end(), 0.0 );
@@ -47,4 +47,4 @@ void Simulation::deformationUpdate_Parallel(){
 
     debug("               Proj: ", plastic_count, " / ", Np);
 
-} // end deformationUpdate_Parallel
+} // end deformationUpdate

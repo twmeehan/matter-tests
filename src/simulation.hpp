@@ -215,22 +215,6 @@ public:
   void G2P();
   void deformationUpdate();
 
-  void P2G_Optimized_Parallel();
-  void G2P_Optimized_Parallel();
-  void deformationUpdate_Parallel();
-  void explicitEulerUpdate_Optimized_Parallel();
-  void plasticity_projection();
-  void G2P_nonlocal();
-  void P2G_nonlocal();
-
-    // void P2G_Baseline();
-    // void P2G_Optimized();
-    // void deformationUpdate_Baseline();
-    // void explicitEulerUpdate_Baseline();
-    // void explicitEulerUpdate_Optimized();
-    // void G2P_Baseline();
-    // void G2P_Optimized();
-
   void MUSL();
 
   void positionUpdate();
