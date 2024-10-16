@@ -51,6 +51,8 @@ public:
   bool pbc_special = false;
   bool gravity_special = false;
 
+  bool musl = false;
+
   unsigned int delete_last_particle = 0;
 
   T final_time;
@@ -228,6 +230,8 @@ public:
     // void explicitEulerUpdate_Optimized();
     // void G2P_Baseline();
     // void G2P_Optimized();
+
+  void MUSL();
 
   void positionUpdate();
   void PBCAddParticles1D();

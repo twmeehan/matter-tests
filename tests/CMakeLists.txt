@@ -26,6 +26,7 @@ add_executable(
   ../src/boundary_collision.cpp
   ../src/updateDt.cpp
   ../src/positionUpdate.cpp
+  ../src/musl.cpp
   ../src/pbc.cpp
 )
 target_link_libraries(

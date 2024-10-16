@@ -199,6 +199,10 @@ void Simulation::advanceStep(){
     }
 
     G2P();
+
+    if (musl == true)
+        MUSL();
+
     deformationUpdate();
     // plasticity_projection();   // if nonlocal approach
 
