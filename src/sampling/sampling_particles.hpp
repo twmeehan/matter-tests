@@ -8,9 +8,9 @@
 #ifdef THREEDIM
 
     template <typename S>
-    void SampleParticles(const T Lx, const T Ly, const T Lz, T kRadius, T ppc, unsigned int front_type, S& sim){
-        std::uint32_t kAttempts = 30;
-        std::uint32_t kSeed = 42;
+    void SampleParticles(S& sim, const T Lx, const T Ly, const T Lz, T kRadius, T ppc = 8, unsigned int front_type = 0, std::uint32_t attempts = 30, std::uint32_t seed = 42) {
+        std::uint32_t kAttempts = attempts;
+        std::uint32_t kSeed = seed;
         std::array<T, 3> kXMin = std::array<T, 3>{{0, 0, 0}};
         std::array<T, 3> kXMax = std::array<T, 3>{{Lx, Ly, Lz}};
 
@@ -60,7 +60,7 @@
 #else // TWODIM
 
     template <typename S>
-    void SampleParticles(const T Lx, const T Ly, T kRadius, T ppc, unsigned int front_type, S& sim){
+    void SampleParticles(S& sim, const T Lx, const T Ly, T kRadius, T ppc = 6, unsigned int front_type = 0, std::uint32_t attempts = 200, std::uint32_t seed = 42){
         std::uint32_t kAttempts = 200;
         std::uint32_t kSeed = 42;
         std::array<T, 2> kXMin = std::array<T, 2>{{0, 0}};

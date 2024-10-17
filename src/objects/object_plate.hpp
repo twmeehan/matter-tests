@@ -8,7 +8,7 @@ public:
 
 #ifdef THREEDIM
 
-    ObjectPlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object, T vy_object, T vz_object, T vmin_factor, T load_factor) :
+    ObjectPlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object = 0.0, T vy_object = 0.0, T vz_object = 0.0, T vmin_factor = 1.0, T load_factor = 0.0) :
               pos_object(pos_object),
               pos_upper(pos_upper),
               pos_lower(pos_lower),
@@ -74,7 +74,7 @@ public:
 
 #else // TWODIM
 
-    ObjectPlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object, T vy_object, T vmin_factor, T load_factor) :
+    ObjectPlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object = 0.0, T vy_object = 0.0, T vmin_factor = 1.0, T load_factor = 0.0) :
               pos_object(pos_object),
               pos_upper(pos_upper),
               pos_lower(pos_lower),
