@@ -1,9 +1,7 @@
 #include "simulation.hpp"
 
 #include "plasticity_helpers/mccrma.hpp"
-#include "plasticity_helpers/mcchardrma.hpp"
 #include "plasticity_helpers/mcchardexprma.hpp"
-#include "plasticity_helpers/mccsinterrma.hpp"
 
 void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & Fe_trial){
 
@@ -11,11 +9,11 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == MCC || plastic_model == MCCHard || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC  || plastic_model == SinterMCC){
+    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == MCC || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
-        // TV hencky = svd.singularValues().array().log(); // VonMises
-        TV hencky = svd.singularValues().array().abs().max(1e-4).log(); // QuadraticLars
+        // TV hencky = svd.singularValues().array().log();
+        TV hencky = svd.singularValues().array().abs().max(1e-4).log();
         T  hencky_trace = hencky.sum();
         TV hencky_deviatoric = hencky - (hencky_trace / dim) * TV::Ones();
         T  hencky_deviatoric_norm = hencky_deviatoric.norm();
@@ -23,7 +21,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         if (hencky_deviatoric_norm > 0)
             hencky_deviatoric /= hencky_deviatoric_norm; // normalize the deviatoric vector so it gives a unit vector specifying the deviatoric direction
 
-        // particles.hencky[p] = hencky;
 
         if (plastic_model == VonMises){
 
@@ -37,13 +34,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 plastic_count++;
                 particles.delta_gamma[p] = d_prefac * delta_gamma / dt;
 
-                // NB! If using the NONLOCAL approach: The following 3 lines should be commented out as this is done in plasticity_projection
                 hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += delta_gamma;
-
-                // NB sintering
-                // particles.sinter_S[p] += dt/sinter_tc*(sinter_Sinf-particles.sinter_S[p]) - particles.sinter_S[p] * delta_gamma / sinter_ec;
 
             } // end plastic projection
 
@@ -311,7 +304,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
                 particles.delta_gamma[p] = delta_gamma / dt;
-            } // end plastic projection projection
+            } // end plastic projection
         } // end PerzynaDP
 
 
@@ -392,14 +385,17 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             /////// IMPLICIT HARDENING
             // bool perform_rma = MCCHardRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
             bool perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
+            // bool perform_rma = MCCHardExpRMA2(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
+
             /////// EXLICIT HARDENING
             // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
             // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
             // T particle_p0 = std::max(T(1e-3), p0*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(1.0)));
-            // T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
             // T particle_p0 = std::max( T(1e-2), p0*std::exp(xi*(1-std::exp(particles.eps_pl_vol[p]))) );
             // T particle_p0 = std::max(T(1e-2), (particles.eps_pl_vol[p] < 0) ? p0*(1.0-std::sinh(xi*particles.eps_pl_vol[p])) : p0*(1.0-std::tanh(xi*particles.eps_pl_vol[p])) );
             // T particle_p0 = std::max(T(1e-3), (particles.eps_pl_vol_mcc[p] < 0) ? K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]) : K*std::tanh(-xi*particles.eps_pl_vol_mcc[p]) );
+
+            // T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
             // bool perform_rma = MCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
             //////////////////////////////////////////////////////////////////////
 
@@ -451,7 +447,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaMuIMCC
 
 
-        else if (plastic_model == MCC || plastic_model == MCCHard || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == SinterMCC){
+        else if (plastic_model == MCC || plastic_model == MCCHardExp || plastic_model == PerzynaMCC){
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -462,25 +458,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T q_trial = q_stress;
 
             bool perform_rma;
-            if (plastic_model == MCC) // Explicit hardening (no hardening used in RMA)
+            if (plastic_model == MCC || plastic_model == PerzynaMCC) // Explicit hardening
             {
                 // T particle_p0 = p0;
                 T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
                 // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
-                // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]) * (1+particles.sinter_S[p]) );
                 perform_rma = MCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
             }
-            else if (plastic_model == MCCHard) // Sinh hardening, implicit hardening in RMA
-            {
-                perform_rma = MCCHardRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
-            }
-            else if (plastic_model == MCCHardExp || plastic_model == PerzynaMCC) // Exponential hardening, implicit hardening in RMA, also assuming the factor in front of q^2 in the yield criterion is 1
+            else if (plastic_model == MCCHardExp) // Exponential hardening, implicit hardening
             {
                 perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
-            }
-            else if (plastic_model == SinterMCC) // Sintering model under development
-            {
-                perform_rma = MCCSinterRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, dt, sinter_Sc, sinter_tc, sinter_ec, particles.eps_pl_vol[p], particles.sinter_S[p]);
             }
 
             if (perform_rma) { // returns true if it performs a return mapping
@@ -501,6 +488,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*perzyna_visc/dt);
                         if (delta_gamma < 0){
                             debug("PerzynaMCC: FATAL negative delta_gamma = ", delta_gamma);
+                            // delta_gamma = 0;
                             exit = 1;
                         }
                     }
@@ -549,9 +537,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 delta_gamma = (q_trial - q_stress) / f_mu_prefac;
                 particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
                 particles.delta_gamma[p] = delta_gamma / dt;
-
-                // T delta_S = dt/sinter_tc*(sinter_Sinf-particles.sinter_S[p]) - particles.sinter_S[p] * std::abs(eps_pl_vol_inst) / sinter_ec;
-                // particles.sinter_S[p] = std::min(T(sinter_Sinf), std::max(T(0.0), particles.sinter_S[p] + delta_S));
 
                 hencky = q_stress / e_mu_prefac * hencky_deviatoric - ep*TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
