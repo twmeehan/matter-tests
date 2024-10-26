@@ -13,8 +13,8 @@ add_executable(mpm
 			   g2p.cpp
 			   explicit_euler_update.cpp
 			   boundary_collision.cpp
-			   updateDt.cpp
-			   positionUpdate.cpp
+			   update_dt.cpp
+			   position_update.cpp
 			   musl.cpp
 			   pbc.cpp
 			   )

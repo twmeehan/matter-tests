@@ -29,17 +29,12 @@ void Simulation::positionUpdate(){
             }
         }
 
+        // To be hard-coded depending on application
         if (pbc_special){
-            if (particles.x[p](0) > 0.8){ // 0.8 for nico bump
+            if (particles.x[p](0) > 0.8){
                 particles.x[p](0)  = -0.1;
                 particles.x[p](1) +=  0.27;
             }
-            // if (particles.x[p](0) > 1.8){
-            //     particles.x[p](0)  = -0.18;
-            //     particles.x[p](1) +=  0.5;
-
-               // particles.v[p](0) *= 0.1;
-            // }
         }
 
     } // end loop over particles
