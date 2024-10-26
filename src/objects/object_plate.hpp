@@ -33,43 +33,47 @@ public:
                   return false;
               }
           }
-          if (plate_type == right){
+          else if (plate_type == right){
               if (X_in(1) < pos_upper && X_in(1) > pos_lower && (pos_object - X_in(0)) <= 0){
                   return true;
               } else{
                   return false;
               }
           }
-          if (plate_type == bottom){
+          else if (plate_type == bottom){
               if (X_in(0) < pos_upper && X_in(0) > pos_lower && (X_in(1) - pos_object) <= 0){
                   return true;
               } else{
                   return false;
               }
           }
-          if (plate_type == top){
+          else if (plate_type == top){
               if (X_in(0) < pos_upper && X_in(0) > pos_lower && (pos_object - X_in(1)) <= 0){
                   return true;
               } else{
                   return false;
               }
           }
-          if (plate_type == back){
+          else if (plate_type == back){
               if (X_in(2) - pos_object <= 0){
                   return true;
               } else{
                   return false;
               }
           }
-          if (plate_type == front){
+          else if (plate_type == front){
               if (pos_object - X_in(2) <= 0){
                   return true;
               } else{
                   return false;
               }
           }
+          else{
+            debug("FATAL: invalid plate type");
+            return false;
+          }
 
-      } // end inside(x,y,z)
+        } // end inside(x,y,z)
 
 
 #else // TWODIM
@@ -97,26 +101,30 @@ public:
                 return false;
             }
         }
-        if (plate_type == right){
+        else if (plate_type == right){
             if (X_in(1) < pos_upper && X_in(1) > pos_lower && (pos_object - X_in(0)) <= 0){
                 return true;
             } else{
                 return false;
             }
         }
-        if (plate_type == bottom){
+        else if (plate_type == bottom){
             if (X_in(0) < pos_upper && X_in(0) > pos_lower && (X_in(1) - pos_object) <= 0){
                 return true;
             } else{
                 return false;
             }
         }
-        if (plate_type == top){
+        else if (plate_type == top){
             if (X_in(0) < pos_upper && X_in(0) > pos_lower && (pos_object - X_in(1)) <= 0){
                 return true;
             } else{
                 return false;
             }
+        }
+        else{
+            debug("FATAL: invalid plate type");
+            return false;
         }
     }
 

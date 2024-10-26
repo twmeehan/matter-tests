@@ -65,7 +65,11 @@ int main(){
 
     ////// OPTIONAL: ADD INDIVIDUAL PARTICLES
     auto new_particle_x = sim.particles.x;
-    TV tmp_particle(0.0, 0.0);
+    #ifdef THREEDIM 
+        TV tmp_particle(0.0, 0.0, 0.0);
+    #else
+        TV tmp_particle(0.0, 0.0);
+    #endif
     new_particle_x.push_back(tmp_particle);
     sim.Np += 1;
     sim.particles = Particles(sim.Np);
