@@ -24,8 +24,8 @@ add_executable(
   ../src/g2p.cpp
   ../src/explicit_euler_update.cpp
   ../src/boundary_collision.cpp
-  ../src/updateDt.cpp
-  ../src/positionUpdate.cpp
+  ../src/update_dt.cpp
+  ../src/position_update.cpp
   ../src/musl.cpp
   ../src/pbc.cpp
 )
