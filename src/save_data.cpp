@@ -1,5 +1,5 @@
 #include "simulation.hpp"
-#include "tinyply.h"
+#include "../deps/tinyply.h"
 
 void Simulation::saveInfo(){
 
@@ -44,14 +44,8 @@ void Simulation::computeAvgData(TM& volavg_cauchy, TM& volavg_kirchh, T& Javg){
         volavg_kirchh += tau * J;
     }
 
-    // T volavg_pressure = -volavg_tau.trace() / dim;
-    // TM volavg_tau_dev = volavg_tau + volavg_pressure * I;
-    // T volavg_devstress = std::sqrt(3.0/2.0 * selfDoubleDot(volavg_tau_dev));
-
     volavg_cauchy /= Jsum;
     volavg_kirchh /= Jsum;
-    // In the porous case: both these terms must in the post-processing be
-    // multiplied by phi(t) = phi_0 * Javg / (1+eps_V)
 
     Javg = Jsum / Np;
 
@@ -96,6 +90,7 @@ void Simulation::saveParticleData(std::string extra){
     std::vector<T> devstress_vec(Np);
     std::vector<T> Je_vec(Np);
 
+    #pragma omp parallel for num_threads(n_threads)
     for(int p = 0; p < Np; p++){
 
         TM Fe = particles.F[p];
@@ -107,7 +102,6 @@ void Simulation::saveParticleData(std::string extra){
             tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
 
         T Je = Fe.determinant();
-        // T J = Je * std::exp( particles.eps_pl_vol[p] );
 
         T pressure  = -tau.trace() / dim;
         TM tau_dev = tau + pressure * TM::Identity();
@@ -125,11 +119,10 @@ void Simulation::saveParticleData(std::string extra){
 
 #ifdef TINYPLY_IMPLEMENTATION
 
-    std::string filename = directory + sim_name + "/out_part_frame_" + extra + std::to_string(frame) + ".ply";
+    std::string filename = directory + sim_name + "/particles_f" + extra + std::to_string(frame) + ".ply";
     std::ofstream out;
     out.open(filename, std::ios::out | std::ios::binary);
     tinyply::PlyFile file;
-
     auto type = std::is_same<T, float>::value ? tinyply::Type::FLOAT32 : tinyply::Type::FLOAT64;
 
     #ifdef THREEDIM
@@ -214,24 +207,6 @@ void Simulation::saveParticleData(std::string extra){
         tinyply::Type::INVALID,
         0);
 
-    // file.add_properties_to_element(
-    //     "vertex",
-    //     { "eps_pl_vol_pradhana" },
-    //     type,
-    //     particles.eps_pl_vol_pradhana.size(),
-    //     reinterpret_cast<uint8_t*>(particles.eps_pl_vol_pradhana.data()),
-    //     tinyply::Type::INVALID,
-    //     0);
-    //
-    // file.add_properties_to_element(
-    //     "vertex",
-    //     { "sinter_S" },
-    //     type,
-    //     particles.sinter_S.size(),
-    //     reinterpret_cast<uint8_t*>(particles.sinter_S.data()),
-    //     tinyply::Type::INVALID,
-    //     0);
-
     file.add_properties_to_element(
         "vertex",
         { "pressure" },
@@ -261,79 +236,92 @@ void Simulation::saveParticleData(std::string extra){
 
     file.write(out, true);
 
-#else
+#endif // TINYPLY_IMPLEMENTATION
 
-    std::ofstream outFile(directory + sim_name + "/out_part_frame_" + extra + std::to_string(frame) + ".csv");
-    outFile << "x"           << ","   // 0
-            << "y"           << ","   // 1
-            << "z"           << ","   // 2
-            << "vx"          << ","   // 3
-            << "vy"          << ","   // 4
-            << "vz"          << ","   // 5
-            << "pressure"    << ","   // 6
-            << "devstress"   << ","   // 7
-            << "eps_pl_vol"  << ","   // 8
-            << "eps_pl_dev"  << ","   // 9
-            << "delta_gamma" << ","   // 10
-            << "viscosity"   << ","   // 11
-            << "muI"         << ","   // 12
-            << "eps_pl_vol_pradhana" << ","   // 13
-            << "Je"         << ","    // 14
-            << "sinter_S"   << "\n";  // 15
-            // << "tau_xx"      << ","   // 16
-            // << "tau_xy"      << ","   // 17
-            // << "tau_yx"      << ","   // 18
-            // << "tau_yy"      << ","   // 19
-            // << "Fe_xx"       << ","   // 20
-            // << "Fe_xy"       << ","   // 21
-            // << "Fe_yx"       << ","   // 22
-            // << "Fe_yy"       << "\n";   // 23
-
-
-        outFile << particles.x[p](0)          << ","   // 0
-                << particles.x[p](1)          << ","   // 1
-            #ifdef THREEDIM
-                << particles.x[p](2)          << ","   // 2
-            #else
-                << 0                          << ","
-            #endif
-                << particles.v[p](0)          << ","   // 3
-                << particles.v[p](1)          << ","   // 4
-            #ifdef THREEDIM
-                << particles.v[p](2)          << ","   // 5
-            #else
-                << 0                          << ","
-            #endif
-                << pressure_vec[p]            << ","   // 6
-                << devstress_vec[p]           << ","   // 7
-                << particles.eps_pl_vol[p]    << ","   // 8
-                << particles.eps_pl_dev[p]    << ","   // 9
-                << particles.delta_gamma[p]   << ","     // 10
-                << particles.viscosity[p]     << ","     // 11
-                << particles.muI[p]           << ","     // 12
-                << particles.eps_pl_vol_pradhana[p]  << ","  // 13
-                << Je_vec[p]                 << ","
-                << particles.sinter_S[p]     << "\n";
-                // << tau(0,0)                   << ","   // 14
-                // << tau(0,1)                   << ","   // 15
-                // << tau(1,0)                   << ","   // 16
-                // << tau(1,1)                   << ","   // 17
-                // << Fe(0,0)                    << ","    // 18
-                // << Fe(0,1)                    << ","    // 19
-                // << Fe(1,0)                    << ","    // 20
-                // << Fe(1,1)                    << "\n";  // 21
-    } // end loop over particles
+    std::ofstream outFile(directory + sim_name + "/last_written.txt");
+    outFile << std::to_string(frame) << "\n";
     outFile.close();
-
-#endif
-
-    std::ofstream outFile3(directory + sim_name + "/last_written.txt");
-    outFile3 << std::to_string(frame) << "\n";
-    outFile3.close();
 
 } // end saveParticleData()
 
 void Simulation::saveGridData(std::string extra){
+
+#ifdef TINYPLY_IMPLEMENTATION
+    std::string filename = directory + sim_name + "/grid_f" + extra + std::to_string(frame) + ".ply";
+    std::ofstream out;
+    out.open(filename, std::ios::out | std::ios::binary);
+    tinyply::PlyFile file;
+    auto type = std::is_same<T, float>::value ? tinyply::Type::FLOAT32 : tinyply::Type::FLOAT64;
+
+    int counter = 0;
+    std::vector<TV> grid_x_save;
+    grid_x_save.resize(grid_nodes); 
+    for(int i = 0; i < Nx; i++){
+        for(int j = 0; j < Ny; j++){
+            #ifdef THREEDIM
+            for(int k = 0; k < Nz; k++){
+                TV grid_x_node(grid.x[i],grid.y[j],grid.z[k]);
+            #else
+                TV grid_x_node(grid.x[i],grid.y[j]);
+            #endif
+                grid_x_save[counter] = grid_x_node;
+                counter++;
+            #ifdef THREEDIM
+            }
+            #endif
+        }
+    }
+
+    #ifdef THREEDIM
+    file.add_properties_to_element(
+        "vertex",
+        { "x", "y", "z"},
+        type,
+        grid_x_save.size(),
+        reinterpret_cast<uint8_t*>(grid_x_save.data()),
+        tinyply::Type::INVALID,
+        0);
+    file.add_properties_to_element(
+        "vertex",
+        { "vx", "vy", "vz" },
+        type,
+        grid.v.size(),
+        reinterpret_cast<uint8_t*>(grid.v.data()),
+        tinyply::Type::INVALID,
+        0);
+    #else
+    file.add_properties_to_element(
+        "vertex",
+        { "x", "y"},
+        type,
+        grid_x_save.size(),
+        reinterpret_cast<uint8_t*>(grid_x_save.data()),
+        tinyply::Type::INVALID,
+        0);
+
+    file.add_properties_to_element(
+        "vertex",
+        { "vx", "vy"},
+        type,
+        grid.v.size(),
+        reinterpret_cast<uint8_t*>(grid.v.data()),
+        tinyply::Type::INVALID,
+        0);
+    #endif
+
+    file.add_properties_to_element(
+        "vertex",
+        { "mass" },
+        type,
+        grid.mass.size(),
+        reinterpret_cast<uint8_t*>(grid.mass.data()),
+        tinyply::Type::INVALID,
+        0);
+    
+    file.write(out, true);
+
+#else
+
     std::ofstream outFile(directory + sim_name + "/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
     outFile         << "x"       << ","
                     << "y"       << ","
@@ -376,6 +364,8 @@ void Simulation::saveGridData(std::string extra){
         } // end for j
     } // end for i
     outFile.close();
-#endif
+#endif // THREEDIM
+
+#endif // TINYPLY_IMPLEMENTATION
 
 } // end saveGridData()

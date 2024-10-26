@@ -2,7 +2,7 @@
 
 #include "../src/simulation.hpp"
 #include "../src/tools.hpp"
-#include "../src/sampling/sampling_particles.hpp"
+#include "../src/sampling_particles.hpp"
 
 
 

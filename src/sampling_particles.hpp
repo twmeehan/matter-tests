@@ -1,9 +1,9 @@
 #ifndef SAMPLING_PARTICLES_HPP
 #define SAMPLING_PARTICLES_HPP
 
-#include "../tools.hpp"
-#include "../data_structures.hpp"
-#include "poisson_disk_sampling.hpp"
+#include "tools.hpp"
+#include "data_structures.hpp"
+#include "../deps/poisson_disk_sampling.hpp"
 
 #ifdef THREEDIM
 

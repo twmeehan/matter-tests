@@ -1,6 +1,6 @@
 #include "simulation.hpp"
 #include "tools.hpp"
-#include "sampling/sampling_particles.hpp"
+#include "sampling_particles.hpp"
 
 #include "objects/object_bump.hpp"
 #include "objects/object_chute.hpp"
@@ -10,7 +10,7 @@
 
 // Comment if not compiling with OpenVDB:
 #include "objects/object_vdb.hpp"
-#include "sampling/sampling_particles_from_vdb.hpp"
+#include "sampling_particles_vdb.hpp"
 
 
 int main(){
@@ -24,21 +24,27 @@ int main(){
     sim.end_frame = 20;     // Last frame to simulate
     sim.fps = 10;           // frames per second (float)
     sim.n_threads = 8;      // number of threads in parallel (integer)
+    sim.save_grid = true;   // [default: false] save grid data
     sim.cfl = 0.5;          // CFL constant, typically around 0.5
     sim.flip_ratio = -0.95; // (A)PIC-(A)FLIP ratio in [-1,1].
     //    Positive numbers  [0,1]: PIC/FLIP where 1 equals pure FLIP
     //    Negative numbers [-1,0): APIC/AFLIP where -1 equals pure AFLIP
 
+    sim.pbc = false; // [default: false] if true, use periodic boundary conditions, see pbc.cpp
+
     // INITILIZE ELASTICITY AND ELASTIC PARAMETERS
     sim.elastic_model = StvkWithHencky;
     sim.initialize(/* Young's (Pa) */ 1e6, /* Poisson's (-) */ 0.3, /* Density (kg/m3) */ 1000);
+    sim.use_von_mises_q = false; // [default: false] if true, q is defined as q = sqrt(3/2 * s:s), otherwise q = sqrt(1/2 * s:s)
 
-    ////// GRAVITY ANGLE
-    T theta_deg = 0; // angle in degrees of gravity vector (0 means in negative y-direction)
+    ////// GRAVITY ANGLE [default: gravity is 0]
+    T theta_deg = 0; // angle in degrees of gravity vector, 0 means in negative y-direction
     T theta = theta_deg * M_PI / 180;
-    sim.gravity = TV::Zero();
+    sim.gravity = TV::Zero(); // 
     sim.gravity[0] = +9.81 * std::sin(theta);
     sim.gravity[1] = -9.81 * std::cos(theta);
+    sim.gravity_special = false; // [default: false] if true, you can create a special gravity function in updateDt.cpp
+
 
     ////// INITIAL PARTICLE POSITIONS
     sim.Lx = 1;
@@ -79,9 +85,13 @@ int main(){
     #else
         name = "Ground";  ObjectPlate ground = ObjectPlate(0,  1e10, -1e10, bottom, STICKY, friction, name);  sim.plates.push_back(ground);
     #endif
+
+    /////// Here are some examples how to use the objects derived from ObjectGeneral:
     // name = "Bump";    ObjectBump bump    = ObjectBump(SEPARATE, friction, name);  sim.objects.push_back(&bump);
     // name = "Gate";    ObjectGate gate    = ObjectGate(SEPARATE, friction, name);  sim.objects.push_back(&gate);
-    // name = "Terrain"; ObjectVdb terrain  = ObjectVdb("/absolute_path_to_directory/vdb_file_name.vdb", STICKY, friction, name); sim.objects.push_back(&terrain);
+
+    /////// Here is an example how to use ObjectVdb:
+    // name = "Terrain"; ObjectVdb terrain  = ObjectVdb("../levelsets/vdb_file_name.vdb", STICKY, friction, name); sim.objects.push_back(&terrain);
 
     ////// OPTIONAL: TEST YOUR TERRAIN
     // TV test_point(0,1);
@@ -104,14 +114,35 @@ int main(){
     // sim.plastic_model = MCCHardExp;     // Modified cam clay with implicit hardening
     // sim.plastic_model = PerzynaMCC;     // Perzyna model with MCC yield
 
-    sim.use_von_mises_q = false;
-    sim.use_pradhana = true;
+    sim.use_pradhana = true; // [default: true] Use true to supress unwanted volume expansion in Drucker-Prager models
 
     ////// PLASTIC PARAMETERS
-    sim.dp_slope = std::tan(30*M_PI/180.0);
-    sim.dp_cohesion = 0;
-    sim.perzyna_exp = 1;
-    sim.perzyna_visc = 0;
+    ////// Drucker-Prager models:
+    sim.dp_slope = std::tan(30*M_PI/180.0); // [default: 1] Internal friction
+    sim.dp_cohesion = 0; // [default: 0] Yield surface's intercection of q-axis (in Pa), 0 is the cohesionless case
+
+    ////// Perzyna models:
+    sim.perzyna_exp = 1; // [default: 1] Exponent in Perzyna models
+    sim.perzyna_visc = 0; // [default: 0] Viscous time parameter is Perzyna models
+
+
+    // Von Mises models:
+    sim.yield_stress_orig = 100; // [default: 100]
+    sim.yield_stress_min = 100; // [default: 100]
+    sim.vm_ptensile = -1e20; // [default: -1e20]
+    sim.xi = 0; // [default: 0]
+
+     // Modified Cam-Clay models:
+    sim.M = 1; // [default: 1] Slope of critical state line
+    sim.beta = 0; // [default: 0] Cohesion (ratio of tensile strength to compressive strength)
+    sim.p0 = 1000; // [default: 1000]
+
+    // Mu(I) rheology models:
+    sim.rho_s = sim.rho / 0.63; // Intrinsic grain density
+    sim.grain_diameter = 1e-3; // Intrinsic grain diameter
+    sim.in_numb_ref = 0.279;   // I_0
+    sim.mu_1 = std::tan(20.9*M_PI/180.0); // mu_1
+    sim.mu_2 = std::tan(32.8*M_PI/180.0); // mu_2
 
     sim.simulate();
 

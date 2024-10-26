@@ -24,7 +24,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         if (plastic_model == VonMises){
 
-            // NB: yield stress is q
             T yield_stress = yield_stress_orig;
             // T yield_stress = std::max( (T)1e-3, particles.yield_stress_orig[p] + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
 
@@ -34,7 +33,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 plastic_count++;
                 particles.delta_gamma[p] = d_prefac * delta_gamma / dt;
 
-                hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
+                hencky -= delta_gamma * hencky_deviatoric; 
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += delta_gamma;
 
@@ -130,7 +129,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 else{
                     T q_yield_new = dp_slope * (p_trial+p_shift) + (-p_proj*dp_slope) ;
                     T delta_gamma = hencky_deviatoric_norm - q_yield_new / (mu*sqrt6);
-                    hencky -= delta_gamma * hencky_deviatoric; //  note use of delta_gamma instead of delta_gamma_nonloc as in plasticity_projection
+                    hencky -= delta_gamma * hencky_deviatoric;
                     particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                     particles.eps_pl_dev[p] += delta_gamma;
                     particles.delta_gamma[p] = delta_gamma / dt;
@@ -146,10 +145,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == PerzynaVM){
 
-            // trial q-stress (in q format)
+            // trial q-stress
             T stress = e_mu_prefac * hencky_deviatoric_norm;
 
-            // update yield stress (q format) based on plastic strain ( first time: yield_stress = yield_stress_orig since epsilon_pl_dev = 0 and exp(..) = 1 )
             T yield_stress = yield_stress_min + (yield_stress_orig - yield_stress_min) * exp(-xi * particles.eps_pl_dev[p]);
 
             //// Only for capped von Mises /////
