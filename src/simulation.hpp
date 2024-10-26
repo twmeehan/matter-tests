@@ -50,6 +50,7 @@ public:
   bool pbc = false;
   bool pbc_special = false;
   bool gravity_special = false;
+  bool save_grid = false;
 
   bool musl = false;
 
@@ -129,11 +130,9 @@ public:
   ElasticModel elastic_model;
   PlasticModel plastic_model;
 
-  T mu;
-  T lambda;
-  T K;
-
-  T xi;
+  T mu; // shear modulus G
+  T lambda; // first Lame parameter
+  T K; // bulk modulus
 
   bool use_pradhana = true;
   bool use_von_mises_q = false;
@@ -145,12 +144,13 @@ public:
   T rma_prefac;
 
   // Von Mises:
-  T yield_stress_orig;
-  T yield_stress_min;
+  T yield_stress_orig = 100;
+  T yield_stress_min = 100;
   T vm_ptensile = -1e20;
+  T xi = 0;
 
   // Drucker Prager
-  T dp_slope;
+  T dp_slope = 1;
   T dp_cohesion = 0;
 
   // Perzyna
@@ -158,9 +158,9 @@ public:
   T perzyna_visc = 0;
 
  // MCC
- T M;
+ T M = 1;
  T beta = 0;
- T p0;
+ T p0 = 1000;
 
  // mu(I) rheology
  T rho_s;
@@ -169,17 +169,6 @@ public:
  T mu_1;
  T mu_2;
  T fac_Q;
-
- // Sintering model
- T sinter_Sc;
- T sinter_tc;
- T sinter_ec;
-
-  // Regularization by Laplacian
-  T xi_nonloc;
-  T nonlocal_l;
-  T nonlocal_l_sq;
-  unsigned int nonlocal_support;
 
   // Objects
   std::vector<ObjectPlate> plates;

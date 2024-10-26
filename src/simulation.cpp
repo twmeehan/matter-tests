@@ -78,8 +78,8 @@ void Simulation::simulate(){
     one_over_dx = 1.0 / dx;
     one_over_dx_square = one_over_dx * one_over_dx;
 
-    nonlocal_l_sq = nonlocal_l * nonlocal_l;
-    nonlocal_support = std::ceil(nonlocal_l / dx);
+    // nonlocal_l_sq = nonlocal_l * nonlocal_l;
+    // nonlocal_support = std::ceil(nonlocal_l / dx);
 
     if (use_von_mises_q){
         q_prefac = sqrt3/sqrt2;
@@ -136,7 +136,8 @@ void Simulation::simulate(){
             std::cout << "Saving frame " << frame << std::endl;
             if (save_sim){
                 saveParticleData();
-                saveGridData();
+                if (save_grid)
+                    saveGridData();
                 // saveAvgData();
             }
 
@@ -145,7 +146,8 @@ void Simulation::simulate(){
             std::cout << "The simulation ended at time = " << time << std::endl;
             if (save_sim){
                 saveParticleData();
-                saveGridData();
+                if (save_grid)
+                    saveGridData();
                 // saveAvgData();
             }
             break;
