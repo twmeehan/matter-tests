@@ -1,6 +1,6 @@
 #include "simulation.hpp"
 
-void Simulation::boundaryCollision(TV Xi, TV& vi){
+void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
 
     // Make a copy
     TV vi_orig = vi;
@@ -21,10 +21,15 @@ void Simulation::boundaryCollision(TV Xi, TV& vi){
                 TV n = obj->normal(Xi);
                 T dot = v_rel.dot(n);
                 if (dot < 0){ // if moving towards object
+
+                    T friction = obj->friction;
+                    if (use_material_fricton)
+                        friction = grid.friction[index];
+
                     TV v_tang = v_rel - dot * n;
-                    if (obj->friction > 0){
-                        if( -dot * obj->friction < v_tang.norm() )
-                            v_rel = v_tang + v_tang.normalized() * dot * obj->friction;
+                    if (friction > 0){
+                        if( -dot * friction < v_tang.norm() )
+                            v_rel = v_tang + v_tang.normalized() * dot * friction;
                         else
                             v_rel.setZero();
                     } else{

@@ -94,6 +94,9 @@ void Simulation::simulate(){
 
     fac_Q = in_numb_ref / (grain_diameter*std::sqrt(rho_s));
 
+    if (use_material_fricton)
+        std::fill(particles.muI.begin(), particles.muI.end(), mu_1);
+
     debug("Num of particles = ", Np);
     debug("dx               = ", dx);
     debug("Wave speed       = ", wave_speed);
@@ -106,7 +109,7 @@ void Simulation::simulate(){
     std::cout << "------------------------------------------------ " << std::endl;
 
     // Lagrangian coordinates. Using assignment operator to copy
-    particles.x0 = particles.x;
+    // particles.x0 = particles.x;
 
     time = 0;
     frame = 0;
@@ -320,13 +323,13 @@ void Simulation::overwriteGridVelocity(TV Xi, TV& vi){
 
 // This function must be hard-coded to choice
 void Simulation::addExternalParticleGravity(){
-    // 1. Transfer grid velocity to particles
-    G2P();
-    // 2. Apply gravity on particle velocity
-    for(int p=0; p<Np; p++)
-        particles.v[p] += dt * (-2.0*amplitude*particles.x0[p]);
-    // 3. Transfer particle velocity back to grid
-    P2G();
+    // // 1. Transfer grid velocity to particles
+    // G2P();
+    // // 2. Apply gravity on particle velocity
+    // for(int p=0; p<Np; p++)
+    //     particles.v[p] += dt * (-2.0*amplitude*particles.x0[p]);
+    // // 3. Transfer particle velocity back to grid
+    // P2G();
 } // end addExternalParticleGravity
 
 

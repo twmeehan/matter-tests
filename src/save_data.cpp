@@ -255,7 +255,7 @@ void Simulation::saveGridData(std::string extra){
 
     int counter = 0;
     std::vector<TV> grid_x_save;
-    grid_x_save.resize(grid_nodes); 
+    grid_x_save.resize(grid_nodes);
     for(int i = 0; i < Nx; i++){
         for(int j = 0; j < Ny; j++){
             #ifdef THREEDIM
@@ -317,7 +317,18 @@ void Simulation::saveGridData(std::string extra){
         reinterpret_cast<uint8_t*>(grid.mass.data()),
         tinyply::Type::INVALID,
         0);
-    
+
+    if (use_material_fricton){
+        file.add_properties_to_element(
+            "vertex",
+            { "friction" },
+            type,
+            grid.friction.size(),
+            reinterpret_cast<uint8_t*>(grid.friction.data()),
+            tinyply::Type::INVALID,
+            0);
+    }
+
     file.write(out, true);
 
 #else

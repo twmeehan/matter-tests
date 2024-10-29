@@ -9,11 +9,13 @@ void Simulation::P2G(){
 
     grid.v.resize(grid_nodes); std::fill( grid.v.begin(), grid.v.end(), TV::Zero() );
     grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
+    grid.friction.resize(grid_nodes); std::fill( grid.friction.begin(), grid.friction.end(), 0.0 );
 
     #pragma omp parallel num_threads(n_threads)
     {
         std::vector<TV> grid_v_local(grid_nodes, TV::Zero() );
         std::vector<T> grid_mass_local(grid_nodes);
+        std::vector<T> grid_friction_local(grid_nodes);
 
         #pragma omp for
         for(int p = 0; p < Np; p++){
@@ -42,6 +44,8 @@ void Simulation::P2G(){
                                 posdiffvec(2) = zi-xp(2);
                                 grid_v_local[ind(i,j,k)] += particles.Bmat[p] * posdiffvec * apicDinverse * weight;
                             }
+                            if (use_material_fricton)
+                                grid_friction_local[ind(i,j,k)] += particles.muI[p] * weight;
                         }
                     } // end for k
         #else
@@ -55,6 +59,8 @@ void Simulation::P2G(){
                             posdiffvec(1) = yi-xp(1);
                             grid_v_local[ind(i,j)] += particles.Bmat[p] * posdiffvec * apicDinverse * weight;
                         }
+                        if (use_material_fricton)
+                            grid_friction_local[ind(i,j)] += particles.muI[p] * weight;
                     }
         #endif
                 } // end for j
@@ -66,6 +72,8 @@ void Simulation::P2G(){
             for (int l = 0; l<grid_nodes; l++){
                 grid.mass[l]          += grid_mass_local[l];
                 grid.v[l]             += grid_v_local[l];
+                if (use_material_fricton)
+                    grid.friction[l]  += grid_friction_local[l];
             } // end for l
         } // end omp critical
 

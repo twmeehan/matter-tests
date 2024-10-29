@@ -83,7 +83,7 @@ void Simulation::explicitEulerUpdate(){
             for(int k = 0; k < Nz; k++){
                 unsigned int index = ind(i,j,k);
 #else
-            unsigned int index = ind(i,j);
+                unsigned int index = ind(i,j);
 #endif
                 T mi = grid.mass[index];
                 if (mi > 0){
@@ -106,9 +106,9 @@ void Simulation::explicitEulerUpdate(){
                     TV Xi(grid.x[i], grid.y[j]);
 #endif
 
-                    boundaryCollision(Xi, new_vi);
+                    boundaryCollision(index, Xi, new_vi);
 
-                    // Currently not working:
+                    // TODO:
                     // boundaryCorrection(new_xi, new_yi, new_vxi, new_vyi);
 
                     // Only if impose velocity on certain grid nodes:

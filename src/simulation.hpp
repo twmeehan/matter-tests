@@ -51,6 +51,7 @@ public:
   bool pbc_special = false;
   bool gravity_special = false;
   bool save_grid = false;
+  bool use_material_fricton = false;
 
   bool musl = false;
 
@@ -218,7 +219,7 @@ public:
 
   void moveObjects();
 
-  void boundaryCollision(TV Xi, TV& vi);
+  void boundaryCollision(int index, TV Xi, TV& vi);
   void overwriteGridVelocity(TV Xi, TV& vi);
 
   void deleteLastParticle(unsigned int n);

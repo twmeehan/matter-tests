@@ -8,7 +8,7 @@
 #include "objects/object_vdb.hpp"
 
 template <typename S>
-void SampleParticlesFromVdb(T kRadius, T ppc, ObjectVdb& obj, S& sim){
+void SampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 8){
     debug("Sampling particles from VDB...");
 
     std::uint32_t kAttempts = 30;
