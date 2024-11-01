@@ -19,7 +19,7 @@ int main(){
     Simulation sim;
 
     sim.directory = "output/";
-    sim.sim_name = "my_simulation_name";
+    sim.sim_name = "collapse";
 
     sim.end_frame = 20;     // Last frame to simulate
     sim.fps = 10;           // frames per second (float)
@@ -35,12 +35,11 @@ int main(){
     // INITILIZE ELASTICITY AND ELASTIC PARAMETERS
     sim.elastic_model = StvkWithHencky;
     sim.initialize(/* Young's (Pa) */ 1e6, /* Poisson's (-) */ 0.3, /* Density (kg/m3) */ 1000);
-    sim.use_von_mises_q = false; // [default: false] if true, q is defined as q = sqrt(3/2 * s:s), otherwise q = sqrt(1/2 * s:s)
 
     ////// GRAVITY ANGLE [default: gravity is 0]
     T theta_deg = 0; // angle in degrees of gravity vector, 0 means in negative y-direction
     T theta = theta_deg * M_PI / 180;
-    sim.gravity = TV::Zero(); // 
+    sim.gravity = TV::Zero(); //
     sim.gravity[0] = +9.81 * std::sin(theta);
     sim.gravity[1] = -9.81 * std::cos(theta);
     sim.gravity_special = false; // [default: false] if true, you can create a special gravity function in updateDt.cpp
@@ -65,7 +64,7 @@ int main(){
 
     ////// OPTIONAL: ADD INDIVIDUAL PARTICLES
     auto new_particle_x = sim.particles.x;
-    #ifdef THREEDIM 
+    #ifdef THREEDIM
         TV tmp_particle(0.0, 0.0, 0.0);
     #else
         TV tmp_particle(0.0, 0.0);
@@ -84,11 +83,7 @@ int main(){
     ////// OBJECTS AND TERRAINS
     T friction = 0.2; // used if SEPARATE or SLIP
     std::string name;
-    #ifdef THREEDIM
-        name = "Ground";  ObjectPlate ground = ObjectPlate(0,  1e10, -1e10, bottom, STICKY, friction, name);  sim.plates.push_back(ground);
-    #else
-        name = "Ground";  ObjectPlate ground = ObjectPlate(0,  1e10, -1e10, bottom, STICKY, friction, name);  sim.plates.push_back(ground);
-    #endif
+    name = "Ground";  ObjectPlate ground = ObjectPlate(0,  1e10, -1e10, bottom, STICKY, friction, name);  sim.plates.push_back(ground);
 
     /////// Here are some examples how to use the objects derived from ObjectGeneral:
     // name = "Bump";    ObjectBump bump    = ObjectBump(SEPARATE, friction, name);  sim.objects.push_back(&bump);
@@ -119,6 +114,9 @@ int main(){
     // sim.plastic_model = PerzynaMCC;     // Perzyna model with MCC yield
 
     sim.use_pradhana = true; // [default: true] Use true to supress unwanted volume expansion in Drucker-Prager models
+
+    sim.use_von_mises_q = false; // [default: false] if true, q is defined as q = sqrt(3/2 * s:s), otherwise q = sqrt(1/2 * s:s)
+                                 // Note if using plastic model DPSoft then this will always be true!
 
     ////// PLASTIC PARAMETERS
     ////// Drucker-Prager models:

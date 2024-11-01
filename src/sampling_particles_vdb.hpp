@@ -16,11 +16,12 @@ void SampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 8){
 
     TV min_corner, max_corner;
     obj.bounds(min_corner, max_corner);
-    debug("    Min corner: \n", min_corner);
-    debug("    Max corner: \n", max_corner);
     TV L = max_corner - min_corner;
 
     #ifdef THREEDIM
+        debug("    Min corner: ", min_corner(0), ", ", min_corner(1), ", ", min_corner(2));
+        debug("    Max corner: ", max_corner(0), ", ", max_corner(1), ", ", max_corner(2));
+
         std::array<T, 3> kXMin = std::array<T, 3>{{min_corner(0), min_corner(1), min_corner(2)}};
         std::array<T, 3> kXMax = std::array<T, 3>{{max_corner(0), max_corner(1), max_corner(2)}};
         std::vector<std::array<T, 3>> square_samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);
@@ -30,6 +31,9 @@ void SampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 8){
         sim.particle_mass = sim.rho * sim.particle_volume;
 
     #else // TWODIM
+        debug("    Min corner: ", min_corner(0), ", ", min_corner(1));
+        debug("    Max corner: ", max_corner(0), ", ", max_corner(1));
+
         std::array<T, 2> kXMin = std::array<T, 2>{{min_corner(0), min_corner(1)}};
         std::array<T, 2> kXMax = std::array<T, 2>{{max_corner(0), max_corner(1)}};
         std::vector<std::array<T, 2>> square_samples = thinks::PoissonDiskSampling(kRadius, kXMin, kXMax, kAttempts, kSeed);

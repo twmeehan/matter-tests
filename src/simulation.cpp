@@ -18,12 +18,34 @@ Simulation::Simulation(){
 
 void Simulation::initialize(T E, T nu, T density){
 
+    std::cout << "-----------------------------------------------------------------------------------" << std::endl;
+    std::cout << "    88b           d88                                                              " << std::endl;
+    std::cout << "    888b         d888                  aa          aa                              " << std::endl;
+    std::cout << "    88`8b       d8'88                  88          88                              " << std::endl;
+    std::cout << "    88 `8b     d8' 88  ,adPPYYba,  aaaa88aaaa  aaaa88aaaa   ,adPPYba,  8b,dPPYba,  " << std::endl;
+    std::cout << "    88  `8b   d8'  88  aa     `Y8  aaaa88aaaa  8888888888  a8P_____88  88P     Y8  " << std::endl;
+    std::cout << "    88   `8b d8'   88  ,adPPPPP88      88          88      adPPPPP88   88          " << std::endl;
+    std::cout << "    88    `888'    88  88,    ,88      aa          aa      a8b         88          " << std::endl;
+    std::cout << "    88     `8'     88   `adPPYba,                           `adPPYba   88          " << std::endl;
+    std::cout << "-----------------------------------------------------------------------------------" << std::endl;
+
+    #if DIMENSION == 3
+        debug("This is a 3D simulation.");
+    #elif DIMENSION == 2
+        debug("This is a 2D simulation.");
+    #else
+        #error Unsupported spline degree
+    #endif
+
     lambda = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
     mu     = E / (2.0*(1.0+nu));
     K = lambda + 2.0 * mu / dim;
     rho = density;
     wave_speed = std::sqrt(E/rho);
 
+    if (save_sim)
+        createDirectory();
+    std::cout << "-----------------------------------------------------------------------------------" << std::endl;
 }
 
 
@@ -47,15 +69,8 @@ void Simulation::createDirectory(){
 
 }
 
+// NB: Simulation::initialize(...) must be called before Simulation::simulate()
 void Simulation::simulate(){
-
-    #if DIMENSION == 3
-        debug("This is a 3D simulation.");
-    #elif DIMENSION == 2
-        debug("This is a 2D simulation.");
-    #else
-        #error Unsupported spline degree
-    #endif
 
     #if SPLINEDEG == 3
       apicDinverse = 3.0/(dx*dx);
@@ -97,16 +112,12 @@ void Simulation::simulate(){
     if (use_material_fricton)
         std::fill(particles.muI.begin(), particles.muI.end(), mu_1);
 
-    debug("Num of particles = ", Np);
-    debug("dx               = ", dx);
-    debug("Wave speed       = ", wave_speed);
-    debug("dt_max           = ", dt_max);
-    debug("particle_volume  = ", particle_volume);
-    debug("particle_mass    = ", particle_mass);
-
-    std::cout << "------------------------------------------------ " << std::endl;
-    std::cout << "---------------- This is Larsie ---------------- " << std::endl;
-    std::cout << "------------------------------------------------ " << std::endl;
+    debug("Num of particles:   ", Np);
+    debug("dx:                 ", dx);
+    debug("Elastic wave speed: ", wave_speed);
+    debug("dt_max:             ", dt_max);
+    debug("particle volume:    ", particle_volume);
+    debug("particle mass:      ", particle_mass);
 
     // Lagrangian coordinates. Using assignment operator to copy
     // particles.x0 = particles.x;
@@ -116,7 +127,6 @@ void Simulation::simulate(){
     final_time = end_frame * frame_dt;
 
     if (save_sim){
-        createDirectory();
         saveInfo();
         saveParticleData();
     }

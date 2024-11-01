@@ -77,7 +77,7 @@ public:
   TV gravity = TV::Zero();
   TV gravity_final;
   T gravity_time;
-  bool no_liftoff = true;
+  // bool no_liftoff = true;
 
   T amplitude;
 

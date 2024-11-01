@@ -40,21 +40,9 @@ void Simulation::updateDt(){
     debug("               dt     = ", dt    );
 #endif
 
-    // if (dt > dt_cfl){
-    //     debug("TIME STEP IS TOO BIG COMPARED TO CFL!!!");
-    //     exit = 1;
-    //     return;
-    // }
-    // if (dt > dt_max){
-    //     debug("TIME STEP IS TOO BIG COMPARED TO ELASTIC WAVE SPEED!!!");
-    //     exit = 1;
-    //     return;
-    // }
-
 
     if (gravity_special){
 
-        ///////////// ALT 1 /////////////////////////////
         if (time < gravity_time){
             gravity = gravity_final * time/gravity_time;
         }
@@ -69,19 +57,6 @@ void Simulation::updateDt(){
             //     }
             //     no_liftoff = false;
             }
-        /////////////////////////////////////////////////
-
-        /////////// ALT 2 ///////////////////////////////
-        // T theta_i = 0;
-        // T theta_f = 5;
-        // T theta = gravity_time * time; // here gravity_time means degrees per sec;
-        // theta = std::min(theta, theta_f);
-        // debug("theta = ", theta);
-        // theta = theta * M_PI / 180;
-        // gravity = TV::Zero();
-        // gravity[0] = +9.81 * std::sin(theta);
-        // gravity[1] = -9.81 * std::cos(theta);
-        /////////////////////////////////////////////////
 
     } // end gravity_special
 

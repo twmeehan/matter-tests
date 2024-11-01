@@ -1,6 +1,6 @@
 # Ma++er
 
-Ma++er (pronounced _Matter_) is an abbreviation for *MPM in C++ for Elasto-viscoplastic **R**heologies 
+Ma++er (pronounced _Matter_) is an abbreviation for *MPM in C++ for Elasto-viscoplastic **R**heologies
 
 The Material Point Method (MPM) is a powerful numerical continuum method aimed at large deformation problems, typically attributed to Sulsky et al. (1994).
 
@@ -45,8 +45,9 @@ IMAGES HERE
 
 * The supported **boundary conditions** are (the last two requiring a **Coulomb friction parameter** to be specified)   
     * No-slip (in code called `STICKY`)
-    * Sticky slip (in code called `SLIP`)
     * Separate slip (in code called `SEPARATE`)
+    * Sticky slip (in code called `SLIP`, currently only available for plate objects)
+
 
 
 * **Parallelized** on shared memory with [OpenMP](https://www.openmp.org/)
@@ -57,7 +58,7 @@ IMAGES HERE
 
 #### How to run the code
 
-1. Set up your simulation parameters and initial state in `mpm.cpp`. The default `mpm.cpp` file in the master branch sets up a simple granular collapse and explains the main options. In the `examples` folder, other examples are presented (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`). 
+1. Set up your simulation parameters and initial state in `mpm.cpp`. The default `mpm.cpp` file in the master branch sets up a simple granular collapse and explains the main options. In the `examples` folder, other examples are presented (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`).
 
 2. Create a build directory: `mkdir build`
 
@@ -69,7 +70,7 @@ IMAGES HERE
 
 
 #### Objects and terrains
- 
+
 Rigid objects and terrains (boundaries) are either   
     * formulated analytically as level sets (signed distance functions)   
     * or imported as `.vdb` level sets files using [OpenVDB](https://www.openvdb.org/)   
@@ -78,7 +79,7 @@ Analytical objects can be specified as a derived class from the general `ObjectG
 
 A terrain/object from a `.vdb` is stored in an instance of the `ObjectVdb` class which is also derived from `ObjectGeneral`. An example of a `.vdb` terrain of ... is found in the folder `levelsets`.
 
-Note that all `ObjectGeneral` instances must be added to the std::vector `objects` and `ObjectPlate` instances are added to the std::vector `plates`. 
+Note that all `ObjectGeneral` instances must be added to the std::vector `objects` and `ObjectPlate` instances are added to the std::vector `plates`.
 
 
 #### Saving simulation data
