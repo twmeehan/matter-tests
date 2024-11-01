@@ -5,7 +5,8 @@
 
 bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_prefac)
 {
-    T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+    // T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+    T y = M * M * (p - p0) * (p + beta * p0) + (q * q);
 
     if (y > 0) {
 
@@ -13,32 +14,45 @@ bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_prefac)
         T pt = p;
         T qt = q;
         T dkdp = 2*M*M;
-        T dldq = 4*beta+2;
+        // T dldq = 4*beta+2;
+        T dldq = 2;
 
         T max_iter = 40;
         for (int iter = 0; iter < max_iter; iter++) {
 
-            y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+            // y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
+            y = M * M * (p - p0) * (p + beta * p0) + (q * q);
+
             T k = M*M * (beta*p0 + 2*p - p0);
-            T l = 2*q * (2*beta+1);
+
+            // T l = 2*q * (2*beta+1);
+            T l = 2*q;
+
             T r1 = pt - p - K             * delta_gamma * k;
             T r2 = qt - q - rma_prefac*mu * delta_gamma * l;
 
             if ( iter > 4 && std::abs(y) < 1e-3 && std::abs(r1) < 1e-3 && std::abs(r2) < 1e-3 ){
-                // debug("RMA: Breaking loop bc small rx at iter = ", iter);
                 break;
             }
             if (iter == max_iter - 1){ // did not break loop
-                debug("RMA: FATAL did not exit loop at iter = ", iter);
-                debug(iter, ":  r1   = ", r1);
-                debug(iter, ":  r2   = ", r2);
-                debug(iter, ":  y    = ", y);
-                debug(iter, ":  p0   = ", p0);
-                debug(iter, ":  pt   = ", pt);
-                debug(iter, ":  qt   = ", qt);
-                debug(iter, ":  p    = ", p);
-                debug(iter, ":  q    = ", q);
-                exit = 1;
+                if (p0 > 0.1){
+                    debug("RMA: FATAL did not exit loop at iter = ", iter, ", iter = ", iter);
+                    debug(iter, ":  r1   = ", r1);
+                    debug(iter, ":  r2   = ", r2);
+                    debug(iter, ":  y    = ", y);
+                    debug(iter, ":  p0   = ", p0);
+                    debug(iter, ":  pt   = ", pt);
+                    debug(iter, ":  qt   = ", qt);
+                    debug(iter, ":  p    = ", p);
+                    debug(iter, ":  q    = ", q);
+                    // exit = 1;
+                    break;
+                }
+                else{ // p0 too small
+                    p = 1e-15;
+                    q = 1e-15;
+                    break;
+                }
             }
 
             T J11 = -1 - K            *delta_gamma*dkdp;
@@ -66,15 +80,13 @@ bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_prefac)
             if (q < 1e-15){
                 q = 1e-15;
             }
-            // debug(iter, ":  r1   = ", r1);
-            // debug(iter, ":  r2   = ", r2);
-            // debug(iter, ":  y    = ", y);
 
         } // end for loop
 
         p = std::max(p, -beta * p0);
         p = std::min(p, p0);
-        q = M * std::sqrt((p0 - p) * (beta * p0 + p) / (1 + 2 * beta));
+        // q = M * std::sqrt((p0 - p) * (beta * p0 + p) / (1 + 2 * beta));
+        q = M * std::sqrt((p0 - p) * (beta * p0 + p));
 
         return true; // if plastic, i.e., y > 0
     } // end if outside

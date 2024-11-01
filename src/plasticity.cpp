@@ -33,7 +33,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 plastic_count++;
                 particles.delta_gamma[p] = d_prefac * delta_gamma / dt;
 
-                hencky -= delta_gamma * hencky_deviatoric; 
+                hencky -= delta_gamma * hencky_deviatoric;
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 particles.eps_pl_dev[p] += delta_gamma;
 
@@ -150,7 +150,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
             T yield_stress = yield_stress_min + (yield_stress_orig - yield_stress_min) * exp(-xi * particles.eps_pl_dev[p]);
 
-            //// Only for capped von Mises /////
+            //////////////// Only for capped von Mises /////////////////
             T p_trial = -K * hencky_trace;
             if (p_trial < vm_ptensile * exp(-xi * particles.eps_pl_vol[p])){
                 T delta_gamma = stress / f_mu_prefac;
@@ -160,7 +160,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
                 particles.delta_gamma[p] = delta_gamma / dt;
             }
-            ////////////////////////////////////
+            ////////////////////////////////////////////////////////////
 
             else if (stress > yield_stress) {
                 plastic_count++;
@@ -339,7 +339,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             }
 
             // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
-            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion; // not sure if we should really shift this intersection!!!
+            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion;
 
             // right of tip AND outside yield surface
             if ((p_trial+p_shift) > p_tip && q_trial > q_yield) {
@@ -381,20 +381,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
             //////////////////////////////////////////////////////////////////////
             /////// IMPLICIT HARDENING
-            // bool perform_rma = MCCHardRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
-            bool perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
-            // bool perform_rma = MCCHardExpRMA2(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
+            bool perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, mu_1, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
 
             /////// EXLICIT HARDENING
-            // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
-            // T particle_p0 = std::max(T(1e-3), K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
-            // T particle_p0 = std::max(T(1e-3), p0*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(1.0)));
+            // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
+            // T particle_p0 = std::max(T(1e-2), p0*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(1.0)));
             // T particle_p0 = std::max( T(1e-2), p0*std::exp(xi*(1-std::exp(particles.eps_pl_vol[p]))) );
             // T particle_p0 = std::max(T(1e-2), (particles.eps_pl_vol[p] < 0) ? p0*(1.0-std::sinh(xi*particles.eps_pl_vol[p])) : p0*(1.0-std::tanh(xi*particles.eps_pl_vol[p])) );
-            // T particle_p0 = std::max(T(1e-3), (particles.eps_pl_vol_mcc[p] < 0) ? K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]) : K*std::tanh(-xi*particles.eps_pl_vol_mcc[p]) );
 
             // T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
-            // bool perform_rma = MCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
+            // bool perform_rma = MCCRMA(p_stress, q_stress, exit, mu_1, particle_p0, beta, mu, K, rma_prefac);
             //////////////////////////////////////////////////////////////////////
 
             particles.muI[p] = mu_1;
@@ -406,14 +402,17 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 T ep = p_stress / (K*dim);
                 T eps_pl_vol_inst = hencky_trace + dim * ep;
                 particles.eps_pl_vol[p]     += eps_pl_vol_inst;
-                // particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
 
                 T q_yield = q_stress;
                 if (q_trial < (q_yield + 1e-5)) {
                     q_stress = q_yield; // this is to ensure that fac_c below becomes negative and thus gamma_dot_S positive
                 }
                 else{
-                    T p_c = p0 * std::exp(-xi*particles.eps_pl_vol[p]);
+                    /////// IMPLICIT HARDENING
+                    T p_c = std::max( p0 * std::exp(-xi*particles.eps_pl_vol[p]) , p_stress+T(0.001));
+                    /////// EXLICIT HARDENING
+                    // T p_c = particle_p0;
+
                     T p_special = p_stress + beta * p_c; // always equal or larger than 0
 
                     T fac_a = f_mu_prefac * dt; // always positive
@@ -458,12 +457,11 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             bool perform_rma;
             if (plastic_model == MCC || plastic_model == PerzynaMCC) // Explicit hardening
             {
-                // T particle_p0 = p0;
-                T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
-                // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol_mcc[p]));
+                // T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
+                T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
                 perform_rma = MCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
             }
-            else if (plastic_model == MCCHardExp) // Exponential hardening, implicit hardening
+            else if (plastic_model == MCCHardExp) // Implicit hardening
             {
                 perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
             }
@@ -474,7 +472,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 T ep = p_stress / (K*dim);
                 T eps_pl_vol_inst = hencky_trace + dim * ep;
                 particles.eps_pl_vol[p] += eps_pl_vol_inst;
-                // particles.eps_pl_vol_mcc[p] += eps_pl_vol_inst;
 
                 T delta_gamma;
                 ////////////////////////////////////////////////////////////////
