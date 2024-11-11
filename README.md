@@ -1,10 +1,9 @@
-# Ma++er
+# Matter
 
-Ma++er (pronounced _Matter_) is an abbreviation for *MPM in C++ for Elasto-viscoplastic **R**heologies
+![logo](media/logo.png)
 
-The Material Point Method (MPM) is a powerful numerical continuum method aimed at large deformation problems, typically attributed to Sulsky et al. (1994).
 
-IMAGES HERE
+_Matter_ is an open-source C++ implemenation of the Material Point Method (MPM) with elasto-viscoplastic rheologies, specifically designed to model the mechanics and flow of granular matter. However, its usage extends to simulate a variety of different _matter_ undergoing small and large deformations. Developed across different sides of the Swiss Alps, this software is designed to be lightweight, easy to install and use, with few dependencies, without compromising speed and performance. Parallelized on shared memory with OpenMP, millions of material points/particles can be simulated on (powerful) desktop workstations. _Matter_ is optimised for dense (not sparse) topologies.
 
 ## Features
 
@@ -58,7 +57,7 @@ IMAGES HERE
 
 #### How to run the code
 
-1. Set up your simulation parameters and initial state in `mpm.cpp`. The default `mpm.cpp` file in the master branch sets up a simple granular collapse and explains the main options. In the `examples` folder, other examples are presented (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`).
+1. Set up your simulation parameters and initial state in `mpm.cpp`. The default `mpm.cpp` file in the master branch sets up a simple granular collapse and explains the main options. In the `examples` folder, other examples are presented (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`). In `tools.hpp`, the user must specify the dimension of the simulation (defualt: 2D) and order of interpolation (default: quadratic). 
 
 2. Create a build directory: `mkdir build`
 
@@ -75,7 +74,7 @@ Rigid objects and terrains (boundaries) are either
     * formulated analytically as level sets (signed distance functions)   
     * or imported as `.vdb` level sets files using [OpenVDB](https://www.openvdb.org/)   
 
-Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in Viroulet et al. (2017). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for speed and conveniance. In `ObjectPlate`, you can also assign a speed (and controls on the time-evokution of the speed) of the plate. Any plate must either a `top`, `bottom`, `front`, `back`, `left` or `right`. Its usage can be seen in the default example in `mpm.cpp` where it is used to simple set the ground (y = 0).
+Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in [Viroulet et al. (2017)](https://doi.org/10.1017/jfm.2017.41). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for speed and conveniance. In `ObjectPlate`, you can also assign a speed (and controls on the time-evokution of the speed) of the plate. Any plate must either a `top`, `bottom`, `front`, `back`, `left` or `right`. Its usage can be seen in the default example in `mpm.cpp` where it is used to simple set the ground (y = 0).
 
 A terrain/object from a `.vdb` is stored in an instance of the `ObjectVdb` class which is also derived from `ObjectGeneral`. An example of a `.vdb` terrain of ... is found in the folder `levelsets`.
 
@@ -91,6 +90,10 @@ We recommend [SideFX's Houdini](https://www.sidefx.com) for visualization the pa
 
 Optionally, the grid data can also be saved if `save_grid = true`. Then, the grid data is saved as `grid_fX.ply`. By default, the grid data is not saved.
 
+
+#### List of most important parameters and options
+
+
 ## Dependencies
 
 The only required dependencies are **[CMake](https://cmake.org/)**, **[OpenMP](https://www.openmp.org/)** and the C++ linear algebra template library **[Eigen](https://eigen.tuxfamily.org/)**. The option `-DUSE_VDB=ON` also requires **[OpenVDB](https://www.openvdb.org/)**, however, this can be turned off if only analytic objects are used.
@@ -100,25 +103,23 @@ On Mac, you can install OpenMP through Homebrew with
 and Eigen can be obtained through
 `brew install eigen`.
 
-## Troubleshooting
+## License and attribution
+Matter is an open-source software licensed under GNU General Public License v3.0.
+If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny@slf.ch).
+
+If you use Matter in your research, please consider to cite works where this code has been used:   
+* Blatny, L., Gray, J.M.N.T. and Gaume, J. (2024) _A critical state μ(I)-rheology model for cohesive granular flows_, Journal of Fluid Mechanics, 997, p. A67. [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)
+
+
+## Help? Want to contribute?
+
+Please contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny@slf.ch)
+
+### Troubleshooting
 
 * If OpenMP was installed through Homebrew, you might need to use the following CMake options when building on Mac, depending on your version:   
 `cmake -DCMAKE_BUILD_TYPE=Release -DOpenMP_CXX_FLAG="-Xclang -fopenmp" -DOpenMP_CXX_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_C_FLAG="-Xclang -fopenmp" -DOpenMP_C_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/opt/homebrew/opt/libomp/lib/libomp.dylib ..`
 
-
-## Coming soon
-
-* Option to export output files in other formats, notably `vtk`
-* More efficient grid handling with [NanoVDB](https://www.openvdb.org/documentation/doxygen/NanoVDB_MainPage.html).
+* Eigen error? Remember to specify vectors with 3 elements for 3D problems and 2 elements for 2D problems. The dimension of the problem is chosen as a global variable in `tools.hpp`.
 
 
-## License and attribution
-Ma++er is licensed under ...
-If you are interested in using Ma++er in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny@slf.ch).
-
-If you use Ma++er in your research, please consider to cite works where this code has been used:   
-Blatny, L., Gray, J.M.N.T. and Gaume, J. (2024) _A critical state μ(I)-rheology model for cohesive granular flows_, Journal of Fluid Mechanics, 997, p. A67. [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)
-
-## Help?
-
-Please contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny@slf.ch)
