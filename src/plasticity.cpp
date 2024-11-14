@@ -247,9 +247,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             }
 
             // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
-            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion; // not sure if we should really shift this intersection!!!
+            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion;
 
-            // right of tip AND outside the shifted yield surface
+            // right of shifted tip AND outside the shifted yield surface
             if ((p_trial+p_shift) > p_tip && q_trial > q_yield) {
                 plastic_count++;
 
@@ -346,7 +346,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 plastic_count++;
 
-                T p_special = p_trial - p_tip; // recall p_tip < 0, thus p_special must be positive. Should we add p_shift as well??
+                T p_special = p_trial+p_shift - p_tip; // p_special is positive.
 
                 T fac_a = f_mu_prefac * dt; // always positive
                 T fac_b = p_trial*(mu_2-mu_1) + f_mu_prefac*dt*fac_Q*std::sqrt(p_special) - (q_trial-q_yield);
@@ -457,8 +457,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             bool perform_rma;
             if (plastic_model == MCC || plastic_model == PerzynaMCC) // Explicit hardening
             {
-                // T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
-                T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
+                T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
+                // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
                 perform_rma = MCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
             }
             else if (plastic_model == MCCHardExp) // Implicit hardening
