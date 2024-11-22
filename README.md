@@ -3,7 +3,9 @@
 ![logo](media/logo.png)
 
 
-_Matter_ is an open-source C++ implemenation of the Material Point Method (MPM) with elasto-viscoplastic rheologies, specifically designed to model the mechanics and flow of granular matter. However, its usage extends to simulate a variety of different _matter_ undergoing small and large deformations. Developed across different sides of the Swiss Alps, this software is designed to be lightweight, easy to install and use, with few dependencies, without compromising speed and performance. Parallelized on shared memory with OpenMP, millions of material points/particles can be simulated on (powerful) desktop workstations. _Matter_ is optimised for dense (not sparse) topologies.
+_Matter_ is an open-source C++ implementation of the Material Point Method (MPM) with elasto-viscoplastic rheologies, specifically designed to model the mechanics and flow of granular matter. However, its usage extends to simulate a variety of different _matter_ undergoing small and large deformations.    
+
+Developed across different sides of the Swiss Alps, this software is designed to be lightweight, easy to install and use, with few dependencies, without compromising speed and performance. Parallelized on shared memory with OpenMP, millions of material points/particles can be simulated on (powerful) desktop workstations.
 
 ## Features
 
@@ -39,25 +41,32 @@ _Matter_ is an open-source C++ implemenation of the Material Point Method (MPM) 
     * Implementing other (visco)plastic models is easy due to the general framework of the code
 
 
-* Supports analytical objects and complex terrains
+* Supports **analytical objects** and **complex terrains**
 
 
-* The supported **boundary conditions** are (the last two requiring a **Coulomb friction parameter** to be specified)   
+* The supported **boundary conditions** are   
     * No-slip (in code called `STICKY`)
     * Separate slip (in code called `SEPARATE`)
-    * Sticky slip (in code called `SLIP`, currently only available for plate objects)
+    * Sticky slip (in code called `SLIP`, currently only available for plate objects)   
 
 
+* The boundary conditions above can be supplied a **Coulomb friction parameter**, or what we call "material friction", where an internal friction parameter of a particular plastic model is used as the Coulomb friction for terrain-material interaction.
 
 * **Parallelized** on shared memory with [OpenMP](https://www.openmp.org/)
 
 * Initial particle positions can be sampled using the **Poisson disk sampling** scheme by R. Bridson, ACM SIGGRAPH 2007, here based on the implementation by [Tommy Hinks](https://github.com/thinks/poisson-disk-sampling)
 
+## Limitations
+
+* Optimized for dense (not sparse) topologies. On sparse topologies, the simulations can be rather slow. This follows from the chosen grid data format, which may be replaced in the future. However, the current choice keeps the code simple and organized.
+
+* Supports only single-materials, however, one can easily extend this to multi-material problems. E.g., one can create particle quantities for the relevant material parameters (see `data_structures.hpp`) which can then be used in the material models (see, e.g., `plasticity.cpp`)
+
 ## Usage
 
 #### How to run the code
 
-1. Set up your simulation parameters and initial state in `mpm.cpp`. The default `mpm.cpp` file in the master branch sets up a simple granular collapse and explains the main options. In the `examples` folder, other examples are presented (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`). In `tools.hpp`, the user must specify the dimension of the simulation (defualt: 2D) and order of interpolation (default: quadratic). 
+1. Set up your simulation parameters and initial state in `mpm.cpp`. The default `mpm.cpp` file in the master branch sets up a simple granular collapse and explains the main options. In the `examples` folder, other examples are presented (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`). In `tools.hpp`, the user must specify the dimension of the simulation (defualt: 2D) and order of interpolation (default: quadratic).
 
 2. Create a build directory: `mkdir build`
 
@@ -92,6 +101,77 @@ Optionally, the grid data can also be saved if `save_grid = true`. Then, the gri
 
 
 #### List of most important parameters and options
+This is an non-exhaustive list of parameters and options (of the Simulation class) to be used in the input file `mpm.cpp`. See `simulation.hpp` for the complete list, and make use of the current `mpm.cpp` example file. The default value is given in brackets [...]
+
+| Parameter  | Default value  | Description  |
+| ----       |    ----        |          ---    |
+| `directory`  | "output/"      | Name of directory to save the simulation
+| `sim_name`   | "my_simulation"|   Name of simulation    
+| `end_frame`  | 1   | Last frame to simulate   
+| `fps`        | 1.0   |  Frames per second
+| `n_threads`  | 1    |  Number of threads in parallel
+| `save_grid`  | false | Save grid data to file
+| `cfl`        | 0.5     | CFL constant, typically around 0.5
+| `flip_ratio` | -0.95  | (A)PIC-(A)FLIP ratio in the range [-1,1]. Positive numbers [0,1]: PIC/FLIP where 1 equals pure FLIP. Negative numbers [-1,0): APIC/AFLIP where -1 equals pure AFLIP
+| `reduce_verbose` | false | Reduce writing to screen
+| `pbc`        | false | Use periodic boundary conditions, see `pbc.cpp`. If `pbc_special = true` then you can hard-code your own periodicity, see `position_update.cpp`
+| `gravity`    | (0,0,(0)) | Gravitational acceleration vector. If `gravity_special = true` you can hard-code your own gravity evolution, see `update_dt.cpp`
+| `delete_last_particle` | 0 | Delete the n last particles sampled
+| `use_material_fricton` | false          | Use the internal friction from a plastic model as the Coulomb friction, only relevant for certain plasticity models.
+| `musl`                 | false          | Use MUSL instead of USL
+| `use_von_mises_q`      | false          | If `true` Define q (the "equivalent shear stress") used in plasticity models as the von Mises equivalent stress q = sqrt(3/2 s:s). If `false`, use q = sqrt(1/2 s:s). If using the `DPSoft` model, this will always be interpreted as `true`.
+| `Lx`, `Ly` and `Lz`    | 1.0            | The material sample space used in `SampleParticles(...)`
+| `dt_max`               | 0.01           | Max time step, should generally be restricted by elastic wave speed, i.e., `dt_max < dx / wave_speed`;
+| `elastic_model`        | StvkWithHencky | Elastic model, the elastic parameters are set in `initialize(...)`
+| `plastic_model`        | NoPlasticity   | Plastic model, plastic parameters are set according to the model used
+
+Here is a list of the parameters in the various plastic models:
+
+| Model               | Parameters     | Default value   |
+| ----                |    ----        |          ---    |
+| **VonMises**        | `q_max`        | 100.0           |
+| **DruckerPrager**   | `dp_slope`     | 1.0             |
+|                     | `dp_cohesion`  | 0.0             |
+| **DPSoft**          | `dp_slope`     | 1.0             |
+|                     | `dp_cohesion`  | 0.0             |
+|                     | `xi`           | 0.0             |  
+|                     | `use_pradhana` | true            |  
+| **PerzynaVM**       | `q_max`        | 100.0           |
+|                     | `q_min`        | 100.0           |
+|                     | `p_min`        | -1.0e20         |
+|                     | `xi`           | 0.0             |  
+|                     | `perzyna_exp`  | 1.0             |      
+|                     | `perzyna_visc` | 0.0             |  
+| **PerzynaDP**       | `dp_slope`     | 1.0             |
+|                     | `dp_cohesion`  | 0.0             |
+|                     | `use_pradhana` | true            |
+|                     | `perzyna_exp`  | 1.0             |      
+|                     | `perzyna_visc` | 0.0             |
+| **PerzynaMuIDP**    | `dp_cohesion`  | 0.0             |
+|                     | `use_pradhana` | true            |
+|                     | `rho_s`        | 1.0             |      
+|                     | `grain_diameter`| 0.001          |
+|                     | `I_ref`        | 0.279           |      
+|                     | `mu_1`         | 0.382           |      
+|                     | `mu_2`         | 0.644           |      
+| **PerzynaMuIMCC**   | `beta`         | 0.0             |
+|                     | `p0`           | true            |
+|                     | `xi`           | 0.0             |
+|                     | `rho_s`        | 1000.0          |      
+|                     | `grain_diameter`| 0.001          |
+|                     | `I_ref`        | 0.279           |      
+|                     | `mu_1`         | 0.382           |      
+|                     | `mu_2`         | 0.644           |
+| **MCC / MCCHardExp** | `beta`        | 0.0             |
+|                     | `p0`           | true            |
+|                     | `xi`           | 0.0             |
+|                     | `M`            | 1.0             |      
+| **PerzynaMCC**      | `beta`        | 0.0             |
+|                     | `p0`           | true            |
+|                     | `xi`           | 0.0             |
+|                     | `M`            | 1.0             |  
+|                     | `perzyna_exp`  | 1.0             |      
+|                     | `perzyna_visc` | 0.0             |
 
 
 ## Dependencies
@@ -107,13 +187,13 @@ and Eigen can be obtained through
 Matter is an open-source software licensed under GNU General Public License v3.0.
 If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny@slf.ch).
 
-If you use Matter in your research, please consider to cite works where this code has been used:   
+If you use Matter in your research, please cite first works where this code has been used:   
 * Blatny, L., Gray, J.M.N.T. and Gaume, J. (2024) _A critical state μ(I)-rheology model for cohesive granular flows_, Journal of Fluid Mechanics, 997, p. A67. [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)
 
 
 ## Help? Want to contribute?
 
-Please contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny@slf.ch)
+Please contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch)
 
 ### Troubleshooting
 
@@ -121,5 +201,3 @@ Please contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny@slf.ch)
 `cmake -DCMAKE_BUILD_TYPE=Release -DOpenMP_CXX_FLAG="-Xclang -fopenmp" -DOpenMP_CXX_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_C_FLAG="-Xclang -fopenmp" -DOpenMP_C_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/opt/homebrew/opt/libomp/lib/libomp.dylib ..`
 
 * Eigen error? Remember to specify vectors with 3 elements for 3D problems and 2 elements for 2D problems. The dimension of the problem is chosen as a global variable in `tools.hpp`.
-
-
