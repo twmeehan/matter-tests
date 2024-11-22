@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #ifndef SAMPLING_PARTICLES_HPP
 #define SAMPLING_PARTICLES_HPP
 
@@ -8,7 +10,10 @@
 #ifdef THREEDIM
 
     template <typename S>
-    void SampleParticles(S& sim, const T Lx, const T Ly, const T Lz, T kRadius, T ppc = 8, unsigned int front_type = 0, std::uint32_t attempts = 30, std::uint32_t seed = 42) {
+    void SampleParticles(S& sim, T kRadius, T ppc = 8, unsigned int front_type = 0, std::uint32_t attempts = 30, std::uint32_t seed = 42) {
+        const T Lx = sim.Lx;
+        const T Ly = sim.Ly;
+        const T Lz = sim.Lz;
         std::uint32_t kAttempts = attempts;
         std::uint32_t kSeed = seed;
         std::array<T, 3> kXMin = std::array<T, 3>{{0, 0, 0}};
@@ -60,7 +65,9 @@
 #else // TWODIM
 
     template <typename S>
-    void SampleParticles(S& sim, const T Lx, const T Ly, T kRadius, T ppc = 6, unsigned int front_type = 0, std::uint32_t attempts = 200, std::uint32_t seed = 42){
+    void SampleParticles(S& sim, T kRadius, T ppc = 6, unsigned int front_type = 0, std::uint32_t attempts = 200, std::uint32_t seed = 42){
+        const T Lx = sim.Lx;
+        const T Ly = sim.Ly;
         std::uint32_t kAttempts = 200;
         std::uint32_t kSeed = 42;
         std::array<T, 2> kXMin = std::array<T, 2>{{0, 0}};

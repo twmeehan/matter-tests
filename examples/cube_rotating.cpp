@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #include "simulation.hpp"
 #include "tools.hpp"
 #include "sampling_particles.hpp"
@@ -26,10 +28,8 @@ int main(){
     sim.Ly = 1;
     #ifdef THREEDIM
         sim.Lz = 0.05;
-        SampleParticles(sim, sim.Lx, sim.Ly, sim.Lz, 0.01);
-    #else
-        SampleParticles(sim, sim.Lx, sim.Ly, 0.01);
     #endif
+    SampleParticles(sim, 0.01);
 
     T total_energy_init = 0;
     for(int p = 0; p < sim.Np; p++){

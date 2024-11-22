@@ -1,11 +1,10 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #include <gtest/gtest.h>
 
 #include "../src/simulation.hpp"
 #include "../src/tools.hpp"
 #include "../src/sampling_particles.hpp"
-
-
-
 
 TEST(ElasticityTest, BulkModulus) {
 
@@ -25,9 +24,9 @@ TEST(ElasticityTest, BulkModulus) {
     sim.Ly = 1;
     #ifdef THREEDIM
     sim.Lz = 0.2;
-        SampleParticles(sim, sim.Lx, sim.Ly, sim.Lz, 0.02, 8);
+        SampleParticles(sim, 0.02, 8);
     #else
-        SampleParticles(sim, sim.Lx, sim.Ly,         0.02, 4);
+        SampleParticles(sim, 0.02, 4);
     #endif
 
     sim.dt_max = 0.5 * sim.dx / sim.wave_speed;
@@ -86,10 +85,8 @@ TEST(EnergyTest, Rotation) {
     sim.Ly = 1;
     #ifdef THREEDIM
         sim.Lz = 0.05;
-        SampleParticles(sim, sim.Lx, sim.Ly, sim.Lz, 0.01);
-    #else
-        SampleParticles(sim, sim.Lx, sim.Ly, 0.01);
     #endif
+    SampleParticles(sim, 0.01);
 
     T total_energy_init = 0;
     for(int p = 0; p < sim.Np; p++){
@@ -156,9 +153,9 @@ TEST(CollapseTest, DruckerPrager) {
     T k_rad = 0.0015;
     #ifdef THREEDIM
         sim.Lz = 0.10;
-        SampleParticles(sim, sim.Lx, sim.Ly, sim.Lz, k_rad, 8);
+        SampleParticles(sim, k_rad, 8);
     #else
-        SampleParticles(sim, sim.Lx, sim.Ly,         k_rad, 4);
+        SampleParticles(sim, k_rad, 4);
     #endif
     for(int p = 0; p < sim.Np; p++){
         sim.particles.x[p](1) += 0.5*sim.dx;
@@ -173,7 +170,6 @@ TEST(CollapseTest, DruckerPrager) {
     sim.Np += 1;
     sim.particles = Particles(sim.Np);
     sim.particles.x = new_part_x;
-    sim.delete_last_particle = false;
 
     sim.dt_max = 0.5 * sim.dx / sim.wave_speed;
 
