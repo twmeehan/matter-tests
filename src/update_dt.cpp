@@ -1,8 +1,9 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #include "simulation.hpp"
 
 void Simulation::updateDt(){
 
-    // T max_speed = std::sqrt((particles.vx.array().square() + particles.vy.array().square()).maxCoeff());
     auto max_velocity_it = std::max_element( particles.v.begin(), particles.v.end(),
                                              []( const TV &v1, const TV &v2 )
                                              {
