@@ -1,5 +1,6 @@
-#include "simulation.hpp"
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
 
+#include "simulation.hpp"
 #include "plasticity_helpers/mccrma.hpp"
 #include "plasticity_helpers/mcchardexprma.hpp"
 
@@ -24,10 +25,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         if (plastic_model == VonMises){
 
-            T yield_stress = yield_stress_orig;
-            // T yield_stress = std::max( (T)1e-3, particles.yield_stress_orig[p] + xi * particles.eps_pl_dev[p] + xi_nonloc * particles.eps_pl_dev_nonloc[p]);
+            T yield_stress = q_max;
 
-            T delta_gamma = hencky_deviatoric_norm - yield_stress / e_mu_prefac; // this is not delta_gamma, this is eps_pl_dev_instant
+            T delta_gamma = hencky_deviatoric_norm - yield_stress / e_mu_prefac; // this is eps_pl_dev_instant
 
             if (delta_gamma > 0){ // project to yield surface
                 plastic_count++;
@@ -148,11 +148,11 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // trial q-stress
             T stress = e_mu_prefac * hencky_deviatoric_norm;
 
-            T yield_stress = yield_stress_min + (yield_stress_orig - yield_stress_min) * exp(-xi * particles.eps_pl_dev[p]);
+            T yield_stress = q_min + (q_max - q_min) * exp(-xi * particles.eps_pl_dev[p]);
 
             //////////////// Only for capped von Mises /////////////////
             T p_trial = -K * hencky_trace;
-            if (p_trial < vm_ptensile * exp(-xi * particles.eps_pl_vol[p])){
+            if (p_trial < p_min * exp(-xi * particles.eps_pl_vol[p])){
                 T delta_gamma = stress / f_mu_prefac;
                 T eps_pl_vol_inst = -p_trial/K;
                 particles.F[p] = svd.matrixU() * svd.matrixV().transpose();
@@ -190,14 +190,14 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         T tmp = dt / tm;
                         T tmp1 = std::pow(tmp, perzyna_exp);
 
-                        T yield_stress_new = yield_stress_min + (yield_stress_orig - yield_stress_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
+                        T yield_stress_new = q_min + (q_max - q_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
 
                         T residual = (stress - f_mu_prefac * delta_gamma) * tmp1 - yield_stress_new;
                         if (std::abs(residual) < 1e-1) {
                             break;
                         }
 
-                        T yield_stress_new_diff = -xi / d_prefac * (yield_stress_orig - yield_stress_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
+                        T yield_stress_new_diff = -xi / d_prefac * (q_max - q_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
                         T residual_diff         = -f_mu_prefac * tmp1 + (stress - f_mu_prefac * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm) - yield_stress_new_diff;
 
                         if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
@@ -312,7 +312,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = -K * hencky_trace;
             T q_trial = e_mu_prefac * hencky_deviatoric_norm;
 
-            T p_tip   = -dp_cohesion/dp_slope;
+            T p_tip   = -dp_cohesion/mu_1;
             T p_shift = 0;
             if (use_pradhana)
                 p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain! Force to be zero if using classical volume-expanding non-ass. DP
@@ -339,7 +339,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             }
 
             // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
-            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion;
+            T q_yield = mu_1 * (p_trial+p_shift) + dp_cohesion;
 
             // right of tip AND outside yield surface
             if ((p_trial+p_shift) > p_tip && q_trial > q_yield) {

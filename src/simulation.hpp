@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #ifndef SIMULATION_HPP
 #define SIMULATION_HPP
 
@@ -44,9 +46,11 @@ public:
   std::string sim_name = "my_simulation";
   std::string directory = "output/";
   bool save_sim = true;
+  bool reduce_verbose = false;
 
   unsigned int n_threads = 1;
   unsigned int end_frame = 1;
+  T fps = 1;
   bool pbc = false;
   bool pbc_special = false;
   bool gravity_special = false;
@@ -58,19 +62,20 @@ public:
   unsigned int delete_last_particle = 0;
 
   T final_time;
-  T fps;
   T frame_dt;
   T dt;
-  T dt_max;
-  T flip_ratio;
   T wave_speed;
-  T cfl;
   T dx;
-  T Lx;
-  T Ly;
 
+
+  T dt_max = 0.01;
+  T cfl = 0.5;
+  T flip_ratio = -0.95;
+
+  T Lx = 1;
+  T Ly = 1;
 #ifdef THREEDIM
-  T Lz;
+  T Lz = 1;
 #endif
 
   T rho;
@@ -128,8 +133,8 @@ public:
 #endif
 
   // Elastoplasticity
-  ElasticModel elastic_model;
-  PlasticModel plastic_model;
+  ElasticModel elastic_model = StvkWithHencky;
+  PlasticModel plastic_model = VonMises;
 
   T mu; // shear modulus G
   T lambda; // first Lame parameter
@@ -145,9 +150,9 @@ public:
   T rma_prefac;
 
   // Von Mises:
-  T yield_stress_orig = 100;
-  T yield_stress_min = 100;
-  T vm_ptensile = -1e20;
+  T q_max = 100;
+  T q_min = 100;
+  T p_min = -1e20;
   T xi = 0;
 
   // Drucker Prager
@@ -164,11 +169,11 @@ public:
  T p0 = 1000;
 
  // mu(I) rheology
- T rho_s;
- T grain_diameter;
- T in_numb_ref;
- T mu_1;
- T mu_2;
+ T rho_s = 2500;
+ T grain_diameter = 1e-3;
+ T I_ref = 0.279;
+ T mu_1 = std::tan(20.9*M_PI/180.0);
+ T mu_2 = std::tan(32.8*M_PI/180.0);;
  T fac_Q;
 
   // Objects

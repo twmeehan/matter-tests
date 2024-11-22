@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #include "simulation.hpp"
 #include <omp.h>
 
@@ -45,6 +47,7 @@ void Simulation::deformationUpdate(){
 
     } // end loop over particles
 
-    debug("               Proj: ", plastic_count, " / ", Np);
+    if (!reduce_verbose)
+        debug("               Proj: ", plastic_count, " / ", Np);
 
 } // end deformationUpdate

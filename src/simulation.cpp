@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #include "simulation.hpp"
 
 Simulation::Simulation(){
@@ -107,17 +109,17 @@ void Simulation::simulate(){
     f_mu_prefac = 2*q_prefac/d_prefac * mu;
     rma_prefac  = 2*q_prefac*q_prefac;
 
-    fac_Q = in_numb_ref / (grain_diameter*std::sqrt(rho_s));
+    fac_Q = I_ref / (grain_diameter*std::sqrt(rho_s));
 
     if (use_material_fricton)
         std::fill(particles.muI.begin(), particles.muI.end(), mu_1);
 
-    debug("Num of particles:   ", Np);
-    debug("dx:                 ", dx);
-    debug("Elastic wave speed: ", wave_speed);
-    debug("dt_max:             ", dt_max);
-    debug("particle volume:    ", particle_volume);
-    debug("particle mass:      ", particle_mass);
+    debug("Number of particles: ", Np);
+    debug("Grid spacing dx:     ", dx);
+    debug("Elastic wave speed:  ", wave_speed);
+    debug("Maximum dt:          ", dt_max);
+    debug("Particle volume:     ", particle_volume);
+    debug("Particle mass:       ", particle_mass);
 
     // Lagrangian coordinates. Using assignment operator to copy
     // particles.x0 = particles.x;
@@ -135,10 +137,12 @@ void Simulation::simulate(){
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     while (frame < end_frame){
-        std::cout << "Frame: "               << frame  << " / "    << end_frame  << std::endl;
-        std::cout << "               Name: " << sim_name           << std::endl;
-        std::cout << "               Step: " << current_time_step  << std::endl;
-        std::cout << "               Time: " << time   << " -> "   << (frame+1)*frame_dt << std::endl;
+        if (!reduce_verbose){
+            std::cout << "Frame: "               << frame  << " / "    << end_frame  << std::endl;
+            std::cout << "               Name: " << sim_name           << std::endl;
+            std::cout << "               Step: " << current_time_step  << std::endl;
+            std::cout << "               Time: " << time   << " -> "   << (frame+1)*frame_dt << std::endl;
+        }
         advanceStep();
         if (exit == 1)
             return;

@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #include "simulation.hpp"
 #include "../deps/tinyply.h"
 
@@ -13,7 +15,7 @@ void Simulation::saveInfo(){
              << particle_volume     << "\n"   // 6
              << rho                 << "\n"   // 7
              << grain_diameter      << "\n"   // 8
-             << in_numb_ref         << "\n"   // 9
+             << I_ref               << "\n"   // 9
              << rho_s               << "\n"   // 10
              << mu_1                << "\n"   // 11
              << mu_2                << "\n";  // 12
@@ -341,7 +343,6 @@ void Simulation::saveGridData(std::string extra){
                     << "vy"      << ","
                     << "vz"      << ","
                     << "mass"    << "\n";
-                //    << "delta_gamma" << ","; // OBS: Only if nonlocal strategy
 
 #ifdef THREEDIM
     for(int i=0; i<Nx; i++){
@@ -355,7 +356,6 @@ void Simulation::saveGridData(std::string extra){
                         << grid.v[index](1)        << "," // 4
                         << grid.v[index](2)        << "," // 5
                         << grid.mass[index]        << "\n";   // 6
-                    //    << grid.delta_gamma[index] << ",";
             } // end for k
         } // end for j
     } // end for i
@@ -371,7 +371,6 @@ void Simulation::saveGridData(std::string extra){
                     << grid.v[index](1)        << "," // 4
                     << 0                       << ","
                     << grid.mass[index]        << "\n";  // 6
-                //    << grid.delta_gamma[index] << ","; // 7
         } // end for j
     } // end for i
     outFile.close();
