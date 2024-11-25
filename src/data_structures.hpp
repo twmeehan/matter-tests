@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #ifndef DATA_STRUCTURES_HPP
 #define DATA_STRUCTURES_HPP
 
@@ -13,12 +15,9 @@ public:
 
       eps_pl_dev.resize(Np);         std::fill( eps_pl_dev.begin(),         eps_pl_dev.end(),         0.0 );
       eps_pl_vol.resize(Np);         std::fill( eps_pl_vol.begin(),         eps_pl_vol.end(),         0.0 );
-      // eps_pl_vol_mcc.resize(Np);     std::fill( eps_pl_vol_mcc.begin(),     eps_pl_vol_mcc.end(),     0.0 );
       eps_pl_vol_pradhana.resize(Np);std::fill( eps_pl_vol_pradhana.begin(),eps_pl_vol_pradhana.end(),0.0 );
 
       delta_gamma.resize(Np);        std::fill( delta_gamma.begin(),       delta_gamma.end(),       0.0 );
-      yield_stress_orig.resize(Np);  std::fill( yield_stress_orig.begin(), yield_stress_orig.end(), 0.0 );
-
       viscosity.resize(Np); std::fill( viscosity.begin(), viscosity.end(), 0.0 );
       muI.resize(Np);       std::fill( muI.begin(),       muI.end(),       0.0 );
 
@@ -35,12 +34,9 @@ public:
 
   std::vector<T> eps_pl_dev;
   std::vector<T> eps_pl_vol;
-  // std::vector<T> eps_pl_vol_mcc;
   std::vector<T> eps_pl_vol_pradhana;
 
   std::vector<T> delta_gamma;
-  std::vector<T> yield_stress_orig;
-  std::vector<T> sinter_S;
   std::vector<T> viscosity;
   std::vector<T> muI;
 
