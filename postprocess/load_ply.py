@@ -1,3 +1,5 @@
+# Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 import numpy as np
 from plyfile import PlyData, PlyElement # pip3 install plyfile
 
@@ -14,7 +16,7 @@ figsize = (5, 5)
 ###############################
 
 #### Specify file name and frames to plot
-file = "output/my_simulation_name/"
+file = "output/collapse/"
 frames_to_plot = [0,2,4,10]
 v_max = 2 # max speed in colorbar
 
@@ -24,7 +26,7 @@ frame_dt  = 1.0 / float(info[1])
 dx              = float(info[2])
 
 ##### Initialize colormap
-cmap = matplotlib.colormaps["RdBu_r"]
+cmap = matplotlib.cm.jet
 norm = matplotlib.colors.Normalize(vmin=0, vmax=v_max)
 sm = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
 sm.set_array([])
@@ -40,7 +42,7 @@ for f in range(0, len(frames_to_plot)):
     vx = plydata.elements[0].data['vx']
     vy = plydata.elements[0].data['vy']
     v = np.sqrt(vx**2 + vy**2)
-    Np = len(x); 
+    Np = len(x);
     print("Max speed at frame ", frame, " is ", round(np.max(v),3), " m/s")
 
     ax[f].scatter(x,y, c=cmap(norm(v)), s=0.4, marker='.')
