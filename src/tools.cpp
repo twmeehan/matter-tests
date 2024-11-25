@@ -1,5 +1,6 @@
-#include "tools.hpp"
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
 
+#include "tools.hpp"
 
 unsigned int countlines(std::string file_name)
 {

@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #ifndef TOOLS_HPP
 #define TOOLS_HPP
 
@@ -12,21 +14,26 @@
 #include <iomanip>
 #include <string>
 
-/////////////////// PARAMETERS ////////////////////
-typedef double T;
-// typedef float T;
+
+/////////////// USER PARAMETERS (GLOBAL) //////////
+typedef double T; // float or double
 // #define THREEDIM // Uncomment for 2D
-#define TINYPLY_IMPLEMENTATION // Use tinyply
-#define SPLINEDEG 2
-// #define WARNINGS // if write warnings to screen
+#define SPLINEDEG 2 // Quadratic B-spline
+// #define WARNINGS // Write more debug info to screen
 ///////////////////////////////////////////////////
 
-// Needed for OMP collapse:
+
+
+// Needed for tinyply (do NOT uncomment):
+#define TINYPLY_IMPLEMENTATION
+
+// Needed for OMP collapse (do NOT uncomment):
 #ifdef THREEDIM
     #define DIMENSION 3
 #else
     #define DIMENSION 2
 #endif
+
 
 #ifdef THREEDIM
     typedef Eigen::Matrix<T, 3, 3> TM;

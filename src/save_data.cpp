@@ -3,89 +3,6 @@
 #include "simulation.hpp"
 #include "../deps/tinyply.h"
 
-void Simulation::saveInfo(){
-
-    std::ofstream infoFile(directory + sim_name + "/info.txt");
-    infoFile << end_frame           << "\n"   // 0
-             << fps                 << "\n"   // 1
-             << dx                  << "\n"   // 2
-             << mu                  << "\n"   // 3
-             << lambda              << "\n"   // 4
-             << Np                  << "\n"   // 5
-             << particle_volume     << "\n"   // 6
-             << rho                 << "\n"   // 7
-             << grain_diameter      << "\n"   // 8
-             << I_ref               << "\n"   // 9
-             << rho_s               << "\n"   // 10
-             << mu_1                << "\n"   // 11
-             << mu_2                << "\n";  // 12
-    infoFile.close();
-}
-
-void Simulation::computeAvgData(TM& volavg_cauchy, TM& volavg_kirchh, T& Javg){
-
-    volavg_cauchy = TM::Zero();
-    volavg_kirchh = TM::Zero();
-
-    T Jsum = 0;
-    for(int p = 0; p < Np; p++){
-
-        TM Fe = particles.F[p];
-
-        TM tau; // particles.tau[p];
-        if (elastic_model == NeoHookean)
-            tau = NeoHookeanPiola(Fe) * Fe.transpose();
-        else if (elastic_model == StvkWithHencky)
-            tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
-
-        T Je = Fe.determinant();
-        T J = Je * std::exp( particles.eps_pl_vol[p] );
-        Jsum += J;
-
-        volavg_cauchy += tau;
-        volavg_kirchh += tau * J;
-    }
-
-    volavg_cauchy /= Jsum;
-    volavg_kirchh /= Jsum;
-
-    Javg = Jsum / Np;
-
-}
-
-void Simulation::saveAvgData(){
-
-    TM volavg_cauchy = TM::Zero();
-    TM volavg_kirchh = TM::Zero();
-    T Javg;
-
-    computeAvgData(volavg_cauchy, volavg_kirchh, Javg);
-
-    std::ofstream outFile1(directory + sim_name + "/out_avgcauchy_frame_" + std::to_string(frame) + ".csv");
-    outFile1 << volavg_cauchy(0,0)    << ","
-             << volavg_cauchy(0,1)    << ","
-             << volavg_cauchy(1,0)    << ","
-             << volavg_cauchy(1,1)    << "\n";
-    outFile1.close();
-
-    std::ofstream outFile2(directory + sim_name + "/out_avgkirchh_frame_" + std::to_string(frame) + ".csv");
-    outFile2 << volavg_kirchh(0,0)    << ","
-             << volavg_kirchh(0,1)    << ","
-             << volavg_kirchh(1,0)    << ","
-             << volavg_kirchh(1,1)    << "\n";
-    outFile2.close();
-
-    std::ofstream outFile3(directory + sim_name + "/out_Javg_frame_" + std::to_string(frame) + ".csv");
-    outFile3 << Javg  << "\n";
-    outFile3.close();
-
-    std::ofstream outFile4(directory + sim_name + "/last_written.txt");
-    outFile4 << std::to_string(frame) << "\n";
-    outFile4.close();
-
-}
-
-
 void Simulation::saveParticleData(std::string extra){
 
     std::vector<T> pressure_vec(Np);
@@ -119,7 +36,6 @@ void Simulation::saveParticleData(std::string extra){
         Je_vec[p] = Je;
     }
 
-#ifdef TINYPLY_IMPLEMENTATION
 
     std::string filename = directory + sim_name + "/particles_f" + extra + std::to_string(frame) + ".ply";
     std::ofstream out;
@@ -238,8 +154,6 @@ void Simulation::saveParticleData(std::string extra){
 
     file.write(out, true);
 
-#endif // TINYPLY_IMPLEMENTATION
-
     std::ofstream outFile(directory + sim_name + "/last_written.txt");
     outFile << std::to_string(frame) << "\n";
     outFile.close();
@@ -248,7 +162,6 @@ void Simulation::saveParticleData(std::string extra){
 
 void Simulation::saveGridData(std::string extra){
 
-#ifdef TINYPLY_IMPLEMENTATION
     std::string filename = directory + sim_name + "/grid_f" + extra + std::to_string(frame) + ".ply";
     std::ofstream out;
     out.open(filename, std::ios::out | std::ios::binary);
@@ -333,49 +246,91 @@ void Simulation::saveGridData(std::string extra){
 
     file.write(out, true);
 
-#else
-
-    std::ofstream outFile(directory + sim_name + "/out_grid_frame_" + extra + std::to_string(frame) + ".csv");
-    outFile         << "x"       << ","
-                    << "y"       << ","
-                    << "z"       << ","
-                    << "vx"      << ","
-                    << "vy"      << ","
-                    << "vz"      << ","
-                    << "mass"    << "\n";
-
-#ifdef THREEDIM
-    for(int i=0; i<Nx; i++){
-        for(int j=0; j<Ny; j++){
-            for(int k=0; k<Nz; k++){
-                unsigned int index = ind(i,j,k);
-                outFile << grid.x[i]               << "," // 0
-                        << grid.y[j]               << "," // 1
-                        << grid.z[k]               << "," // 2
-                        << grid.v[index](0)        << "," // 3
-                        << grid.v[index](1)        << "," // 4
-                        << grid.v[index](2)        << "," // 5
-                        << grid.mass[index]        << "\n";   // 6
-            } // end for k
-        } // end for j
-    } // end for i
-    outFile.close();
-#else
-    for(int i=0; i<Nx; i++){
-        for(int j=0; j<Ny; j++){
-            unsigned int index = ind(i,j);
-            outFile << grid.x[i]               << "," // 0
-                    << grid.y[j]               << "," // 1
-                    << 0                       << ","
-                    << grid.v[index](0)        << "," // 3
-                    << grid.v[index](1)        << "," // 4
-                    << 0                       << ","
-                    << grid.mass[index]        << "\n";  // 6
-        } // end for j
-    } // end for i
-    outFile.close();
-#endif // THREEDIM
-
-#endif // TINYPLY_IMPLEMENTATION
-
 } // end saveGridData()
+
+
+
+
+void Simulation::computeAvgData(TM& volavg_cauchy, TM& volavg_kirchh, T& Javg){
+
+    volavg_cauchy = TM::Zero();
+    volavg_kirchh = TM::Zero();
+
+    T Jsum = 0;
+    for(int p = 0; p < Np; p++){
+
+        TM Fe = particles.F[p];
+
+        TM tau; // particles.tau[p];
+        if (elastic_model == NeoHookean)
+            tau = NeoHookeanPiola(Fe) * Fe.transpose();
+        else if (elastic_model == StvkWithHencky)
+            tau = StvkWithHenckyPiola(Fe) * Fe.transpose();
+
+        T Je = Fe.determinant();
+        T J = Je * std::exp( particles.eps_pl_vol[p] );
+        Jsum += J;
+
+        volavg_cauchy += tau;
+        volavg_kirchh += tau * J;
+    }
+
+    volavg_cauchy /= Jsum;
+    volavg_kirchh /= Jsum;
+
+    Javg = Jsum / Np;
+
+}
+
+
+void Simulation::saveAvgData(){
+
+    TM volavg_cauchy = TM::Zero();
+    TM volavg_kirchh = TM::Zero();
+    T Javg;
+
+    computeAvgData(volavg_cauchy, volavg_kirchh, Javg);
+
+    std::ofstream outFile1(directory + sim_name + "/out_avgcauchy_frame_" + std::to_string(frame) + ".csv");
+    outFile1 << volavg_cauchy(0,0)    << ","
+             << volavg_cauchy(0,1)    << ","
+             << volavg_cauchy(1,0)    << ","
+             << volavg_cauchy(1,1)    << "\n";
+    outFile1.close();
+
+    std::ofstream outFile2(directory + sim_name + "/out_avgkirchh_frame_" + std::to_string(frame) + ".csv");
+    outFile2 << volavg_kirchh(0,0)    << ","
+             << volavg_kirchh(0,1)    << ","
+             << volavg_kirchh(1,0)    << ","
+             << volavg_kirchh(1,1)    << "\n";
+    outFile2.close();
+
+    std::ofstream outFile3(directory + sim_name + "/out_Javg_frame_" + std::to_string(frame) + ".csv");
+    outFile3 << Javg  << "\n";
+    outFile3.close();
+
+    std::ofstream outFile4(directory + sim_name + "/last_written.txt");
+    outFile4 << std::to_string(frame) << "\n";
+    outFile4.close();
+
+}
+
+
+void Simulation::saveInfo(){
+
+    std::ofstream infoFile(directory + sim_name + "/info.txt");
+    infoFile << end_frame           << "\n"   // 0
+             << fps                 << "\n"   // 1
+             << dx                  << "\n"   // 2
+             << mu                  << "\n"   // 3
+             << lambda              << "\n"   // 4
+             << Np                  << "\n"   // 5
+             << particle_volume     << "\n"   // 6
+             << rho                 << "\n"   // 7
+             << grain_diameter      << "\n"   // 8
+             << I_ref               << "\n"   // 9
+             << rho_s               << "\n"   // 10
+             << mu_1                << "\n"   // 11
+             << mu_2                << "\n";  // 12
+    infoFile.close();
+}
