@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #include "simulation.hpp"
 
 void Simulation::boundaryCollision(int index, TV Xi, TV& vi){

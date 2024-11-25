@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #ifndef SAMPLING_PARTICLES_VDB_HPP
 #define SAMPLING_PARTICLES_VDB_HPP
 

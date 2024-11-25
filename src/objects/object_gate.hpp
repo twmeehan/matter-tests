@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #ifndef OBJECTGATE_HPP
 #define OBJECTGATE_HPP
 

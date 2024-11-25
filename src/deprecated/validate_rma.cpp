@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #include "simulation.hpp"
 
 void Simulation::validateRMA(){
@@ -11,7 +13,6 @@ void Simulation::validateRMA(){
     // Trial state ENTER HERE
     T p_trial = -100;
     T q_trial = 200;
-    // dt = 0.001;
 
     T trace_epsilon = -p_trial / K;
     T norm_eps_hat = q_trial / (mu*sqrt6);
@@ -19,10 +20,7 @@ void Simulation::validateRMA(){
     std::ofstream steps; steps.open(directory + sim_name + "/rma_steps.txt");
     steps    << "0" << "\t" << p_trial << "\t" << q_trial << "\t" << "0" << std::endl;
 
-    // bool outside = PerzynaQuadRMA(p_trial, q_trial, exit, M, p0, beta, mu, K, dt, dim, perzyna_visc);
-    // bool outside = QuadRMA(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
-    // bool outside = CamClayRMA(p_trial, q_trial, exit, trace_epsilon, norm_eps_hat, M, p0, beta, mu, K);
-    bool outside = MCCRMA(p_trial, q_trial, exit, M, p0, beta, mu, K, 1);
+=    bool outside = MCCRMA(p_trial, q_trial, exit, M, p0, beta, mu, K, 1);
 
 
     if (exit == 1){
@@ -37,7 +35,6 @@ void Simulation::validateRMA(){
     std::cout << "p_proj  = " << p_trial << std::endl;
     std::cout << "q_proj  = " << q_trial << std::endl;
 
-    // std::cout << "For this p, the correct q is " << 2.0*M / (2*beta+1.0) * (p0-p_trial)*(beta*p0+p_trial) / p0 << std::endl;
     std::cout << "For this p, the correct q is " << M * std::sqrt( (p0-p_trial)*(beta*p0+p_trial) / (2*beta+1.0) ) << std::endl;
 
     std::cout << "---------------------------"  << std::endl;

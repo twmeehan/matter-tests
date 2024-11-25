@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 SET (CMAKE_CXX_STANDARD 17)
-project(Larsie)
+project(matter)
 
 enable_testing()
 

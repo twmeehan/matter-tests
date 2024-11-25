@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #include "simulation.hpp"
 
 // Deformation gradient is updated based on the NEW GRID VELOCITIES and the OLD PARTICLE POSITIONS

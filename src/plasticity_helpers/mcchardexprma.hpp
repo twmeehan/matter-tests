@@ -1,3 +1,5 @@
+// Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
+
 #ifndef MCCHARDEXPRMA_HPP
 #define MCCHARDEXPRMA_HPP
 
