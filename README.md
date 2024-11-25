@@ -1,11 +1,20 @@
 # Matter
 
-![logo](media/logo.png)
-
+[![Build and Test](https://github.com/larsblatny/matter/actions/workflows/cmake-single-platform.yml/badge.svg)](https://github.com/larsblatny/matter/actions/workflows/cmake-single-platform.yml)
 
 _Matter_ is an open-source C++ implementation of the Material Point Method (MPM) with elasto-viscoplastic rheologies, specifically designed to model the mechanics and flow of granular matter. However, its usage extends to simulate a variety of different _matter_ undergoing small and large deformations.    
 
 Developed across different sides of the Swiss Alps, this software is designed to be lightweight, easy to install and use, with few dependencies, without compromising speed and performance. Parallelized on shared memory with OpenMP, millions of material points/particles can be simulated on (powerful) desktop workstations.
+
+![logo](media/logo.png)
+
+## License and attribution
+Matter is an open-source software licensed under _GNU General Public License v3.0_ (see LICENCE file).
+If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny@slf.ch).
+
+If you use Matter in your research, please cite the scientific works where this code has been used:   
+* Blatny, L., Gray, J.M.N.T. and Gaume, J. (2024) _A critical state μ(I)-rheology model for cohesive granular flows_, Journal of Fluid Mechanics, 997, p. A67. [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)
+
 
 ## Features
 
@@ -62,9 +71,18 @@ Developed across different sides of the Swiss Alps, this software is designed to
 
 * Supports only single-materials, however, one can easily extend this to multi-material problems. E.g., one can create particle quantities for the relevant material parameters (see `data_structures.hpp`) which can then be used in the material models (see, e.g., `plasticity.cpp`)
 
-## Usage
+## Get started
 
-#### How to run the code
+#### Installing dependencies
+
+The only required dependencies are **[CMake](https://cmake.org/)**, **[OpenMP](https://www.openmp.org/)** and the C++ linear algebra template library **[Eigen](https://eigen.tuxfamily.org/)**. The option `-DUSE_VDB=ON` also requires **[OpenVDB](https://www.openvdb.org/)**, however, this can be turned off if only analytic objects are used.
+
+On Mac, you can install OpenMP through Homebrew with
+`brew install libomp`
+and Eigen can be obtained through
+`brew install eigen`.
+
+#### Build and run the code
 
 1. Set up your simulation parameters and initial state in `mpm.cpp`. The default `mpm.cpp` file in the master branch sets up a simple granular collapse and explains the main options. In the `examples` folder, other examples are presented (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`). In `tools.hpp`, the user must specify the dimension of the simulation (defualt: 2D) and order of interpolation (default: quadratic).
 
@@ -95,13 +113,13 @@ Note that all `ObjectGeneral` instances must be added to the std::vector `object
 The directory to save the output data is specified by the user in `mpm.cpp`.
 Particle data is saved as **binary PLY-files** (using [tinyply](https://github.com/ddiakopoulos/tinyply)) with the format (`particles_fX.ply`) where X represents the frame number (from 0 to `end_frame` as specified by the user).
 
-We recommend [SideFX's Houdini](https://www.sidefx.com) for visualization the particle data. In the file `visualize.hipnc`, we show how to make a simple visualization of the data. Some simple postprocesing can also be done directly in Houdini. PLY files can also be easily imported in Python for postprocessing. This is shown in the file `load_ply.py`.
+We recommend [SideFX's Houdini](https://www.sidefx.com) for visualization the particle data. In the file `visualize.hipnc` in the `postprocess` directory, we show how to make a simple visualization of the data. Some simple postprocesing can also be done directly in Houdini. PLY files can also be easily imported in Python for postprocessing. This is shown in the file `load_ply.py` which can be found in the `postprocess` directory.
 
 Optionally, the grid data can also be saved if `save_grid = true`. Then, the grid data is saved as `grid_fX.ply`. By default, the grid data is not saved.
 
 
 #### List of most important parameters and options
-This is an non-exhaustive list of parameters and options (of the Simulation class) to be used in the input file `mpm.cpp`. See `simulation.hpp` for the complete list, and make use of the current `mpm.cpp` example file. The default value is given in brackets [...]
+This is a non-exhaustive list of parameters and options (of the `Simulation` class) to be specified in the input file `mpm.cpp`. See `simulation.hpp` for the complete list, and take advantage of the current `mpm.cpp` example file. Other example files are found in the `examples` directory.
 
 | Parameter  | Default value  | Description  |
 | ----       |    ----        |          ---    |
@@ -174,26 +192,6 @@ Here is a list of the parameters in the various plastic models:
 |                     | `perzyna_visc` | 0.0             |
 
 
-## Dependencies
-
-The only required dependencies are **[CMake](https://cmake.org/)**, **[OpenMP](https://www.openmp.org/)** and the C++ linear algebra template library **[Eigen](https://eigen.tuxfamily.org/)**. The option `-DUSE_VDB=ON` also requires **[OpenVDB](https://www.openvdb.org/)**, however, this can be turned off if only analytic objects are used.
-
-On Mac, you can install OpenMP through Homebrew with
-`brew install libomp`
-and Eigen can be obtained through
-`brew install eigen`.
-
-## License and attribution
-Matter is an open-source software licensed under GNU General Public License v3.0.
-If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny@slf.ch).
-
-If you use Matter in your research, please cite first works where this code has been used:   
-* Blatny, L., Gray, J.M.N.T. and Gaume, J. (2024) _A critical state μ(I)-rheology model for cohesive granular flows_, Journal of Fluid Mechanics, 997, p. A67. [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)
-
-
-## Help? Want to contribute?
-
-Please contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch)
 
 ### Troubleshooting
 
@@ -201,3 +199,7 @@ Please contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] sl
 `cmake -DCMAKE_BUILD_TYPE=Release -DOpenMP_CXX_FLAG="-Xclang -fopenmp" -DOpenMP_CXX_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_C_FLAG="-Xclang -fopenmp" -DOpenMP_C_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/opt/homebrew/opt/libomp/lib/libomp.dylib ..`
 
 * Eigen error? Remember to specify vectors with 3 elements for 3D problems and 2 elements for 2D problems. The dimension of the problem is chosen as a global variable in `tools.hpp`.
+
+## Help? Want to contribute?
+
+Please contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch)
