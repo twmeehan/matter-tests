@@ -11,12 +11,12 @@
 #include "objects/object_plate.hpp"
 
 // Comment if not compiling with OpenVDB:
-#include "objects/object_vdb.hpp"
-#include "sampling_particles_vdb.hpp"
+// #include "objects/object_vdb.hpp"
+// #include "sampling_particles_vdb.hpp"
 
 
 int main(){
-    openvdb::initialize(); // Comment if not using openvdb
+    // openvdb::initialize(); // Comment if not using openvdb
 
     Simulation sim;
 
@@ -83,7 +83,7 @@ int main(){
     // name = "Bump";    ObjectBump bump    = ObjectBump(SEPARATE, friction, name);  sim.objects.push_back(&bump);
     // name = "Gate";    ObjectGate gate    = ObjectGate(SEPARATE, friction, name);  sim.objects.push_back(&gate);
 
-    /////// Here is an example how to use ObjectVdb:
+    /////// Here is an example how to use ObjectVdb (uncomment include files and openvdb::initialize() function above):
     // name = "Terrain"; ObjectVdb terrain  = ObjectVdb("../levelsets/vdb_file_name.vdb", STICKY, friction, name); sim.objects.push_back(&terrain);
 
     ////// PLASTICITY
