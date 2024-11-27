@@ -12,8 +12,8 @@ void Simulation::updateDt(){
     T max_speed = (*max_velocity_it).norm();
 
     if (max_speed >= wave_speed){
-        debug("DETECTED SPEED LARGER THAN ELASTIC WAVE SPEED!!!");
-        exit = 1;
+        debug("               Detected particle speed ", max_speed, " larger than elastic wave speed ", wave_speed);
+        // exit = 1;
         return;
     }
 

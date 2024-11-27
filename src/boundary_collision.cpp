@@ -25,7 +25,7 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                 if (dot < 0){ // if moving towards object
 
                     T friction = obj->friction;
-                    if (use_material_fricton)
+                    if (use_material_friction)
                         friction = grid.friction[index];
 
                     TV v_tang = v_rel - dot * n;

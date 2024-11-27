@@ -111,7 +111,7 @@ void Simulation::simulate(){
 
     fac_Q = I_ref / (grain_diameter*std::sqrt(rho_s));
 
-    if (use_material_fricton)
+    if (use_material_friction)
         std::fill(particles.muI.begin(), particles.muI.end(), mu_1);
 
     debug("Number of particles: ", Np);

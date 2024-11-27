@@ -4,13 +4,13 @@
 
 _Matter_ is an open-source C++ implementation of the Material Point Method (MPM) with elasto-viscoplastic rheologies, specifically designed to model the mechanics and flow of granular matter. However, its usage extends to simulate a variety of different _matter_ undergoing small and large deformations.    
 
-Developed across different sides of the Swiss Alps, this software is designed to be lightweight, easy to install and use, with few dependencies, without compromising speed and performance. Parallelized on shared memory with OpenMP, millions of material points/particles can be simulated on (powerful) desktop workstations.
+Developed across different sides of the Swiss Alps, this software is designed to be lightweight, easy to install and use, with few dependencies, without significantly compromising speed and performance. Parallelized on shared memory with OpenMP, millions of material points/particles can be simulated on (powerful) desktop workstations.
 
 ![logo](media/logo.png)
 
 ## License and attribution
-Matter is an open-source software licensed under _GNU General Public License v3.0_ (see LICENCE file).
-If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny@slf.ch).
+Matter is an open-source software licensed under _GNU General Public License v3.0_ (see LICENSE file).
+If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch).
 
 If you use Matter in your research, please cite the scientific works where this code has been used:   
 * Blatny, L., Gray, J.M.N.T. and Gaume, J. (2024) _A critical state μ(I)-rheology model for cohesive granular flows_, Journal of Fluid Mechanics, 997, p. A67. [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)
@@ -84,13 +84,13 @@ and Eigen can be obtained through
 
 #### Build and run the code
 
-1. Set up your simulation parameters and initial state in `mpm.cpp`. The default `mpm.cpp` file in the master branch sets up a simple granular collapse and explains the main options. In the `examples` folder, other examples are presented (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`). In `tools.hpp`, the user must specify the dimension of the simulation (defualt: 2D) and order of interpolation (default: quadratic).
+1. Set up your simulation parameters and initial state in `mpm.cpp`. The default `mpm.cpp` file in the master branch sets up a simple granular collapse and explains the main options. In the `examples` folder, other examples are presented (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`). In `tools.hpp`, the user must specify the dimension of the simulation (default: 2D) and order of interpolation (default: quadratic).
 
 2. Create a build directory: `mkdir build`
 
 3. From the build directory (`cd build`), specify CMake options: `cmake -DCMAKE_BUILD_TYPE=Release -DUSE_VDB=ON ..`
 
-4. Compile with `make -j <number of cores for compliation>` (NB: the number of threads for the _simulation_ is specified in `mpm.cpp`)
+4. Compile with `make -j <number of cores for compilation>` (NB: the number of threads for the _simulation_ is specified in `mpm.cpp`)
 
 5. Run the executable: `./src/mpm`
 
@@ -101,9 +101,10 @@ Rigid objects and terrains (boundaries) are either
     * formulated analytically as level sets (signed distance functions)   
     * or imported as `.vdb` level sets files using [OpenVDB](https://www.openvdb.org/)   
 
-Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in [Viroulet et al. (2017)](https://doi.org/10.1017/jfm.2017.41). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for speed and conveniance. In `ObjectPlate`, you can also assign a speed (and controls on the time-evokution of the speed) of the plate. Any plate must either a `top`, `bottom`, `front`, `back`, `left` or `right`. Its usage can be seen in the default example in `mpm.cpp` where it is used to simple set the ground (y = 0).
+Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in [Viroulet et al. (2017)](https://doi.org/10.1017/jfm.2017.41). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for speed and convenience. In `ObjectPlate`, you can also assign a speed (and controls on the time-evolution of the speed) of the plate. Any plate must either a `top`, `bottom`, `front`, `back`, `left` or `right`. Its usage can be seen in the default example in `mpm.cpp` where it is used to simple set the ground (y = 0).
 
-A terrain/object from a `.vdb` is stored in an instance of the `ObjectVdb` class which is also derived from `ObjectGeneral`. An example of a `.vdb` terrain of ... is found in the folder `levelsets`.
+A terrain/object from a `.vdb` is stored in an instance of the `ObjectVdb` class which is also derived from `ObjectGeneral`.
+Examples of `.vdb`-files are found in the folder `levelsets`. This includes `vdb`-files which defines level sets for particle sampling.
 
 Note that all `ObjectGeneral` instances must be added to the std::vector `objects` and `ObjectPlate` instances are added to the std::vector `plates`.
 
@@ -113,7 +114,7 @@ Note that all `ObjectGeneral` instances must be added to the std::vector `object
 The directory to save the output data is specified by the user in `mpm.cpp`.
 Particle data is saved as **binary PLY-files** (using [tinyply](https://github.com/ddiakopoulos/tinyply)) with the format (`particles_fX.ply`) where X represents the frame number (from 0 to `end_frame` as specified by the user).
 
-We recommend [SideFX's Houdini](https://www.sidefx.com) for visualization the particle data. In the file `visualize.hipnc` in the `postprocess` directory, we show how to make a simple visualization of the data. Some simple postprocesing can also be done directly in Houdini. PLY files can also be easily imported in Python for postprocessing. This is shown in the file `load_ply.py` which can be found in the `postprocess` directory.
+We recommend [SideFX's Houdini](https://www.sidefx.com) for visualization the particle data. In the file `visualize.hipnc` in the `postprocess` directory, we show how to make a simple visualization of the data. Some simple post-processing can also be done directly in Houdini. PLY files can also be easily imported in Python for post-processing. This is shown in the file `load_ply.py` which can be found in the `postprocess` directory.
 
 Optionally, the grid data can also be saved if `save_grid = true`. Then, the grid data is saved as `grid_fX.ply`. By default, the grid data is not saved.
 
@@ -135,7 +136,7 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 | `pbc`        | false | Use periodic boundary conditions, see `pbc.cpp`. If `pbc_special = true` then you can hard-code your own periodicity, see `position_update.cpp`
 | `gravity`    | (0,0,(0)) | Gravitational acceleration vector. If `gravity_special = true` you can hard-code your own gravity evolution, see `update_dt.cpp`
 | `delete_last_particle` | 0 | Delete the n last particles sampled
-| `use_material_fricton` | false          | Use the internal friction from a plastic model as the Coulomb friction, only relevant for certain plasticity models.
+| `use_material_friction` | false          | Use the internal friction from a plastic model as the Coulomb friction, only relevant for certain plasticity models.
 | `musl`                 | false          | Use MUSL instead of USL
 | `use_von_mises_q`      | false          | If `true` Define q (the "equivalent shear stress") used in plasticity models as the von Mises equivalent stress q = sqrt(3/2 s:s). If `false`, use q = sqrt(1/2 s:s). If using the `DPSoft` model, this will always be interpreted as `true`.
 | `Lx`, `Ly` and `Lz`    | 1.0            | The material sample space used in `SampleParticles(...)`

@@ -46,7 +46,7 @@ void Simulation::P2G(){
                                 posdiffvec(2) = zi-xp(2);
                                 grid_v_local[ind(i,j,k)] += particles.Bmat[p] * posdiffvec * apicDinverse * weight;
                             }
-                            if (use_material_fricton)
+                            if (use_material_friction)
                                 grid_friction_local[ind(i,j,k)] += particles.muI[p] * weight;
                         }
                     } // end for k
@@ -61,7 +61,7 @@ void Simulation::P2G(){
                             posdiffvec(1) = yi-xp(1);
                             grid_v_local[ind(i,j)] += particles.Bmat[p] * posdiffvec * apicDinverse * weight;
                         }
-                        if (use_material_fricton)
+                        if (use_material_friction)
                             grid_friction_local[ind(i,j)] += particles.muI[p] * weight;
                     }
         #endif
@@ -74,7 +74,7 @@ void Simulation::P2G(){
             for (int l = 0; l<grid_nodes; l++){
                 grid.mass[l]          += grid_mass_local[l];
                 grid.v[l]             += grid_v_local[l];
-                if (use_material_fricton)
+                if (use_material_friction)
                     grid.friction[l]  += grid_friction_local[l];
             } // end for l
         } // end omp critical

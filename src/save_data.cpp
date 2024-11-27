@@ -233,7 +233,7 @@ void Simulation::saveGridData(std::string extra){
         tinyply::Type::INVALID,
         0);
 
-    if (use_material_fricton){
+    if (use_material_friction){
         file.add_properties_to_element(
             "vertex",
             { "friction" },
