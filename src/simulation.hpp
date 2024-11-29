@@ -27,56 +27,27 @@ public:
   Simulation();
   ~Simulation(){};
 
-#ifdef THREEDIM
-  const unsigned int dim = 3;
-#else
-  const unsigned int dim = 2;
-#endif
-
-  unsigned int current_time_step = 0;
-  unsigned int frame = 0;
   int exit = 0;
-  T time = 0;
-
-  T runtime_p2g = 0;
-  T runtime_g2p = 0;
-  T runtime_euler = 0;
-  T runtime_defgrad = 0;
 
   std::string sim_name = "my_simulation";
   std::string directory = "output/";
-  bool save_sim = true;
-  bool reduce_verbose = false;
 
   unsigned int n_threads = 1;
   unsigned int end_frame = 1;
   T fps = 1;
+
+  bool save_sim = true;
+  bool reduce_verbose = false;
   bool pbc = false;
   bool pbc_special = false;
   bool gravity_special = false;
   bool save_grid = false;
   bool use_material_friction = false;
-
   bool musl = false;
 
-  unsigned int delete_last_particle = 0;
-
-  T final_time;
-  T frame_dt;
-  T dt;
-  T wave_speed;
-  T dx;
-
-  T dt_max;
   T cfl = 0.5;
   T cfl_elastic = 0.5;
   T flip_ratio = -0.95;
-
-  T Lx = 1;
-  T Ly = 1;
-#ifdef THREEDIM
-  T Lz = 1;
-#endif
 
   T rho = 1000;
 
@@ -85,53 +56,19 @@ public:
   T gravity_time;
   // bool no_liftoff = true;
 
-  T amplitude;
+  T Lx = 1;
+  T Ly = 1;
+#ifdef THREEDIM
+  T Lz = 1;
+#endif
 
   // Particle data
+  Particles particles;
   unsigned int Np;
   T particle_mass;
-  T particle_volume; // initial particle volume V0
-  Particles particles;
-
-  // Grid data
-  unsigned int Nx, Ny;
-#ifdef THREEDIM
-  unsigned int Nz;
-#endif
-
-  unsigned int grid_nodes;
-  Grid grid;
-
-#ifdef THREEDIM
-    inline unsigned int ind(unsigned int i, unsigned int j, unsigned int k){
-      return (i*Ny + j) * Nz + k; // 3D
-    }
-#else
-    inline unsigned int ind(unsigned int i, unsigned int j){
-        return (i*Ny + j); // 3D
-    }
-#endif
-
-  // Remeshing Fixed Grid
-  T min_x_init;
-  T max_x_init;
-  T Nx_init;
-  T low_x_init;
-  T high_x_init;
-
-  T min_y_init;
-  T max_y_init;
-  T Ny_init;
-  T low_y_init;
-  T high_y_init;
-
-#ifdef THREEDIM
-  T min_z_init;
-  T max_z_init;
-  T Nz_init;
-  T low_z_init;
-  T high_z_init;
-#endif
+  T particle_volume; // initial particle volume 
+  unsigned int delete_last_particle = 0;
+  T dx;
 
   // Elastoplasticity
   ElasticModel elastic_model = Hencky;
@@ -139,18 +76,9 @@ public:
 
   T E = 1e6; // Young's modulus (3D)
   T nu = 0.3; // Poisson's ratio (3D)
-  T mu; // shear modulus 
-  T lambda; // first Lame parameter
-  T K; // bulk modulus
 
   bool use_pradhana = true;
   bool use_von_mises_q = false;
-
-  T q_prefac;    // q        = factor * ||dev(tau)||
-  T d_prefac;    // gamma    = factor * ||dev(eps)||
-  T e_mu_prefac; // q        = factor * ||dev(eps)||
-  T f_mu_prefac; // q^tr - q = factor * dt * gamma_dot
-  T rma_prefac;
 
   // Von Mises:
   T q_max = 100;
@@ -166,30 +94,21 @@ public:
   T perzyna_exp = 1;
   T perzyna_visc = 0;
 
- // MCC
- T M = 1;
- T beta = 0;
- T p0 = 1000;
+  // MCC
+  T M = 1;
+  T beta = 0;
+  T p0 = 1000;
 
- // mu(I) rheology
- T rho_s = 2500;
- T grain_diameter = 1e-3;
- T I_ref = 0.279;
- T mu_1 = std::tan(20.9*M_PI/180.0);
- T mu_2 = std::tan(32.8*M_PI/180.0);;
- T fac_Q;
+  // mu(I) rheology
+  T rho_s = 2500;
+  T grain_diameter = 1e-3;
+  T I_ref = 0.279;
+  T mu_1 = std::tan(20.9*M_PI/180.0);
+  T mu_2 = std::tan(32.8*M_PI/180.0);;
 
   // Objects
   std::vector<ObjectPlate> plates;
   std::vector<ObjectGeneral*> objects;
-
-  // Precomputations
-  T one_over_dx;
-  T one_over_dx_square;
-  T sqrt6 = std::sqrt(6.0);
-  T sqrt3 = std::sqrt(3.0);
-  T sqrt2 = std::sqrt(2.0);
-  T apicDinverse;
 
   // Functions
   void initialize();
@@ -232,13 +151,95 @@ public:
 
   void deleteLastParticle(unsigned int n);
 
+  T calculateBulkModulus();
   void checkMomentumConservation();
   void checkMassConservation();
 
-  void validateRMA();
-
   void addExternalParticleGravity();
   std::pair<TMX, TMX> createExternalGridGravity();
+
+
+private:
+
+#ifdef THREEDIM
+  const unsigned int dim = 3;
+#else
+  const unsigned int dim = 2;
+#endif
+
+  unsigned int current_time_step = 0;
+  unsigned int frame = 0;
+  T time = 0;
+
+  T runtime_p2g = 0;
+  T runtime_g2p = 0;
+  T runtime_euler = 0;
+  T runtime_defgrad = 0;
+
+  T final_time;
+  T frame_dt;
+  T dt;
+  T dt_max;
+  T wave_speed;
+
+  T mu; // shear modulus 
+  T lambda; // first Lame parameter
+  T K; // bulk modulus
+
+  T fac_Q; // for mu(I) rheology
+
+  // Prefactors for plasticity models
+  T q_prefac;    // q        = factor * ||dev(tau)||
+  T d_prefac;    // gamma    = factor * ||dev(eps)||
+  T e_mu_prefac; // q        = factor * ||dev(eps)||
+  T f_mu_prefac; // q^tr - q = factor * dt * gamma_dot
+  T rma_prefac;
+
+  // Precomputations
+  T one_over_dx;
+  T one_over_dx_square;
+  T sqrt6 = std::sqrt(6.0);
+  T sqrt3 = std::sqrt(3.0);
+  T sqrt2 = std::sqrt(2.0);
+  T apicDinverse;
+
+  // Grid handling and remeshing
+  Grid grid;
+  unsigned int Nx, Ny;
+#ifdef THREEDIM
+  unsigned int Nz;
+#endif
+  unsigned int grid_nodes;
+
+#ifdef THREEDIM
+    inline unsigned int ind(unsigned int i, unsigned int j, unsigned int k){
+      return (i*Ny + j) * Nz + k; // 3D
+    }
+#else
+    inline unsigned int ind(unsigned int i, unsigned int j){
+        return (i*Ny + j); // 3D
+    }
+#endif
+
+  T min_x_init;
+  T max_x_init;
+  T Nx_init;
+  T low_x_init;
+  T high_x_init;
+
+  T min_y_init;
+  T max_y_init;
+  T Ny_init;
+  T low_y_init;
+  T high_y_init;
+
+#ifdef THREEDIM
+  T min_z_init;
+  T max_z_init;
+  T Nz_init;
+  T low_z_init;
+  T high_z_init;
+#endif
 
 
 }; // END Simulation class

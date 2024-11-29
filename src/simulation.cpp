@@ -82,8 +82,8 @@ void Simulation::simulate(){
     #endif
 
     lambda = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) ); // first Lame parameter
-    mu     = E / (2.0*(1.0+nu)); // shear modulus
-    K = lambda + 2.0 * mu / dim; // bulk modulus
+    mu = E / (2.0*(1.0+nu)); // shear modulus
+    K = calculateBulkModulus(); // bulk modulus
     wave_speed = std::sqrt(E/rho); // elastic wave speed
     
     dt_max = cfl_elastic * dx / wave_speed;
@@ -254,6 +254,10 @@ void Simulation::moveObjects(){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////// EXTRA HELPER FUNCTIONS //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+T Simulation::calculateBulkModulus(){
+    return lambda + 2.0 * mu / dim;
+}
 
 void Simulation::checkMomentumConservation(){
     TV momentum_grid = TV::Zero();

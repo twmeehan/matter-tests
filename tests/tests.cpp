@@ -55,12 +55,18 @@ TEST(ElasticityTest, BulkModulus) {
     T Javg;
     sim.computeAvgData(volavg_cauchy, volavg_kirchh, Javg);
 
-    T volavg_p = -1.0 * (volavg_kirchh(0,0) + volavg_kirchh(1,1)) / sim.dim;
+    #ifdef THREEDIM
+        T volavg_p = -1.0 * (volavg_kirchh(0,0) + volavg_kirchh(1,1) + volavg_kirchh(2,2)) / 3;
+    #else
+        T volavg_p = -1.0 * (volavg_kirchh(0,0) + volavg_kirchh(1,1)) / 2;
+    #endif 
+
     T volavg_epsv = std::log(Javg);
 
     T measured_K = volavg_p / (-volavg_epsv);
+    T true_K = sim.calculateBulkModulus();
 
-    T rel_diff = std::abs(measured_K - sim.K) / sim.K;
+    T rel_diff = std::abs(measured_K - true_K) / true_K;
 
     ASSERT_NEAR(rel_diff, 0.0, 0.03);
 }
