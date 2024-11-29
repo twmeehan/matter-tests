@@ -18,7 +18,9 @@ TEST(ElasticityTest, BulkModulus) {
 
     sim.gravity = TV::Zero();
 
-    sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 10000); // feeder, incl slope and gran collapse
+    sim.E = 1e6;     // Young's modulus (Pa)
+    sim.nu = 0.3;    // Poisson's ratio (-)
+    sim.rho = 10000; // Density (kg/m3)
 
     sim.Lx = 1;
     sim.Ly = 1;
@@ -29,7 +31,6 @@ TEST(ElasticityTest, BulkModulus) {
         SampleParticles(sim, 0.02, 4);
     #endif
 
-    sim.dt_max = 0.5 * sim.dx / sim.wave_speed;
     T vel = 0.001;
 
     T vmin_factor = 10;
@@ -44,7 +45,7 @@ TEST(ElasticityTest, BulkModulus) {
         name = "Compre";  ObjectPlate compre = ObjectPlate(sim.Ly+0.5*sim.dx,  1e20, -1e20, top,    STICKY, 0, name,   0, -vel,    vmin_factor, load_factor);  sim.plates.push_back(compre);
     #endif
 
-    sim.elastic_model = StvkWithHencky;
+    sim.elastic_model = Hencky;
     sim.plastic_model = NoPlasticity;
 
     sim.simulate();
@@ -71,14 +72,17 @@ TEST(EnergyTest, Rotation) {
 
     Simulation sim;
     sim.save_sim = false;
-    sim.end_frame = 200;
-    sim.fps = 10;
+    sim.reduce_verbose = true;
+    sim.end_frame = 20;
+    sim.fps = 1;
     sim.gravity = TV::Zero();
     sim.cfl = 0.5;
     sim.flip_ratio = -1;
     sim.n_threads = 8;
 
-    sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1550);
+    sim.E = 1e6;    // Young's modulus (Pa)
+    sim.nu = 0.3;   // Poisson's ratio (-)
+    sim.rho = 1550; // Density (kg/m3)
 
     T h_gate, l_gate;
     sim.Lx = 1;
@@ -101,9 +105,7 @@ TEST(EnergyTest, Rotation) {
         total_energy_init += 0.5*(vx*vx + vy*vy); // per unit mass
     }
 
-    sim.dt_max = 0.5 * sim.dx / sim.wave_speed;
-
-    sim.elastic_model = StvkWithHencky;
+    sim.elastic_model = Hencky;
     sim.plastic_model = NoPlasticity;
 
     sim.simulate();
@@ -146,7 +148,9 @@ TEST(CollapseTest, DruckerPrager) {
     sim.gravity[0] = +9.81 * std::sin(theta);
     sim.gravity[1] = -9.81 * std::cos(theta);
 
-    sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1000);
+    sim.E = 1e6;    // Young's modulus (Pa)
+    sim.nu = 0.3;   // Poisson's ratio (-)
+    sim.rho = 1000; // Density (kg/m3)
 
     sim.Lx = 0.20;
     sim.Ly = 0.15;
@@ -171,9 +175,7 @@ TEST(CollapseTest, DruckerPrager) {
     sim.particles = Particles(sim.Np);
     sim.particles.x = new_part_x;
 
-    sim.dt_max = 0.5 * sim.dx / sim.wave_speed;
-
-    sim.elastic_model = StvkWithHencky;
+    sim.elastic_model = Hencky;
     sim.plastic_model = PerzynaDP;
 
     sim.use_von_mises_q = false;

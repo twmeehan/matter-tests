@@ -10,18 +10,19 @@ int main(){
 
     sim.directory = "output/";
     sim.sim_name = "cube_rotating";
-    sim.end_frame = 200;
-    sim.fps = 10;
-
     sim.save_grid = true;
+    sim.initialize();
+    
+    sim.reduce_verbose = true;
+
+    sim.end_frame = 20;
+    sim.fps = 1;
 
     sim.gravity = TV::Zero();
 
     sim.cfl = 0.5;
     sim.flip_ratio = -1;
     sim.n_threads = 8;
-
-    sim.initialize(/* E */ 1e6, /* nu */ 0.3, /* rho */ 1550);
 
     T h_gate, l_gate;
     sim.Lx = 1;
@@ -44,11 +45,12 @@ int main(){
         total_energy_init += 0.5*(vx*vx + vy*vy); // per unit mass
     }
 
-    sim.dt_max = 0.5 * sim.dx / sim.wave_speed;
-
-    // Elastoplasticity
-    sim.elastic_model = StvkWithHencky;
+    // Elasticity
+    sim.elastic_model = Hencky;
     sim.plastic_model = NoPlasticity;
+    sim.E = 1e6;     // Young's modulus (Pa)
+    sim.nu = 0.3;   // Poisson's ratio (-)
+    sim.rho = 1550; // Density (kg/m3)
 
     sim.simulate();
 

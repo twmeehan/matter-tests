@@ -25,8 +25,8 @@ void Simulation::explicitEulerUpdate(){
             if (elastic_model == NeoHookean){
                 dPsidF = NeoHookeanPiola(Fe);
             }
-            else if (elastic_model == StvkWithHencky){ // St Venant Kirchhoff with Hencky strain
-                dPsidF = StvkWithHenckyPiola(Fe);
+            else if (elastic_model == Hencky){ // St Venant Kirchhoff with Hencky strain
+                dPsidF = HenckyPiola(Fe);
             }
             else{
                 debug("You specified an unvalid ELASTIC model!");

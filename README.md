@@ -18,7 +18,7 @@ If you use Matter in your research, please cite the scientific works where this 
 
 ## Features
 
-* Both **2D** and **3D**
+* Both **2D** (plane strain) and **3D**
 
 
 * Supports Update Stress Last **(USL)** and Modified Update Stress Last **(MUSL)** udated Lagrangian **symplectic** (explicit) MPM
@@ -135,14 +135,18 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 | `reduce_verbose` | false | Reduce writing to screen
 | `pbc`        | false | Use periodic boundary conditions, see `pbc.cpp`. If `pbc_special = true` then you can hard-code your own periodicity, see `position_update.cpp`
 | `gravity`    | (0,0,(0)) | Gravitational acceleration vector. If `gravity_special = true` you can hard-code your own gravity evolution, see `update_dt.cpp`
-| `delete_last_particle` | 0 | Delete the n last particles sampled
-| `use_material_friction` | false          | Use the internal friction from a plastic model as the Coulomb friction, only relevant for certain plasticity models.
+| `rho`                   |  1000           | Density (kg/m3)
+| `delete_last_particle`  | 0               | Delete the n last particles sampled
+| `use_material_friction` | false           | Use the internal friction from a plastic model as the Coulomb friction, only relevant for certain plasticity models.
 | `musl`                 | false          | Use MUSL instead of USL
 | `use_von_mises_q`      | false          | If `true` Define q (the "equivalent shear stress") used in plasticity models as the von Mises equivalent stress q = sqrt(3/2 s:s). If `false`, use q = sqrt(1/2 s:s). If using the `DPSoft` model, this will always be interpreted as `true`.
 | `Lx`, `Ly` and `Lz`    | 1.0            | The material sample space used in `SampleParticles(...)`
 | `dt_max`               | 0.01           | Max time step, should generally be restricted by elastic wave speed, i.e., `dt_max < dx / wave_speed`;
-| `elastic_model`        | StvkWithHencky | Elastic model, the elastic parameters are set in `initialize(...)`
+| `elastic_model`        | StvkWithHencky | Elastic model
 | `plastic_model`        | NoPlasticity   | Plastic model, plastic parameters are set according to the model used
+| `E`                    | 1e6   | The 3D Young's modulus (Pa)
+| `nu`                   | 0.3  | The 3D Poisson's ratio (-)
+
 
 Here is a list of the parameters in the various plastic models:
 

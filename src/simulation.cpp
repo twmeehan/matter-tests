@@ -18,7 +18,7 @@ Simulation::Simulation(){
 }
 
 
-void Simulation::initialize(T E, T nu, T density){
+void Simulation::initialize(){
 
     std::cout << "-----------------------------------------------------------------------------------" << std::endl;
     std::cout << "    88b           d88                                                              " << std::endl;
@@ -30,20 +30,6 @@ void Simulation::initialize(T E, T nu, T density){
     std::cout << "    88    `888'    88  88,    ,88      aa          aa      a8b         88          " << std::endl;
     std::cout << "    88     `8'     88   `adPPYba,                           `adPPYba   88          " << std::endl;
     std::cout << "-----------------------------------------------------------------------------------" << std::endl;
-
-    #if DIMENSION == 3
-        debug("This is a 3D simulation.");
-    #elif DIMENSION == 2
-        debug("This is a 2D simulation.");
-    #else
-        #error Unsupported spline degree
-    #endif
-
-    lambda = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) );
-    mu     = E / (2.0*(1.0+nu));
-    K = lambda + 2.0 * mu / dim;
-    rho = density;
-    wave_speed = std::sqrt(E/rho);
 
     if (save_sim)
         createDirectory();
@@ -74,6 +60,14 @@ void Simulation::createDirectory(){
 // NB: Simulation::initialize(...) must be called before Simulation::simulate()
 void Simulation::simulate(){
 
+    #if DIMENSION == 3
+        debug("This is a 3D simulation.");
+    #elif DIMENSION == 2
+        debug("This is a 2D simulation.");
+    #else
+        #error Unsupported spline degree
+    #endif
+
     #if SPLINEDEG == 3
       apicDinverse = 3.0/(dx*dx);
       debug("Using cubic splines.");
@@ -87,16 +81,19 @@ void Simulation::simulate(){
         #error Unsupported spline degree
     #endif
 
-    // Precomputations
+    lambda = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) ); // first Lame parameter
+    mu     = E / (2.0*(1.0+nu)); // shear modulus
+    K = lambda + 2.0 * mu / dim; // bulk modulus
+    wave_speed = std::sqrt(E/rho); // elastic wave speed
+    
+    dt_max = cfl_elastic * dx / wave_speed;
+
     frame_dt = 1.0 / fps;
 
     gravity_final = gravity;
 
     one_over_dx = 1.0 / dx;
     one_over_dx_square = one_over_dx * one_over_dx;
-
-    // nonlocal_l_sq = nonlocal_l * nonlocal_l;
-    // nonlocal_support = std::ceil(nonlocal_l / dx);
 
     if (use_von_mises_q){
         q_prefac = sqrt3/sqrt2;
@@ -121,8 +118,10 @@ void Simulation::simulate(){
     debug("Particle volume:     ", particle_volume);
     debug("Particle mass:       ", particle_mass);
 
-    // Lagrangian coordinates. Using assignment operator to copy
-    // particles.x0 = particles.x;
+    // particles.x0 = particles.x;  // Lagrangian coordinates, using assignment operator to copy
+
+    // nonlocal_l_sq = nonlocal_l * nonlocal_l;
+    // nonlocal_support = std::ceil(nonlocal_l / dx);
 
     time = 0;
     frame = 0;

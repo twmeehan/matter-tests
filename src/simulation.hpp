@@ -33,11 +33,11 @@ public:
   const unsigned int dim = 2;
 #endif
 
-  // These must all be zero at beginning
   unsigned int current_time_step = 0;
   unsigned int frame = 0;
   int exit = 0;
   T time = 0;
+
   T runtime_p2g = 0;
   T runtime_g2p = 0;
   T runtime_euler = 0;
@@ -67,9 +67,9 @@ public:
   T wave_speed;
   T dx;
 
-
-  T dt_max = 0.01;
+  T dt_max;
   T cfl = 0.5;
+  T cfl_elastic = 0.5;
   T flip_ratio = -0.95;
 
   T Lx = 1;
@@ -78,7 +78,8 @@ public:
   T Lz = 1;
 #endif
 
-  T rho;
+  T rho = 1000;
+
   TV gravity = TV::Zero();
   TV gravity_final;
   T gravity_time;
@@ -133,10 +134,12 @@ public:
 #endif
 
   // Elastoplasticity
-  ElasticModel elastic_model = StvkWithHencky;
+  ElasticModel elastic_model = Hencky;
   PlasticModel plastic_model = VonMises;
 
-  T mu; // shear modulus G
+  T E = 1e6; // Young's modulus (3D)
+  T nu = 0.3; // Poisson's ratio (3D)
+  T mu; // shear modulus 
   T lambda; // first Lame parameter
   T K; // bulk modulus
 
@@ -189,7 +192,7 @@ public:
   T apicDinverse;
 
   // Functions
-  void initialize(T E, T nu, T density);
+  void initialize();
   void simulate();
   void saveInfo();
   void saveAvgData();
@@ -219,7 +222,7 @@ public:
   unsigned int num_add_pbc_particles;
 
   TM NeoHookeanPiola(TM & Fe);
-  TM StvkWithHenckyPiola(TM & Fe);
+  TM HenckyPiola(TM & Fe);
   void plasticity(unsigned int p, unsigned int & plastic_count, TM & Fe_trial);
 
   void moveObjects();
@@ -246,14 +249,14 @@ inline TM Simulation::NeoHookeanPiola(TM & Fe){
     return mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
 } // end NeoHookeanPiola
 
-inline TM Simulation::StvkWithHenckyPiola(TM & Fe){
+inline TM Simulation::HenckyPiola(TM & Fe){
     Eigen::JacobiSVD<TM> svd(Fe, Eigen::ComputeFullU | Eigen::ComputeFullV);
     TA sigma = svd.singularValues().array(); // abs() for inverse also??
     TM logSigma = sigma.abs().log().matrix().asDiagonal();
     TM invSigma = sigma.inverse().matrix().asDiagonal();
     TM dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
     return dPsidF;
-} // end StvkWithHenckyPiola
+} // end HenckyPiola
 
 
 

@@ -22,17 +22,20 @@ int main(){
 
     sim.directory = "output/";
     sim.sim_name = "collapse";
+    sim.save_grid = true;   // save grid data
+    sim.initialize();
 
     sim.end_frame = 20;     // last frame to simulate
     sim.fps = 10;           // frames per second
     sim.n_threads = 8;      // number of threads in parallel
-    sim.save_grid = true;   // save grid data
     sim.cfl = 0.5;          // CFL constant, typically around 0.5
     sim.flip_ratio = -0.95; // (A)PIC-(A)FLIP ratio in [-1,1].
 
-    // INITILIZE ELASTICITY AND ELASTIC PARAMETERS
-    sim.elastic_model = StvkWithHencky;
-    sim.initialize(/* Young's (Pa) */ 1e6, /* Poisson's (-) */ 0.3, /* Density (kg/m3) */ 1000);
+    // INITILIZE ELASTICITY
+    sim.elastic_model = Hencky;
+    sim.E = 1e6;     // Young's modulus (Pa)
+    sim.nu = 0.3;   // Poisson's ratio (-)
+    sim.rho = 1000; // Density (kg/m3)
 
     ////// GRAVITY ANGLE [default: gravity is 0]
     T theta_deg = 0; // angle in degrees of gravity vector
@@ -70,9 +73,6 @@ int main(){
 
     ////// OPTIONAL: INITIAL PARTICLE VELOCITIES
     // sim.particles.v = ...
-
-    ///// SET MAX TIME STEP
-    sim.dt_max = 0.5 * sim.dx / sim.wave_speed;
 
     ////// OBJECTS AND TERRAINS
     T friction = 0.2; // used if SEPARATE or SLIP
