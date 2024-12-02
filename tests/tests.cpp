@@ -10,6 +10,7 @@ TEST(ElasticityTest, BulkModulus) {
 
     Simulation sim;
     sim.save_sim = false;
+    sim.reduce_verbose = true;
     sim.end_frame = 100;
     sim.fps = 1;
     sim.n_threads = 8;
@@ -59,7 +60,7 @@ TEST(ElasticityTest, BulkModulus) {
         T volavg_p = -1.0 * (volavg_kirchh(0,0) + volavg_kirchh(1,1) + volavg_kirchh(2,2)) / 3;
     #else
         T volavg_p = -1.0 * (volavg_kirchh(0,0) + volavg_kirchh(1,1)) / 2;
-    #endif 
+    #endif
 
     T volavg_epsv = std::log(Javg);
 
@@ -142,6 +143,7 @@ TEST(CollapseTest, DruckerPrager) {
 
     Simulation sim;
     sim.save_sim = false;
+    sim.reduce_verbose = true;
     sim.end_frame = 70;
     sim.fps = 50;
     sim.n_threads = 8;

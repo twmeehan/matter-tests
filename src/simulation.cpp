@@ -85,7 +85,7 @@ void Simulation::simulate(){
     mu = E / (2.0*(1.0+nu)); // shear modulus
     K = calculateBulkModulus(); // bulk modulus
     wave_speed = std::sqrt(E/rho); // elastic wave speed
-    
+
     dt_max = cfl_elastic * dx / wave_speed;
 
     frame_dt = 1.0 / fps;
@@ -149,7 +149,7 @@ void Simulation::simulate(){
         current_time_step++;
         if( std::abs(time - frame_dt*(frame+1)) < 1e-15 ){
             frame++;
-            std::cout << "Saving frame " << frame << std::endl;
+            std::cout << "End of frame " << frame << std::endl;
             if (save_sim){
                 saveParticleData();
                 if (save_grid)
