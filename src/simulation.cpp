@@ -147,7 +147,7 @@ void Simulation::simulate(){
             return;
         time += dt;
         current_time_step++;
-        if( std::abs(time - frame_dt*(frame+1)) < 1e-15 ){
+        if( time - frame_dt*(frame+1) >= 0 ){
             frame++;
             std::cout << "End of frame " << frame << std::endl;
             if (save_sim){
