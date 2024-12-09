@@ -8,11 +8,8 @@ int main(){
 
     Simulation sim;
 
-    sim.directory = "output/";
-    sim.sim_name = "cube_rotating";
+    sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ "cube_rotating");
     sim.save_grid = true;
-    sim.initialize();
-    
     sim.reduce_verbose = true;
 
     sim.end_frame = 20;

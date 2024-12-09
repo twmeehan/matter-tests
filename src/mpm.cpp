@@ -20,11 +20,9 @@ int main(){
 
     Simulation sim;
 
-    sim.directory = "output/";
-    sim.sim_name = "collapse";
-    sim.save_grid = true;   // save grid data
-    sim.initialize();
+    sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ "collapse");
 
+    sim.save_grid = true;
     sim.end_frame = 20;     // last frame to simulate
     sim.fps = 10;           // frames per second
     sim.n_threads = 8;      // number of threads in parallel

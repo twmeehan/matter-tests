@@ -20,10 +20,8 @@ int main(){
 
     Simulation sim;
 
-    sim.directory = "output/";
-    sim.sim_name = "collapse";
+    sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ "collapse");
     sim.save_grid = true;   // save grid data
-    sim.initialize();
 
     sim.end_frame = 20;     // last frame to simulate
     sim.fps = 10;           // frames per second

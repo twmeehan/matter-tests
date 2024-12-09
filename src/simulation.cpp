@@ -8,6 +8,8 @@ Simulation::Simulation(){
     frame = 0;
     exit  = 0;
 
+    is_initialized = false;
+
     runtime_p2g = 0;
     runtime_g2p = 0;
     runtime_euler = 0;
@@ -18,7 +20,7 @@ Simulation::Simulation(){
 }
 
 
-void Simulation::initialize(){
+void Simulation::initialize(bool save, std::string dir, std::string name){
 
     std::cout << "-----------------------------------------------------------------------------------" << std::endl;
     std::cout << "    88b           d88                                                              " << std::endl;
@@ -31,9 +33,15 @@ void Simulation::initialize(){
     std::cout << "    88     `8'     88   `adPPYba,                           `adPPYba   88          " << std::endl;
     std::cout << "-----------------------------------------------------------------------------------" << std::endl;
 
+    save_sim = save;
+    directory = dir;
+    sim_name = name;
+
     if (save_sim)
         createDirectory();
     std::cout << "-----------------------------------------------------------------------------------" << std::endl;
+
+    is_initialized = true;
 }
 
 
@@ -59,6 +67,11 @@ void Simulation::createDirectory(){
 
 // NB: Simulation::initialize(...) must be called before Simulation::simulate()
 void Simulation::simulate(){
+
+    if (!is_initialized){
+        debug("Simulation not initialized. Call the initialize(...) function in your input file.");
+        return;
+    }
 
     #if DIMENSION == 3
         debug("This is a 3D simulation.");

@@ -29,13 +29,11 @@ public:
 
   int exit = 0;
 
-  std::string sim_name = "my_simulation";
-  std::string directory = "output/";
-
   unsigned int n_threads = 1;
   unsigned int end_frame = 1;
   T fps = 1;
 
+  bool is_initialized = false;
   bool save_sim = true;
   bool reduce_verbose = false;
   bool pbc = false;
@@ -66,7 +64,7 @@ public:
   Particles particles;
   unsigned int Np;
   T particle_mass;
-  T particle_volume; // initial particle volume 
+  T particle_volume; // initial particle volume
   unsigned int delete_last_particle = 0;
   T dx;
 
@@ -111,7 +109,7 @@ public:
   std::vector<ObjectGeneral*> objects;
 
   // Functions
-  void initialize();
+  void initialize(bool save = true, std::string dir = "output/", std::string name = "dummy");
   void simulate();
   void saveInfo();
   void saveAvgData();
@@ -176,13 +174,16 @@ private:
   T runtime_euler = 0;
   T runtime_defgrad = 0;
 
+  std::string sim_name;
+  std::string directory;
+
   T final_time;
   T frame_dt;
   T dt;
   T dt_max;
   T wave_speed;
 
-  T mu; // shear modulus 
+  T mu; // shear modulus
   T lambda; // first Lame parameter
   T K; // bulk modulus
 

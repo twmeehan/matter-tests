@@ -9,16 +9,14 @@
 TEST(ElasticityTest, BulkModulus) {
 
     Simulation sim;
-    sim.save_sim = false;
+    sim.initialize(false);
     sim.reduce_verbose = true;
     sim.end_frame = 100;
     sim.fps = 1;
     sim.n_threads = 8;
     sim.cfl = 0.6;
     sim.flip_ratio = -0.95;
-
     sim.gravity = TV::Zero();
-
     sim.E = 1e6;     // Young's modulus (Pa)
     sim.nu = 0.3;    // Poisson's ratio (-)
     sim.rho = 10000; // Density (kg/m3)
@@ -78,7 +76,7 @@ TEST(ElasticityTest, BulkModulus) {
 TEST(EnergyTest, Rotation) {
 
     Simulation sim;
-    sim.save_sim = false;
+    sim.initialize(false);
     sim.reduce_verbose = true;
     sim.end_frame = 20;
     sim.fps = 1;
@@ -86,7 +84,6 @@ TEST(EnergyTest, Rotation) {
     sim.cfl = 0.5;
     sim.flip_ratio = -1;
     sim.n_threads = 8;
-
     sim.E = 1e6;    // Young's modulus (Pa)
     sim.nu = 0.3;   // Poisson's ratio (-)
     sim.rho = 1550; // Density (kg/m3)
@@ -142,7 +139,8 @@ TEST(EnergyTest, Rotation) {
 TEST(CollapseTest, DruckerPrager) {
 
     Simulation sim;
-    sim.save_sim = false;
+    sim.initialize(false);
+
     sim.reduce_verbose = true;
     sim.end_frame = 70;
     sim.fps = 50;
