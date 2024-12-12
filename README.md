@@ -33,7 +33,7 @@ If you use Matter in your research, please cite the scientific works where this 
 * Adaptive background **grid extension/reduction** to particle domain
 
 
-* The following **elasticity models** are currently available:
+* **Finite strain elasticity**. The following (hyper)elastic models are currently available:
     * Neo-Hookean model
     * Hencky's elasticity model
 
@@ -119,18 +119,17 @@ We recommend [SideFX's Houdini](https://www.sidefx.com) for visualization the pa
 Optionally, the grid data can also be saved if `save_grid = true`. Then, the grid data is saved as `grid_fX.ply`. By default, the grid data is not saved.
 
 
-#### List of most important parameters and options
+#### Key parameters and options
 This is a non-exhaustive list of parameters and options (of the `Simulation` class) to be specified in the input file `mpm.cpp`. See `simulation.hpp` for the complete list, and take advantage of the current `mpm.cpp` example file. Other example files are found in the `examples` directory.
 
 | Parameter  | Default value  | Description  |
 | ----       |    ----        |          ---    |
-| `directory`  | "output/"      | Name of directory to save the simulation
-| `sim_name`   | "my_simulation"|   Name of simulation    
 | `end_frame`  | 1   | Last frame to simulate   
 | `fps`        | 1.0   |  Frames per second
 | `n_threads`  | 1    |  Number of threads in parallel
 | `save_grid`  | false | Save grid data to file
 | `cfl`        | 0.5     | CFL constant, typically around 0.5
+| `cfl_elastic`| 0.5     | CFL-like constant for elastic wave speed, typically around 0.5
 | `flip_ratio` | -0.95  | (A)PIC-(A)FLIP ratio in the range [-1,1]. Positive numbers [0,1]: PIC/FLIP where 1 equals pure FLIP. Negative numbers [-1,0): APIC/AFLIP where -1 equals pure AFLIP
 | `reduce_verbose` | false | Reduce writing to screen
 | `pbc`        | false | Use periodic boundary conditions, see `pbc.cpp`. If `pbc_special = true` then you can hard-code your own periodicity, see `position_update.cpp`
@@ -141,8 +140,7 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 | `musl`                 | false          | Use MUSL instead of USL
 | `use_von_mises_q`      | false          | If `true` Define q (the "equivalent shear stress") used in plasticity models as the von Mises equivalent stress q = sqrt(3/2 s:s). If `false`, use q = sqrt(1/2 s:s). If using the `DPSoft` model, this will always be interpreted as `true`.
 | `Lx`, `Ly` and `Lz`    | 1.0            | The material sample space used in `SampleParticles(...)`
-| `dt_max`               | 0.01           | Max time step, should generally be restricted by elastic wave speed, i.e., `dt_max < dx / wave_speed`;
-| `elastic_model`        | StvkWithHencky | Elastic model
+| `elastic_model`        | Hencky | Elastic model
 | `plastic_model`        | NoPlasticity   | Plastic model, plastic parameters are set according to the model used
 | `E`                    | 1e6   | The 3D Young's modulus (Pa)
 | `nu`                   | 0.3  | The 3D Poisson's ratio (-)
