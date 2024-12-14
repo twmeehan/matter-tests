@@ -8,3 +8,7 @@ add_subdirectory(src)
 add_subdirectory(tests)
 
 option (USE_VDB "Use OpenVDB part of the code" OFF)
+
+file(DOWNLOAD
+    https://raw.githubusercontent.com/ddiakopoulos/tinyply/refs/heads/master/source/tinyply.h
+    ${CMAKE_SOURCE_DIR}/deps/tinyply.h)
