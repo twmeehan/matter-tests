@@ -50,8 +50,6 @@ public:
   T rho = 1000;
 
   TV gravity = TV::Zero();
-  TV gravity_final;
-  T gravity_time;
   // bool no_liftoff = true;
 
   T Lx = 1;
@@ -65,8 +63,8 @@ public:
   unsigned int Np;
   T particle_mass;
   T particle_volume; // initial particle volume
-  unsigned int delete_last_particle = 0;
   T dx;
+  unsigned int delete_last_particle = 0;
 
   // Elastoplasticity
   ElasticModel elastic_model = Hencky;
@@ -182,6 +180,9 @@ private:
   T dt;
   T dt_max;
   T wave_speed;
+
+  TV gravity_final;
+  T gravity_time;
 
   T mu; // shear modulus
   T lambda; // first Lame parameter

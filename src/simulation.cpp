@@ -213,8 +213,6 @@ void Simulation::advanceStep(){
         }
     }
 
-    moveObjects();
-
     if (pbc){
         PBCAddParticles(4);
     }
@@ -252,6 +250,8 @@ void Simulation::advanceStep(){
     // plasticity_projection(); // if nonlocal approach (deprecated)
 
     positionUpdate();
+
+    moveObjects();
 
 } // end advanceStep
 
