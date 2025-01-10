@@ -342,7 +342,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T q_yield = mu_1 * (p_trial+p_shift) + dp_cohesion;
 
             // right of tip AND outside yield surface
-            if ((p_trial+p_shift) > p_tip && q_trial > q_yield) {
+            if ((p_trial+p_shift) > p_tip && q_trial > (q_yield + 1e-4)) {
 
                 plastic_count++;
 
@@ -355,7 +355,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 // this is gamma_dot:
                 T delta_gamma = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always positive because a>0 and c<0
 
-                T mu_i                 = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(p_special) / delta_gamma + 1.0);
+                T mu_i = mu_2; // if p_special = 0 then mu = mu_2
+                if (p_special > 1e-4){
+                    mu_i = mu_1 + (mu_2 - mu_1) / (fac_Q * std::sqrt(p_special) / delta_gamma + 1.0);
+                }
                 particles.muI[p]       = mu_i;
                 particles.viscosity[p] = (mu_i - mu_1) * p_special / delta_gamma;
 
@@ -404,7 +407,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_vol[p]     += eps_pl_vol_inst;
 
                 T q_yield = q_stress;
-                if (q_trial < (q_yield + 1e-5)) {
+                if (q_trial < (q_yield + 1e-4)) {
                     q_stress = q_yield; // this is to ensure that fac_c below becomes negative and thus gamma_dot_S positive
                 }
                 else{
