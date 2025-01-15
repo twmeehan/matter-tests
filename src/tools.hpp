@@ -52,7 +52,7 @@ typedef double T; // float or double
 
 enum PlateType { top, bottom, left, right, front, back };
 enum ElasticModel { Hencky, NeoHookean };
-enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, DPSoft, MCC, MCCHardExp, PerzynaVM, PerzynaDP, PerzynaMuIDP, PerzynaMCC, PerzynaMuIMCC};
+enum PlasticModel { NoPlasticity, VonMises, DruckerPrager, DPSoft, MCC, MCCHardExp, PerzynaVM, PerzynaDP, PerzynaMCC, MuiDP, MuiMCC};
 enum BoundaryCondition { STICKY, SLIP, SEPARATE };
 
 ///////////////////// TOOLS ////////////////////////

@@ -157,6 +157,10 @@ Here is a list of the parameters in the various plastic models:
 |                     | `dp_cohesion`  | 0.0             |
 |                     | `xi`           | 0.0             |  
 |                     | `use_pradhana` | true            |  
+| **MCC / MCCHardExp** | `beta`        | 0.0             |
+|                     | `p0`           | true            |
+|                     | `xi`           | 0.0             |
+|                     | `M`            | 1.0             |      
 | **PerzynaVM**       | `q_max`        | 100.0           |
 |                     | `q_min`        | 100.0           |
 |                     | `p_min`        | -1.0e20         |
@@ -168,14 +172,20 @@ Here is a list of the parameters in the various plastic models:
 |                     | `use_pradhana` | true            |
 |                     | `perzyna_exp`  | 1.0             |      
 |                     | `perzyna_visc` | 0.0             |
-| **PerzynaMuIDP**    | `dp_cohesion`  | 0.0             |
+| **PerzynaMCC**      | `beta`         | 0.0             |
+|                     | `p0`           | true            |
+|                     | `xi`           | 0.0             |
+|                     | `M`            | 1.0             |  
+|                     | `perzyna_exp`  | 1.0             |      
+|                     | `perzyna_visc` | 0.0             |
+| **MuiDP**           | `dp_cohesion`  | 0.0             |
 |                     | `use_pradhana` | true            |
 |                     | `rho_s`        | 1.0             |      
 |                     | `grain_diameter`| 0.001          |
 |                     | `I_ref`        | 0.279           |      
 |                     | `mu_1`         | 0.382           |      
 |                     | `mu_2`         | 0.644           |      
-| **PerzynaMuIMCC**   | `beta`         | 0.0             |
+| **MuiMCC**          | `beta`         | 0.0             |
 |                     | `p0`           | true            |
 |                     | `xi`           | 0.0             |
 |                     | `rho_s`        | 1000.0          |      
@@ -183,16 +193,6 @@ Here is a list of the parameters in the various plastic models:
 |                     | `I_ref`        | 0.279           |      
 |                     | `mu_1`         | 0.382           |      
 |                     | `mu_2`         | 0.644           |
-| **MCC / MCCHardExp** | `beta`        | 0.0             |
-|                     | `p0`           | true            |
-|                     | `xi`           | 0.0             |
-|                     | `M`            | 1.0             |      
-| **PerzynaMCC**      | `beta`        | 0.0             |
-|                     | `p0`           | true            |
-|                     | `xi`           | 0.0             |
-|                     | `M`            | 1.0             |  
-|                     | `perzyna_exp`  | 1.0             |      
-|                     | `perzyna_visc` | 0.0             |
 
 
 

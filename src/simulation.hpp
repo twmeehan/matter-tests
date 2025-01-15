@@ -50,6 +50,7 @@ public:
   T rho = 1000;
 
   TV gravity = TV::Zero();
+  T gravity_time = 0;
   // bool no_liftoff = true;
 
   T Lx = 1;
@@ -182,7 +183,6 @@ private:
   T wave_speed;
 
   TV gravity_final;
-  T gravity_time;
 
   T mu; // shear modulus
   T lambda; // first Lame parameter

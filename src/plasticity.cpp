@@ -10,7 +10,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == MCC || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == PerzynaMuIDP || plastic_model == PerzynaMuIMCC){
+    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == MCC || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == MuiDP || plastic_model == MuiMCC){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log();
@@ -306,7 +306,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end PerzynaDP
 
 
-        else if (plastic_model == PerzynaMuIDP){
+        else if (plastic_model == MuiDP){
 
             // trial stresses
             T p_trial = -K * hencky_trace;
@@ -371,9 +371,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
             } // end plastic projection
 
-        } // end PerzynaMuIDP
+        } // end MuiDP
 
-        else if (plastic_model == PerzynaMuIMCC) {
+        else if (plastic_model == MuiMCC) {
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -444,7 +444,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
             } // end plastic projection
 
-        } // end PerzynaMuIMCC
+        } // end MuiMCC
 
 
         else if (plastic_model == MCC || plastic_model == MCCHardExp || plastic_model == PerzynaMCC){
