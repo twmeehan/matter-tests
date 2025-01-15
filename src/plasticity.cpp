@@ -227,6 +227,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             if (use_pradhana)
                 p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain! Force to be zero if using classical volume-expanding non-ass. DP
 
+            if (use_material_friction)
+                particles.muI[p] = dp_slope;
+
             // if left of shifted tip,
             // => project to the original tip given by cohesion only (i.e., not the shifted tip)
             if ((p_trial+p_shift) < p_tip){
@@ -297,6 +300,13 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     } // end N-R iterations
 
                 } // end if perzyna_exp == 1
+
+                if (use_material_friction){
+                    if (std::abs(p_trial + p_shift) < 1e-10)
+                        particles.muI[p] = 1e15;
+                    else
+                        particles.muI[p] = ((q_trial - f_mu_prefac * delta_gamma) - dp_cohesion) / (p_trial + p_shift);
+                }
 
                 hencky -= (1.0/d_prefac) * delta_gamma * hencky_deviatoric;
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
