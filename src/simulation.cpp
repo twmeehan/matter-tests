@@ -109,11 +109,11 @@ void Simulation::simulate(){
     one_over_dx_square = one_over_dx * one_over_dx;
 
     if (use_von_mises_q){
-        q_prefac = sqrt3/sqrt2;
-        d_prefac = sqrt2/sqrt3;
+        q_prefac = std::sqrt(3.0)/std::sqrt(2.0);
+        d_prefac = std::sqrt(2.0)/std::sqrt(3.0);
     } else {
-        q_prefac = 1.0/sqrt2;
-        d_prefac = sqrt2;
+        q_prefac = 1.0 / std::sqrt(2.0);
+        d_prefac = std::sqrt(2.0);
     }
     e_mu_prefac = 2*q_prefac          * mu;
     f_mu_prefac = 2*q_prefac/d_prefac * mu;

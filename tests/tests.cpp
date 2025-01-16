@@ -136,7 +136,82 @@ TEST(EnergyTest, Rotation) {
 
 
 
-TEST(CollapseTest, DruckerPrager) {
+TEST(CollapseTest, DruckerPragerOne) {
+
+    Simulation sim;
+    sim.initialize(false);
+
+    sim.reduce_verbose = true;
+    sim.end_frame = 70;
+    sim.fps = 50;
+    sim.n_threads = 8;
+    sim.cfl = 0.5;
+    sim.flip_ratio = -0.95;
+
+    T theta_deg = 10;
+    T theta = theta_deg * M_PI / 180;
+    sim.gravity = TV::Zero();
+    sim.gravity[0] = +9.81 * std::sin(theta);
+    sim.gravity[1] = -9.81 * std::cos(theta);
+
+    sim.E = 1e6;    // Young's modulus (Pa)
+    sim.nu = 0.3;   // Poisson's ratio (-)
+    sim.rho = 1000; // Density (kg/m3)
+
+    sim.Lx = 0.20;
+    sim.Ly = 0.15;
+    T k_rad = 0.0015;
+    #ifdef THREEDIM
+        sim.Lz = 0.10;
+        SampleParticles(sim, k_rad, 8);
+    #else
+        SampleParticles(sim, k_rad, 4);
+    #endif
+    for(int p = 0; p < sim.Np; p++){
+        sim.particles.x[p](1) += 0.5*sim.dx;
+    }
+    auto new_part_x = sim.particles.x;
+    #ifdef THREEDIM
+        TV tmp_part(sim.Lx/2.0, 0.0, 0.0);
+    #else
+        TV tmp_part(sim.Lx/2.0, 0.0);
+    #endif
+    new_part_x.push_back(tmp_part);
+    sim.Np += 1;
+    sim.particles = Particles(sim.Np);
+    sim.particles.x = new_part_x;
+
+    sim.elastic_model = Hencky;
+    sim.plastic_model = DPSoft;
+
+    sim.use_von_mises_q = false;
+    sim.use_pradhana = true;
+
+    sim.xi = 0;
+
+    sim.dp_cohesion = 0;
+    sim.dp_slope = std::tan(30.0 * M_PI / 180.0);
+
+    std::string name;
+    #ifdef THREEDIM
+    name = "Back";    ObjectPlate sideback   = ObjectPlate(0,       1e20, -1e20, back,   SEPARATE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sideback);
+    name = "Front";   ObjectPlate sidefront  = ObjectPlate(sim.Lz,  1e20, -1e20, front,  SEPARATE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sidefront);
+    name = "Left";    ObjectPlate sideleft   = ObjectPlate(0,       1e20, -1e20, left,   SEPARATE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sideleft);
+    name = "Ground";  ObjectPlate ground     = ObjectPlate(0,       1e20, -1e20, bottom, STICKY,   0, name,   0,0,0,  1,0);  sim.plates.push_back(ground);
+    #else
+    name = "Left";    ObjectPlate sideleft   = ObjectPlate(0,  1e20, -1e20, left,   SEPARATE, 0, name,   0,0,  1,0);  sim.plates.push_back(sideleft);
+    name = "Ground";  ObjectPlate ground     = ObjectPlate(0,  1e20, -1e20, bottom, STICKY,   0, name,   0,0,  1,0);  sim.plates.push_back(ground);
+    #endif
+
+    sim.simulate();
+
+    auto max_x_it = std::max_element( sim.particles.x.begin(), sim.particles.x.end(), [](const TV &x1, const TV &x2){return x1(0) < x2(0);} );
+    T max_x = (*max_x_it)(0);
+    T diff = std::abs(max_x - 0.56);
+    ASSERT_NEAR(diff, 0.0, 0.011);
+}
+
+TEST(CollapseTest, DruckerPragerTwo) {
 
     Simulation sim;
     sim.initialize(false);
