@@ -10,7 +10,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == MCC || plastic_model == MCCHardExp || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == MuiDP || plastic_model == MuiMCC){
+    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == ModifiedCamClay || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == MuiDP || plastic_model == MuiMCC){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log();
@@ -393,17 +393,24 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T q_trial = q_stress;
 
             //////////////////////////////////////////////////////////////////////
-            /////// IMPLICIT HARDENING
-            bool perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, mu_1, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
+            bool perform_rma;
+            T p_c;
+            if (hardening_law == ExpExpl){ // Exponential Explicit Hardening
+                p_c = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
+                perform_rma = MCCRMA(p_stress, q_stress, exit, mu_1, p_c, beta, mu, K, rma_prefac);
+            }
+            else if (hardening_law == SinhExpl){ // Sinh Explicit Hardening
+                p_c = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
+                perform_rma = MCCRMA(p_stress, q_stress, exit, mu_1, p_c, beta, mu, K, rma_prefac);
+            }
+            else if (hardening_law == ExpImpl){ // Exponential Implicit Hardening
+                perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, mu_1, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
+            }
+            else{
+                debug("You specified an unvalid HARDENING LAW!");
+                exit = 1;
+            }
 
-            /////// EXLICIT HARDENING
-            // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
-            // T particle_p0 = std::max(T(1e-2), p0*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(1.0)));
-            // T particle_p0 = std::max( T(1e-2), p0*std::exp(xi*(1-std::exp(particles.eps_pl_vol[p]))) );
-            // T particle_p0 = std::max(T(1e-2), (particles.eps_pl_vol[p] < 0) ? p0*(1.0-std::sinh(xi*particles.eps_pl_vol[p])) : p0*(1.0-std::tanh(xi*particles.eps_pl_vol[p])) );
-
-            // T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
-            // bool perform_rma = MCCRMA(p_stress, q_stress, exit, mu_1, particle_p0, beta, mu, K, rma_prefac);
             //////////////////////////////////////////////////////////////////////
 
             particles.muI[p] = mu_1;
@@ -421,10 +428,8 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     q_stress = q_yield; // this is to ensure that fac_c below becomes negative and thus gamma_dot_S positive
                 }
                 else{
-                    /////// IMPLICIT HARDENING
-                    T p_c = std::max( p0 * std::exp(-xi*particles.eps_pl_vol[p]) , p_stress+T(0.001));
-                    /////// EXLICIT HARDENING
-                    // T p_c = particle_p0;
+                    if (hardening_law == ExpImpl)
+                        p_c = std::max( p0 * std::exp(-xi*particles.eps_pl_vol[p]) , p_stress+T(0.001) );
 
                     T p_special = p_stress + beta * p_c; // always equal or larger than 0
 
@@ -457,7 +462,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end MuiMCC
 
 
-        else if (plastic_model == MCC || plastic_model == MCCHardExp || plastic_model == PerzynaMCC){
+        else if (plastic_model == ModifiedCamClay || plastic_model == PerzynaMCC){
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -468,15 +473,27 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T q_trial = q_stress;
 
             bool perform_rma;
-            if (plastic_model == MCC || plastic_model == PerzynaMCC) // Explicit hardening
-            {
+
+            if (hardening_law == NoHard){ // Exponential Explicit Hardening
+                perform_rma = MCCRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, rma_prefac);
+            }
+            else if (hardening_law == ExpExpl){ // Exponential Explicit Hardening
                 T particle_p0 = std::max(T(1e-2), p0*std::exp(-xi*particles.eps_pl_vol[p]));
-                // T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
+                // T particle_p0 = std::max( T(1e-2), p0*std::exp(xi*(1-std::exp(particles.eps_pl_vol[p]))) );
                 perform_rma = MCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
             }
-            else if (plastic_model == MCCHardExp) // Implicit hardening
-            {
+            else if (hardening_law == SinhExpl){ // Sinh Explicit Hardening
+                T particle_p0 = std::max(T(1e-2), K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
+                // T particle_p0 = std::max(T(1e-2), p0*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(1.0)));
+                // T particle_p0 = std::max(T(1e-2), (particles.eps_pl_vol[p] < 0) ? p0*(1.0-std::sinh(xi*particles.eps_pl_vol[p])) : p0*(1.0-std::tanh(xi*particles.eps_pl_vol[p])) );
+                perform_rma = MCCRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
+            }
+            else if (hardening_law == ExpImpl){ // Exponential Implicit Hardening
                 perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
+            }
+            else{
+                debug("You specified an unvalid HARDENING LAW!");
+                exit = 1;
             }
 
             if (perform_rma) { // returns true if it performs a return mapping

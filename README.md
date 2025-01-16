@@ -132,8 +132,8 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 | `cfl_elastic`| 0.5     | CFL-like constant for elastic wave speed, typically around 0.5
 | `flip_ratio` | -0.95  | (A)PIC-(A)FLIP ratio in the range [-1,1]. Positive numbers [0,1]: PIC/FLIP where 1 equals pure FLIP. Negative numbers [-1,0): APIC/AFLIP where -1 equals pure AFLIP
 | `reduce_verbose` | false | Reduce writing to screen
-| `pbc`        | false | Use periodic boundary conditions, see `pbc.cpp`. If `pbc_special = true` then you can hard-code your own periodicity, see `position_update.cpp`
-| `gravity`    | (0,0,(0)) | Gravitational acceleration vector. If `gravity_special = true` you can hard-code your own gravity evolution, see `update_dt.cpp`
+| `pbc`        | false | Use periodic boundary conditions, see `pbc.cpp`. If `pbc_special = true` one may code the periodicity in `position_update.cpp`
+| `gravity`    | (0,0,(0)) | Gravitational acceleration vector. If `gravity_special = true` one may code the gravity evolution in `update_dt.cpp` where the gravity is increased linearly to its specified value within `gravity_time`.
 | `rho`                   |  1000           | Density (kg/m3)
 | `delete_last_particle`  | 0               | Delete the n last particles sampled
 | `use_material_friction` | false           | Use the internal friction from a plastic model as the Coulomb friction, only relevant for certain plasticity models.
@@ -157,8 +157,8 @@ Here is a list of the parameters in the various plastic models:
 |                     | `dp_cohesion`  | 0.0             |
 |                     | `xi`           | 0.0             |  
 |                     | `use_pradhana` | true            |  
-| **MCC / MCCHardExp** | `beta`        | 0.0             |
-|                     | `p0`           | true            |
+| **ModifiedCamClay** | `beta`         | 0.0             |
+|                     | `p0`           | 1000.0          |
 |                     | `xi`           | 0.0             |
 |                     | `M`            | 1.0             |      
 | **PerzynaVM**       | `q_max`        | 100.0           |
@@ -173,7 +173,7 @@ Here is a list of the parameters in the various plastic models:
 |                     | `perzyna_exp`  | 1.0             |      
 |                     | `perzyna_visc` | 0.0             |
 | **PerzynaMCC**      | `beta`         | 0.0             |
-|                     | `p0`           | true            |
+|                     | `p0`           | 1000.0          |
 |                     | `xi`           | 0.0             |
 |                     | `M`            | 1.0             |  
 |                     | `perzyna_exp`  | 1.0             |      
@@ -186,7 +186,7 @@ Here is a list of the parameters in the various plastic models:
 |                     | `mu_1`         | 0.382           |      
 |                     | `mu_2`         | 0.644           |      
 | **MuiMCC**          | `beta`         | 0.0             |
-|                     | `p0`           | true            |
+|                     | `p0`           | 1000.0          |
 |                     | `xi`           | 0.0             |
 |                     | `rho_s`        | 1000.0          |      
 |                     | `grain_diameter`| 0.001          |
@@ -194,6 +194,7 @@ Here is a list of the parameters in the various plastic models:
 |                     | `mu_1`         | 0.382           |      
 |                     | `mu_2`         | 0.644           |
 
+In the MCC-based models, one must also choose a corresponding hardening law, either 1) an exponential explicit law `ExpExpl`, 2) a hyperbolic sine explicit law `SinhExpl` or 3) an exponential implicit law `ExpImpl`.
 
 
 ### Troubleshooting

@@ -70,6 +70,7 @@ public:
   // Elastoplasticity
   ElasticModel elastic_model = Hencky;
   PlasticModel plastic_model = VonMises;
+  HardeningLaw hardening_law = ExpImpl;
 
   T E = 1e6; // Young's modulus (3D)
   T nu = 0.3; // Poisson's ratio (3D)
