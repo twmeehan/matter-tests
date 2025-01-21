@@ -69,7 +69,7 @@ public:
 
   // Elastoplasticity
   ElasticModel elastic_model = Hencky;
-  PlasticModel plastic_model = VonMises;
+  PlasticModel plastic_model = NoPlasticity;
   HardeningLaw hardening_law = ExpImpl;
 
   T E = 1e6; // Young's modulus (3D)

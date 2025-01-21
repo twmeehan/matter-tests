@@ -10,7 +10,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VonMises || plastic_model == DruckerPrager || plastic_model == DPSoft || plastic_model == ModifiedCamClay || plastic_model == PerzynaMCC || plastic_model == PerzynaVM || plastic_model == PerzynaDP || plastic_model == MuiDP || plastic_model == MuiMCC){
+    else if (plastic_model == VM || plastic_model == DP || plastic_model == DPSoft || plastic_model == MCC || plastic_model == VMVisc || plastic_model == DPVisc || plastic_model == MCCVisc || plastic_model == DPMui || plastic_model == MCCMui){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log();
@@ -23,7 +23,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             hencky_deviatoric /= hencky_deviatoric_norm; // normalize the deviatoric vector so it gives a unit vector specifying the deviatoric direction
 
 
-        if (plastic_model == VonMises){
+        if (plastic_model == VM){
 
             T yield_stress = q_max;
 
@@ -41,7 +41,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         } // end VonMises
 
-        else if (plastic_model == DruckerPrager){
+        else if (plastic_model == DP){
 
             // trial stresses
             T p_trial = -K * hencky_trace;
@@ -75,7 +75,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 }
             } // if else side of tip
 
-        } // end DruckerPrager
+        } // end DP
 
         else if (plastic_model == DPSoft){
 
@@ -154,7 +154,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         } // end DPSoft
 
-        else if (plastic_model == PerzynaVM){
+        else if (plastic_model == VMVisc){
 
             // trial q-stress
             T stress = e_mu_prefac * hencky_deviatoric_norm;
@@ -180,7 +180,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 if (perzyna_exp == 1 && xi == 0){
                     delta_gamma = (stress-yield_stress) / (f_mu_prefac + yield_stress*perzyna_visc/dt);
                     if (delta_gamma < 0){
-                        debug("PerzynaVM: FATAL negative delta_gamma = ", delta_gamma);
+                        debug("VMVisc: FATAL negative delta_gamma = ", delta_gamma);
                         exit = 1;
                     }
                 }
@@ -190,7 +190,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     int max_iter = 60;
                     for (int iter = 0; iter < max_iter; iter++) {
                         if (iter == max_iter - 1){ // did not break loop
-                            debug("PerzynaVM: FATAL did not exit loop at iter = ", iter);
+                            debug("VMVisc: FATAL did not exit loop at iter = ", iter);
                             exit = 1;
                         }
 
@@ -212,7 +212,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         T residual_diff         = -f_mu_prefac * tmp1 + (stress - f_mu_prefac * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm) - yield_stress_new_diff;
 
                         if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
-                            debug("PerzynaVM: residual_diff too small in abs value = ", residual_diff);
+                            debug("VMVisc: residual_diff too small in abs value = ", residual_diff);
                             exit = 1;
                         }
 
@@ -225,9 +225,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
                 particles.delta_gamma[p] = delta_gamma / dt;
             } // end plastic projection projection
-        } // end PerzynaVM
+        } // end VMVisc
 
-        else if (plastic_model == PerzynaDP){
+        else if (plastic_model == DPVisc){
 
             // trial stresses
             T p_trial = -K * hencky_trace;
@@ -237,6 +237,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_shift = 0;
             if (use_pradhana)
                 p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain! Force to be zero if using classical volume-expanding non-ass. DP
+
+            // if positive volume gain, the q=0 intersection for the yield surface is shifted to the right, at a larger p.
+            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion;
 
             if (use_material_friction)
                 particles.muI[p] = dp_slope;
@@ -262,9 +265,6 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.delta_gamma[p] = 0; // for the elastic particles, the plastic particles have their delta_gamma overwritten in the next if-statement
             }
 
-            // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
-            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion;
-
             // right of shifted tip AND outside the shifted yield surface
             if ((p_trial+p_shift) > p_tip && q_trial > q_yield) {
                 plastic_count++;
@@ -274,7 +274,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 if (perzyna_exp == 1){
                     delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*perzyna_visc/dt);
                     if (delta_gamma < 0){
-                        debug("PerzynaDP: FATAL negative delta_gamma = ", delta_gamma);
+                        debug("DPVisc: FATAL negative delta_gamma = ", delta_gamma);
                         exit = 1;
                     }
                 }
@@ -285,7 +285,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     int max_iter = 60;
                     for (int iter = 0; iter < max_iter; iter++) {
                         if (iter == max_iter - 1){ // did not break loop
-                            debug("PerzynaDP: FATAL did not exit loop at iter = ", iter);
+                            debug("DPVisc: FATAL did not exit loop at iter = ", iter);
                             exit = 1;
                         }
 
@@ -301,7 +301,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         T residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
 
                         if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
-                            debug("PerzynaDP: FATAL residual_diff too small in abs value = ", residual_diff);
+                            debug("DPVisc: FATAL residual_diff too small in abs value = ", residual_diff);
                             exit = 1;
                         }
 
@@ -326,10 +326,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
                 particles.delta_gamma[p] = delta_gamma / dt;
             } // end plastic projection
-        } // end PerzynaDP
+        } // end DPVisc
 
 
-        else if (plastic_model == MuiDP){
+        else if (plastic_model == DPMui){
 
             // trial stresses
             T p_trial = -K * hencky_trace;
@@ -394,9 +394,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
             } // end plastic projection
 
-        } // end MuiDP
+        } // end DPMui
 
-        else if (plastic_model == MuiMCC) {
+        else if (plastic_model == MCCMui) {
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -472,10 +472,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
             } // end plastic projection
 
-        } // end MuiMCC
+        } // end MCCMui
 
 
-        else if (plastic_model == ModifiedCamClay || plastic_model == PerzynaMCC){
+        else if (plastic_model == MCC || plastic_model == MCCVisc){
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -518,14 +518,14 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 T delta_gamma;
                 ////////////////////////////////////////////////////////////////
-                if (plastic_model == PerzynaMCC){
+                if (plastic_model == MCCVisc){
 
                     T q_yield = q_stress;
 
                     if (perzyna_exp == 1){
                         delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*perzyna_visc/dt);
                         if (delta_gamma < 0){
-                            debug("PerzynaMCC: FATAL negative delta_gamma = ", delta_gamma);
+                            debug("MCCVisc: FATAL negative delta_gamma = ", delta_gamma);
                             // delta_gamma = 0;
                             exit = 1;
                         }
@@ -537,7 +537,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         int max_iter = 60;
                         for (int iter = 0; iter < max_iter; iter++) {
                             if (iter == max_iter - 1){ // did not break loop
-                                debug("PerzynaMCC: FATAL did not exit loop at iter = ", iter);
+                                debug("MCCVisc: FATAL did not exit loop at iter = ", iter);
                                 exit = 1;
                             }
 
@@ -553,7 +553,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                             T residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm);
 
                             if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
-                                debug("PerzynaMCC: FATAL residual_diff too small in abs value = ", residual_diff);
+                                debug("MCCVisc: FATAL residual_diff too small in abs value = ", residual_diff);
                                 exit = 1;
                             }
 
@@ -568,7 +568,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                     q_stress = std::max(q_yield, q_trial - f_mu_prefac * delta_gamma); // delta_gamma = dt * gamma_dot_S
 
-                } //  end if PerzynaMCC
+                } //  end if MCCVisc
                 ////////////////////////////////////////////////////////////////
 
 
@@ -579,7 +579,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 hencky = q_stress / e_mu_prefac * hencky_deviatoric - ep*TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
             } // if perform_rma
-        }
+        } // end MCC / MCCVisc
 
     } // end plastic_model type
 

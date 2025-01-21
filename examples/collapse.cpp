@@ -86,7 +86,7 @@ int main(){
     // name = "Terrain"; ObjectVdb terrain  = ObjectVdb("../levelsets/vdb_file_name.vdb", STICKY, friction, name); sim.objects.push_back(&terrain);
 
     ////// PLASTICITY
-    sim.plastic_model = PerzynaDP; // Perzyna model with Drucker_Prager yield surface
+    sim.plastic_model = DPVisc; // Perzyna model with Drucker_Prager yield surface
 
     sim.use_pradhana = true; // Supress unwanted volume expansion in Drucker-Prager models
     sim.use_von_mises_q = false; // [default: false] if true, q is defined as q = sqrt(3/2 * s:s), otherwise q = sqrt(1/2 * s:s)

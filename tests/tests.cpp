@@ -257,7 +257,7 @@ TEST(CollapseTest, DruckerPragerTwo) {
     sim.particles.x = new_part_x;
 
     sim.elastic_model = Hencky;
-    sim.plastic_model = PerzynaDP;
+    sim.plastic_model = DPVisc;
 
     sim.use_von_mises_q = false;
     sim.use_pradhana = true;
