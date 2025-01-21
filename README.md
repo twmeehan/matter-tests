@@ -150,42 +150,42 @@ Here is a list of the parameters in the various plastic models:
 
 | Model               | Parameters     | Default value   |
 | ----                |    ----        |          ---    |
-| **VonMises**        | `q_max`        | 100.0           |
-| **DruckerPrager**   | `dp_slope`     | 1.0             |
+| **VM**              | `q_max`        | 100.0           |
+| **DP**              | `dp_slope`     | 1.0             |
 |                     | `dp_cohesion`  | 0.0             |
 | **DPSoft**          | `dp_slope`     | 1.0             |
 |                     | `dp_cohesion`  | 0.0             |
 |                     | `xi`           | 0.0             |  
 |                     | `use_pradhana` | true            |  
-| **ModifiedCamClay** | `beta`         | 0.0             |
+| **MCC**             | `beta`         | 0.0             |
 |                     | `p0`           | 1000.0          |
 |                     | `xi`           | 0.0             |
 |                     | `M`            | 1.0             |      
-| **PerzynaVM**       | `q_max`        | 100.0           |
+| **VMVisc**          | `q_max`        | 100.0           |
 |                     | `q_min`        | 100.0           |
 |                     | `p_min`        | -1.0e20         |
 |                     | `xi`           | 0.0             |  
 |                     | `perzyna_exp`  | 1.0             |      
 |                     | `perzyna_visc` | 0.0             |  
-| **PerzynaDP**       | `dp_slope`     | 1.0             |
+| **DPVisc**          | `dp_slope`     | 1.0             |
 |                     | `dp_cohesion`  | 0.0             |
 |                     | `use_pradhana` | true            |
 |                     | `perzyna_exp`  | 1.0             |      
 |                     | `perzyna_visc` | 0.0             |
-| **PerzynaMCC**      | `beta`         | 0.0             |
+| **MCCVisc**         | `beta`         | 0.0             |
 |                     | `p0`           | 1000.0          |
 |                     | `xi`           | 0.0             |
 |                     | `M`            | 1.0             |  
 |                     | `perzyna_exp`  | 1.0             |      
 |                     | `perzyna_visc` | 0.0             |
-| **MuiDP**           | `dp_cohesion`  | 0.0             |
+| **DPMui**           | `dp_cohesion`  | 0.0             |
 |                     | `use_pradhana` | true            |
 |                     | `rho_s`        | 1.0             |      
 |                     | `grain_diameter`| 0.001          |
 |                     | `I_ref`        | 0.279           |      
 |                     | `mu_1`         | 0.382           |      
 |                     | `mu_2`         | 0.644           |      
-| **MuiMCC**          | `beta`         | 0.0             |
+| **MCCMui**          | `beta`         | 0.0             |
 |                     | `p0`           | 1000.0          |
 |                     | `xi`           | 0.0             |
 |                     | `rho_s`        | 1000.0          |      
