@@ -85,7 +85,12 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
             T p_tip_orig = -dp_cohesion/dp_slope;
             T p_tip      = p_tip_orig * std::exp(-xi * particles.eps_pl_dev[p]);
-            T p_shift    = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain! Force to be zero if using classical volume-expanding non-ass. DP
+            T p_shift = 0;
+            if (use_pradhana)
+                p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain!
+
+            // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
+            T q_yield = dp_slope * (p_trial+p_shift) + (-p_tip*dp_slope); // not sure if we should really shift this intersection!!!
 
             // if left of shifted tip,
             // => project to the original tip given by cohesion only (i.e., not the shifted tip)
@@ -101,16 +106,17 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
 
                 T eps_pl_vol_inst = (p_proj-p_trial)/K;
-                particles.eps_pl_vol[p]          += eps_pl_vol_inst;
-                particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
-
-            }
-            else{ // if right of shifted tip (incl elastic states)
-                particles.delta_gamma[p] = 0; // for the elastic particles, the plastic particles have their delta_gamma overwritten in the next if
+                particles.eps_pl_vol[p] += eps_pl_vol_inst;
+                if (use_pradhana)
+                    particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
             }
 
-            // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
-            T q_yield = dp_slope * (p_trial+p_shift) + (-p_tip*dp_slope); // not sure if we should really shift this intersection!!!
+            // right of tip AND inside yield surface, i.e., elastic states.
+            if ((p_trial+p_shift) > p_tip && q_trial <= q_yield) {
+                if (use_pradhana)
+                    particles.eps_pl_vol_pradhana[p] = 0; // reset correction as no longer dilating
+                particles.delta_gamma[p] = 0; // elastic particles have no delta_gamma
+            }
 
             // right of tip AND outside yield surface
             if ((p_trial+p_shift) > p_tip && q_trial > q_yield) {
@@ -119,19 +125,21 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 T temp_eps_pl_dev = particles.eps_pl_dev[p] + (hencky_deviatoric_norm - q_yield / e_mu_prefac);
                 T p_proj          = p_tip_orig * std::exp(-xi * temp_eps_pl_dev);
 
-                // if left of tip - project from p_trial to p_proj
+                // if left of tip: project from p_trial to p_proj
                 if ((p_trial+p_shift) < p_proj){
                     T delta_gamma             = d_prefac * hencky_deviatoric_norm;
                     particles.delta_gamma[p]  = delta_gamma / dt;
                     particles.eps_pl_dev[p]  += (1.0/d_prefac) * delta_gamma;
 
-                    T eps_pl_vol_inst                 = (p_proj-p_trial)/K;
-                    particles.eps_pl_vol[p]          += eps_pl_vol_inst;
-                    particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
+                    T eps_pl_vol_inst = (p_proj-p_trial)/K;
+                    particles.eps_pl_vol[p] += eps_pl_vol_inst;
+                    if (use_pradhana)
+                        particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
+
                     hencky = -p_proj/(K*dim) * TV::Ones();
                     particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                 }
-                // if right of tip - p_trial becomes p
+                // if right of tip: p_trial becomes p
                 else{
                     T q_yield_new = dp_slope * (p_trial+p_shift) + (-p_proj*dp_slope) ;
                     T delta_gamma = d_prefac * (hencky_deviatoric_norm - q_yield_new / e_mu_prefac);
@@ -139,13 +147,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
                     particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
                     particles.delta_gamma[p] = delta_gamma / dt;
-                    particles.eps_pl_vol_pradhana[p] = 0; // reset pradhana volume accumulation
+                    if (use_pradhana)
+                        particles.eps_pl_vol_pradhana[p] = 0; // reset volume accumulation
                 }
             } // end plastic projection projection
-            // right of tip AND inside yield surface
-            else{ // elastic states
-                particles.eps_pl_vol_pradhana[p] = 0; // reset pradhana volume accumulation
-            }
 
         } // end DPSoft
 
@@ -245,14 +250,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 plastic_count++;
                 hencky = -p_proj/(K*dim) * TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
-                particles.delta_gamma[p]          = delta_gamma / dt;
-                particles.eps_pl_dev[p]          += (1.0/d_prefac) * delta_gamma;
-                particles.eps_pl_vol[p]          += eps_pl_vol_inst;
-                particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
+                particles.delta_gamma[p] = delta_gamma / dt;
+                particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
+                particles.eps_pl_vol[p] += eps_pl_vol_inst;
+                if (use_pradhana)
+                    particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
             }
             else{ // if right of shifted tip (incl elastic states)
-                particles.eps_pl_vol_pradhana[p] = 0; // reset pradhana volume accumulation
-                particles.delta_gamma[p] = 0; // for the elastic particles, the plastic particles have their delta_gamma overwritten in the next if
+                if (use_pradhana)
+                    particles.eps_pl_vol_pradhana[p] = 0; // reset pradhana volume accumulation
+                particles.delta_gamma[p] = 0; // for the elastic particles, the plastic particles have their delta_gamma overwritten in the next if-statement
             }
 
             // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
