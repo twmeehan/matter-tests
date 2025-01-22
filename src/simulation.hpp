@@ -157,13 +157,13 @@ public:
   std::pair<TMX, TMX> createExternalGridGravity();
 
 
-private:
+  #ifdef THREEDIM
+    const unsigned int dim = 3;
+  #else
+    const unsigned int dim = 2;
+  #endif
 
-#ifdef THREEDIM
-  const unsigned int dim = 3;
-#else
-  const unsigned int dim = 2;
-#endif
+private:
 
   unsigned int current_time_step = 0;
   unsigned int frame = 0;
