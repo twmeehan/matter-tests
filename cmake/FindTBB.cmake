@@ -336,21 +336,21 @@ if(NOT TBB_VERSION)
 
  #only read the start of the file
 
-if (APPLE)
+# if (APPLE)
 
  file(READ
       "${TBB_INCLUDE_DIR}/oneapi/tbb/version.h"
       TBB_VERSION_CONTENTS
       LIMIT 2048)
 
-else (APPLE)
-
- file(READ
-      "${TBB_INCLUDE_DIR}/tbb/tbb_stddef.h"
-      TBB_VERSION_CONTENTS
-      LIMIT 2048)
-
-endif (APPLE)
+# else (APPLE)
+#
+#  file(READ
+#       "${TBB_INCLUDE_DIR}/tbb/tbb_stddef.h"
+#       TBB_VERSION_CONTENTS
+#       LIMIT 2048)
+#
+# endif (APPLE)
 
 
 
