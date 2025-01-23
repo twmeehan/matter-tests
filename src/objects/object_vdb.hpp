@@ -5,6 +5,7 @@
 
 #include "object_general.hpp"
 
+#define IMATH_HALF_NO_LOOKUP_TABLE
 #include <openvdb/openvdb.h>
 #include <openvdb/io/File.h>
 #include <openvdb/tools/GridOperators.h>
