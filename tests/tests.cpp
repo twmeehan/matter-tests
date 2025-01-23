@@ -51,7 +51,6 @@ TEST(BoundaryTest, Analytic) {
 }
 
 
-
 TEST(ElasticityTest, BulkModulus) {
 
     Simulation sim;

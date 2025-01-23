@@ -34,13 +34,31 @@ if (USE_VDB)
 
 	# if (APPLE)
 		message("-- MESSAGE: Will not include Half libraries")
-		target_link_libraries (mpm OpenMP::OpenMP_CXX Eigen3::Eigen ${OPENVDB_LIBRARIES} ${OpenEXR_LIBRARIES} ${TBB_LIBRARIES} ${Boost_LIBRARIES})
+
+		target_link_libraries (mpm
+							OpenMP::OpenMP_CXX
+							Eigen3::Eigen
+							${OPENVDB_LIBRARIES}
+							${OpenEXR_LIBRARIES}
+							${TBB_LIBRARIES}
+							${Boost_LIBRARIES}
+						)
+
 	# else (APPLE)
 	# 	message("-- MESSAGE: Will include Half libraries")
+	#
 	# 	find_package(Half QUIET)
 	# 	include_directories(${HALF_INCLUDE_DIRS} SYSTEM)
 	#
-	# 	target_link_libraries (mpm OpenMP::OpenMP_CXX Eigen3::Eigen ${OPENVDB_LIBRARIES} ${OpenEXR_LIBRARIES} ${TBB_LIBRARIES} ${Boost_LIBRARIES} ${HALF_LIBRARIES})
+	# 	target_link_libraries (mpm
+	# 						OpenMP::OpenMP_CXX
+	# 						Eigen3::Eigen
+	# 						${OPENVDB_LIBRARIES}
+	# 						${OpenEXR_LIBRARIES}
+	# 						${TBB_LIBRARIES}
+	# 						${Boost_LIBRARIES}
+	# 						${HALF_LIBRARIES}
+	# 					)
 	# endif (APPLE)
 
 else (USE_VDB)

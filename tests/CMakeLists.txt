@@ -11,30 +11,96 @@ FetchContent_MakeAvailable(googletest)
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(OpenMP REQUIRED)
 
-add_executable(
-  tests
-  tests.cpp
-  ../src/tools.cpp
-  ../src/simulation.cpp
-  ../src/save_data.cpp
-  ../src/remesh.cpp
-  ../src/deformation_update.cpp
-  ../src/plasticity.cpp
-  ../src/p2g.cpp
-  ../src/g2p.cpp
-  ../src/explicit_euler_update.cpp
-  ../src/boundary_collision.cpp
-  ../src/update_dt.cpp
-  ../src/position_update.cpp
-  ../src/musl.cpp
-  ../src/pbc.cpp
-)
-target_link_libraries(
-  tests
-  GTest::gtest_main
-  OpenMP::OpenMP_CXX
-  Eigen3::Eigen
-)
+
+if (USE_VDB)
+
+    add_executable(tests
+      tests.cpp
+      tests_vdb.cpp
+      ../src/tools.cpp
+      ../src/simulation.cpp
+      ../src/save_data.cpp
+      ../src/remesh.cpp
+      ../src/deformation_update.cpp
+      ../src/plasticity.cpp
+      ../src/p2g.cpp
+      ../src/g2p.cpp
+      ../src/explicit_euler_update.cpp
+      ../src/boundary_collision.cpp
+      ../src/update_dt.cpp
+      ../src/position_update.cpp
+      ../src/musl.cpp
+      ../src/pbc.cpp
+    )
+
+	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+
+	find_package(OpenVDB 3.1 QUIET)
+	include_directories(${OPENVDB_INCLUDE_DIRS} SYSTEM)
+
+	find_package(TBB REQUIRED)
+	include_directories(${TBB_INCLUDE_DIRS} SYSTEM)
+
+	find_package(Boost REQUIRED)
+	include_directories(${Boost_INCLUDE_DIRS} SYSTEM)
+
+	# if (APPLE)
+		message("-- MESSAGE: Will not include Half libraries")
+
+		target_link_libraries (tests GTest::gtest_main
+                            OpenMP::OpenMP_CXX
+                            Eigen3::Eigen
+                            ${OPENVDB_LIBRARIES}
+                            ${OpenEXR_LIBRARIES}
+                            ${TBB_LIBRARIES}
+                            ${Boost_LIBRARIES}
+                        )
+
+	# else (APPLE)
+	# 	message("-- MESSAGE: Will include Half libraries")
+    #
+	# 	find_package(Half QUIET)
+	# 	include_directories(${HALF_INCLUDE_DIRS} SYSTEM)
+    #
+	# 	target_link_libraries (tests GTest::gtest_main
+    #                         OpenMP::OpenMP_CXX
+    #                         Eigen3::Eigen
+    #                         ${OPENVDB_LIBRARIES}
+    #                         ${OpenEXR_LIBRARIES}
+    #                         ${TBB_LIBRARIES}
+    #                         ${Boost_LIBRARIES}
+    #                         ${HALF_LIBRARIES}
+    #                     )
+	# endif (APPLE)
+
+else (USE_VDB)
+
+    add_executable(tests
+      tests.cpp
+      ../src/tools.cpp
+      ../src/simulation.cpp
+      ../src/save_data.cpp
+      ../src/remesh.cpp
+      ../src/deformation_update.cpp
+      ../src/plasticity.cpp
+      ../src/p2g.cpp
+      ../src/g2p.cpp
+      ../src/explicit_euler_update.cpp
+      ../src/boundary_collision.cpp
+      ../src/update_dt.cpp
+      ../src/position_update.cpp
+      ../src/musl.cpp
+      ../src/pbc.cpp
+    )
+
+	target_link_libraries (tests GTest::gtest_main
+    OpenMP::OpenMP_CXX
+    Eigen3::Eigen)
+
+endif (USE_VDB)
+
+# Add include directory as a preprocessor definition
+target_compile_definitions(tests PRIVATE INCLUDE_DIR="${CMAKE_SOURCE_DIR}/levelsets")
 
 include(GoogleTest)
 gtest_discover_tests(tests)
