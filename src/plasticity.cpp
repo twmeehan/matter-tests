@@ -111,7 +111,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     particles.eps_pl_vol_pradhana[p] += eps_pl_vol_inst; // can be negative!
             }
 
-            // right of tip AND inside yield surface, i.e., elastic states.
+            // right of tip AND inside yield surface, i.e., elastic states
             if ((p_trial+p_shift) > p_tip && q_trial <= q_yield) {
                 if (use_pradhana)
                     particles.eps_pl_vol_pradhana[p] = 0; // reset correction as no longer dilating
@@ -373,10 +373,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 T fac_a = f_mu_prefac * dt; // always positive
                 T fac_b = p_trial*(mu_2-mu_1) + f_mu_prefac*dt*fac_Q*std::sqrt(p_special) - (q_trial-q_yield);
-                T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(p_special); // always negative
+                T fac_c = -(q_trial-q_yield) * fac_Q * std::sqrt(p_special); // always negative (or zero IFF p_special = 0)
 
                 // this is gamma_dot:
-                T delta_gamma = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always positive because a>0 and c<0
+                T delta_gamma = (-fac_b + std::sqrt(fac_b*fac_b - 4*fac_a*fac_c) ) / (2*fac_a); // always if because a>0 and c<0
 
                 T mu_i = mu_2; // if p_special = 0 then mu = mu_2
                 if (p_special > 1e-4){
