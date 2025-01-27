@@ -73,6 +73,12 @@ void Simulation::simulate(){
         return;
     }
 
+    if (elastic_model != Hencky && plastic_model != NoPlasticity){
+        debug("This plastic model is only compatible with Hencky's elasticity model");
+        debug("Please use: elastic_model = Hencky");
+        return;
+    }
+
     #if DIMENSION == 3
         debug("This is a 3D simulation.");
     #elif DIMENSION == 2

@@ -98,8 +98,8 @@ and Eigen can be obtained through
 #### Objects and terrains
 
 Rigid objects and terrains (boundaries) are either   
-    * formulated analytically as level sets (signed distance functions)   
-    * or imported as `.vdb` level sets files using [OpenVDB](https://www.openvdb.org/)   
+* formulated analytically as level sets (signed distance functions)   
+* or imported as `.vdb` level sets files using [OpenVDB](https://www.openvdb.org/)   
 
 Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in [Viroulet et al. (2017)](https://doi.org/10.1017/jfm.2017.41). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for speed and convenience. In `ObjectPlate`, you can also assign a speed (and controls on the time-evolution of the speed) of the plate. Any plate must either a `top`, `bottom`, `front`, `back`, `left` or `right`. Its usage can be seen in the default example in `mpm.cpp` where it is used to simple set the ground (y = 0).
 
@@ -140,66 +140,66 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 | `musl`                 | false          | Use MUSL instead of USL
 | `use_von_mises_q`      | false          | If `true` Define q (the "equivalent shear stress") used in plasticity models as the von Mises equivalent stress q = sqrt(3/2 s:s). If `false`, use q = sqrt(1/2 s:s). If using the `DPSoft` model, this will always be interpreted as `true`.
 | `Lx`, `Ly` and `Lz`    | 1.0            | The material sample space used in `SampleParticles(...)`
-| `elastic_model`        | Hencky | Elastic model
+| `elastic_model`        | Hencky | Elastic model. Note that Hencky's model must be used when combined with a plastic model. 
 | `plastic_model`        | NoPlasticity   | Plastic model, plastic parameters are set according to the model used
 | `E`                    | 1e6   | The 3D Young's modulus (Pa)
 | `nu`                   | 0.3  | The 3D Poisson's ratio (-)
 
 
-Here is a list of the parameters in the various plastic models:
+Here is a list of the various plastic models and their parameters:
 
-| Model               | Parameters     | Default value   |
-| ----                |    ----        |          ---    |
-| **VM**              | `q_max`        | 100.0           |
-| **DP**              | `dp_slope`     | 1.0             |
-|                     | `dp_cohesion`  | 0.0             |
-| **DPSoft**          | `dp_slope`     | 1.0             |
-|                     | `dp_cohesion`  | 0.0             |
-|                     | `xi`           | 0.0             |  
-|                     | `use_pradhana` | true            |  
-| **MCC**             | `beta`         | 0.0             |
-|                     | `p0`           | 1000.0          |
-|                     | `xi`           | 0.0             |
-|                     | `M`            | 1.0             |      
-| **VMVisc**          | `q_max`        | 100.0           |
-|                     | `q_min`        | 100.0           |
-|                     | `p_min`        | -1.0e20         |
-|                     | `xi`           | 0.0             |  
-|                     | `perzyna_exp`  | 1.0             |      
-|                     | `perzyna_visc` | 0.0             |  
-| **DPVisc**          | `dp_slope`     | 1.0             |
-|                     | `dp_cohesion`  | 0.0             |
-|                     | `use_pradhana` | true            |
-|                     | `perzyna_exp`  | 1.0             |      
-|                     | `perzyna_visc` | 0.0             |
-| **MCCVisc**         | `beta`         | 0.0             |
-|                     | `p0`           | 1000.0          |
-|                     | `xi`           | 0.0             |
-|                     | `M`            | 1.0             |  
-|                     | `perzyna_exp`  | 1.0             |      
-|                     | `perzyna_visc` | 0.0             |
-| **DPMui**           | `dp_cohesion`  | 0.0             |
-|                     | `use_pradhana` | true            |
-|                     | `rho_s`        | 1.0             |      
-|                     | `grain_diameter`| 0.001          |
-|                     | `I_ref`        | 0.279           |      
-|                     | `mu_1`         | 0.382           |      
-|                     | `mu_2`         | 0.644           |      
-| **MCCMui**          | `beta`         | 0.0             |
-|                     | `p0`           | 1000.0          |
-|                     | `xi`           | 0.0             |
-|                     | `rho_s`        | 1000.0          |      
-|                     | `grain_diameter`| 0.001          |
-|                     | `I_ref`        | 0.279           |      
-|                     | `mu_1`         | 0.382           |      
-|                     | `mu_2`         | 0.644           |
+| Model                                | Name                  | Parameters                | Default value   |
+|  ----                                | ----     |    ----        |          ---    |
+| Von Mises                            | **VM**   | `q_max`        | 100.0           |
+| Drucker-Prager                       | **DP**   | `dp_slope`     | 1.0             |
+|                                      |          | `dp_cohesion`  | 0.0             |
+| Drucker-Prager with strain-softening | **DPSoft** | `dp_slope`   | 1.0             |
+|                                      |            | `dp_cohesion`  | 0.0           |
+|                                      |            | `xi`           | 0.0           |  
+|                                      |            | `use_pradhana` | true          |  
+| Modified Cam-Clay | **MCC**  | `beta`         | 0.0             |
+|                   |          | `p0`           | 1000.0          |
+|                   |          | `xi`           | 0.0             |
+|                   |          | `M`            | 1.0             |      
+| Perzyna-Von Mises | **VMVisc** | `q_max` | 100.0         |
+| |                     | `q_min`        | 100.0           |
+| |                     | `p_min`        | -1.0e20         |
+| |                     | `xi`           | 0.0             |  
+| |                     | `perzyna_exp`  | 1.0             |      
+| |                     | `perzyna_visc` | 0.0             |  
+| Perzyna-Drucker-Prager | **DPVisc** | `dp_slope`  | 1.0  |
+| |                     | `dp_cohesion`  | 0.0             |
+| |                     | `use_pradhana` | true            |
+| |                     | `perzyna_exp`  | 1.0             |      
+| |                     | `perzyna_visc` | 0.0             |
+| Perzyna-Modified Cam-Clay | **MCCVisc**  | `beta`  | 0.0 |
+| |                     | `p0`           | 1000.0          |
+| |                     | `xi`           | 0.0             |
+| |                     | `M`            | 1.0             |  
+| |                     | `perzyna_exp`  | 1.0             |      
+| |                     | `perzyna_visc` | 0.0             |
+| $\mu(I)$-rheology     | **DPMui**  | `dp_cohesion` | 0.0 |
+| |                     | `use_pradhana` | true            |
+| |                     | `rho_s`        | 1.0             |      
+| |                     | `grain_diameter`| 0.001          |
+| |                     | `I_ref`        | 0.279           |      
+| |                     | `mu_1`         | 0.382           |      
+| |                     | `mu_2`         | 0.644           |      
+| Critical state $\mu(I)$-rheology | **MCCMui**  | `beta` | 0.0  |
+| |                     | `p0`           | 1000.0          |
+| |                     | `xi`           | 0.0             |
+| |                     | `rho_s`        | 1000.0          |      
+| |                     | `grain_diameter`| 0.001          |
+| |                     | `I_ref`        | 0.279           |      
+| |                     | `mu_1`         | 0.382           |      
+| |                     | `mu_2`         | 0.644           |
 
 In the MCC-based models, one must also choose a corresponding hardening law, either 1) an exponential explicit law `ExpExpl`, 2) a hyperbolic sine explicit law `SinhExpl` or 3) an exponential implicit law `ExpImpl`.
 
 
 ### Troubleshooting
 
-* If OpenMP was installed through Homebrew, you might need to use the following CMake options when building on Mac, depending on your version:   
+* On Mac, if OpenMP was installed through Homebrew, you might need to use the following CMake options when building, depending on your version:   
 `cmake -DCMAKE_BUILD_TYPE=Release -DOpenMP_CXX_FLAG="-Xclang -fopenmp" -DOpenMP_CXX_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_C_FLAG="-Xclang -fopenmp" -DOpenMP_C_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/opt/homebrew/opt/libomp/lib/libomp.dylib ..`
 
 * Eigen error? Remember to specify vectors with 3 elements for 3D problems and 2 elements for 2D problems. The dimension of the problem is chosen as a global variable in `tools.hpp`.
