@@ -66,3 +66,6 @@ else (USE_VDB)
 	target_link_libraries (mpm OpenMP::OpenMP_CXX Eigen3::Eigen)
 
 endif (USE_VDB)
+
+# Add include directory as a preprocessor definition
+target_compile_definitions(mpm PRIVATE INCLUDE_DIR="${CMAKE_SOURCE_DIR}/levelsets")

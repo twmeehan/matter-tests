@@ -5,13 +5,40 @@
 #include "../src/simulation.hpp"
 #include "../src/tools.hpp"
 
+#include "../src/objects/object_curve.hpp"
 #include "../src/objects/object_vdb.hpp"
 
-TEST(BoundaryTest, LoadFile) {
+TEST(FileIOTest, LoadFile) {
     std::string file_path = std::string(INCLUDE_DIR) + "/curve.vdb";
     std::ifstream file(file_path);
-    ASSERT_TRUE(file.is_open()) << "Failed to open file at: " << file_path;
+    ASSERT_TRUE(file.is_open());
 }
+
+
+TEST(BoundaryTest, CalcNormal) {
+
+    openvdb::initialize(); 
+
+    ObjectVdb obj1 = ObjectVdb(std::string(INCLUDE_DIR) + "/curve.vdb"); 
+    ObjectCurve obj2 = ObjectCurve();
+
+    T xpos = -0.5;
+    #ifdef THREEDIM
+        TV pos = TV(xpos, xpos*xpos, 0.0);
+    #else
+        TV pos = TV(xpos, xpos*xpos);
+    #endif
+    
+    T diff1 = std::abs(obj1.normal(pos)[0]-obj2.normal(pos)[0]);
+    T diff2 = std::abs(obj1.normal(pos)[1]-obj2.normal(pos)[1]);
+    T diff = diff1 + diff2;
+
+    EXPECT_TRUE(obj1.inside(pos) == obj2.inside(pos));
+
+    ASSERT_NEAR(diff, 0.0, 1e-4);
+
+}
+
 
 TEST(BoundaryTest, VDB) {
 

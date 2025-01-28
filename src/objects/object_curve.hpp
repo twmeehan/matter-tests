@@ -11,7 +11,7 @@ public:
 
     ~ObjectCurve(){}
 
-    ObjectCurve(BoundaryCondition bc_in, T friction_in, std::string name_in) : ObjectGeneral(bc_in, friction_in, name_in) {}
+    ObjectCurve(BoundaryCondition bc_in = STICKY, T friction_in = 0.0, std::string name_in = "") : ObjectGeneral(bc_in, friction_in, name_in) {}
 
     bool inside(const TV& X_in) override {
 
