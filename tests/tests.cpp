@@ -108,7 +108,7 @@ TEST(BoundaryTest, MIBF) {
 
     sim_one.use_pradhana = false; 
     sim_one.use_von_mises_q = false;
-    sim_one.use_material_friction = true;
+    sim_one.use_mibf = true;
 
     sim_one.dp_slope = friction;
     sim_one.dp_cohesion = 0;
@@ -166,7 +166,7 @@ TEST(BoundaryTest, MIBF) {
 
     sim_two.use_pradhana = false; 
     sim_two.use_von_mises_q = false;
-    sim_two.use_material_friction = true;
+    sim_two.use_mibf = true;
 
     sim_two.dp_slope = friction;
     sim_two.dp_cohesion = 0;

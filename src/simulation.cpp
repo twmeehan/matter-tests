@@ -128,7 +128,7 @@ void Simulation::simulate(){
 
     fac_Q = I_ref / (grain_diameter*std::sqrt(rho_s));
 
-    if (use_material_friction){
+    if (use_mibf){
         if (plastic_model == DPMui || plastic_model == MCCMui){
             std::fill(particles.muI.begin(), particles.muI.end(), mu_1);
         } 

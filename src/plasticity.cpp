@@ -241,7 +241,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             // if positive volume gain, the q=0 intersection for the yield surface is shifted to the right, at a larger p.
             T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion;
 
-            if (use_material_friction)
+            if (use_mibf)
                 particles.muI[p] = dp_slope;
 
             // if left of shifted tip,
@@ -314,7 +314,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 } // end if perzyna_exp == 1
 
-                if (use_material_friction){
+                if (use_mibf){
                     if (std::abs(p_trial + p_shift) < 1e-10)
                         particles.muI[p] = 1e15;
                     else

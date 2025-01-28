@@ -25,7 +25,7 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                 if (dot < 0){ // if moving towards object
 
                     T friction = obj->friction;
-                    if (use_material_friction)
+                    if (use_mibf)
                         friction = grid.friction[index];
 
                     TV v_tang = v_rel - dot * n;
@@ -70,7 +70,7 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
             else if (obj.bc == SLIP) {
 
                 T friction = obj.friction;
-                    if (use_material_friction)
+                    if (use_mibf)
                         friction = grid.friction[index];
 
                 if (obj.plate_type == top || obj.plate_type == bottom){
@@ -146,7 +146,7 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
             else if (obj.bc == SEPARATE) {
 
                 T friction = obj.friction;
-                    if (use_material_friction)
+                    if (use_mibf)
                         friction = grid.friction[index];
 
                 if ((obj.plate_type == top && vy_rel > 0) || (obj.plate_type == bottom && vy_rel < 0)){
@@ -247,7 +247,7 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
             else if (obj.bc == SLIP) {
 
                 T friction = obj.friction;
-                    if (use_material_friction)
+                    if (use_mibf)
                         friction = grid.friction[index];
 
                 if (obj.plate_type == top || obj.plate_type == bottom){
@@ -297,7 +297,7 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
             else if (obj.bc == SEPARATE) {
 
                 T friction = obj.friction;
-                    if (use_material_friction)
+                    if (use_mibf)
                         friction = grid.friction[index];
 
                 if ((obj.plate_type == top && vy_rel > 0) || (obj.plate_type == bottom && vy_rel < 0)){

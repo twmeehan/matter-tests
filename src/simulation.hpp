@@ -40,7 +40,7 @@ public:
   bool pbc_special = false;
   bool gravity_special = false;
   bool save_grid = false;
-  bool use_material_friction = false;
+  bool use_mibf = false;
   bool musl = false;
 
   T cfl = 0.5;
