@@ -24,9 +24,9 @@ TEST(BoundaryTest, CalcNormal) {
 
     T xpos = -0.5;
     #ifdef THREEDIM
-        TV pos = TV(xpos, xpos*xpos, 0.0);
+        TV pos(xpos, xpos*xpos, 0.0);
     #else
-        TV pos = TV(xpos, xpos*xpos);
+        TV pos(xpos, xpos*xpos);
     #endif
     
     T diff1 = std::abs(obj1.normal(pos)[0]-obj2.normal(pos)[0]);

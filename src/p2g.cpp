@@ -85,6 +85,7 @@ void Simulation::P2G(){
     // At this point in time grid.mass is equal to m_i / m_p //
     ///////////////////////////////////////////////////////////
 
+    #pragma omp parallel for num_threads(n_threads)
     for (int l = 0; l<grid_nodes; l++){
         T mi = grid.mass[l];
         if (mi > 0)
@@ -92,6 +93,8 @@ void Simulation::P2G(){
         else
             grid.v[l].setZero();
         //grid.v[l] = (mi > 0) ? grid.v[l]/mi : TV::Zero(); // condition ? result_if_true : result_if_false
+        if (use_material_friction)
+            grid.friction[l] /= mi;
     }
 
     for(auto&& m: grid.mass){

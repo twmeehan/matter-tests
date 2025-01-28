@@ -51,6 +51,141 @@ TEST(BoundaryTest, Analytic) {
 }
 
 
+TEST(BoundaryTest, MIBF) {
+
+    T friction = std::tan(30.0 * M_PI / 180.0);
+    T theta = 32 * M_PI / 180;
+
+    #ifdef THREEDIM
+        TV tmp_part(0.0, 0.0, 0.0);
+        ObjectPlate ground = ObjectPlate(0,  1e20, -1e20, bottom, SEPARATE, friction, "",   0, 0, 0,  1,0);  
+    #else
+        TV tmp_part(0.0, 0.0);
+        ObjectPlate ground = ObjectPlate(0,  1e20, -1e20, bottom, SEPARATE, friction, "",   0, 0,     1,0);  
+    #endif
+    
+
+    Simulation sim_one;
+    sim_one.initialize(false);
+
+    sim_one.save_grid = true;
+    sim_one.end_frame = 1;
+    sim_one.fps = 2;
+    sim_one.n_threads = 8;   
+    sim_one.cfl = 0.5;     
+    sim_one.flip_ratio = -0.95; 
+
+    sim_one.gravity = TV::Zero();
+    sim_one.gravity[0] = +9.81 * std::sin(theta);
+    sim_one.gravity[1] = -9.81 * std::cos(theta);
+
+    sim_one.elastic_model = Hencky;
+    sim_one.E = 1e5;     
+    sim_one.nu = 0.3;   
+    sim_one.rho = 1000; 
+
+    sim_one.Lx = 0.1;
+    sim_one.Ly = 0.05;
+    #ifdef THREEDIM
+        sim_one.Lz = 0.05;
+    #endif
+    SampleParticles(sim_one, 0.001);
+    for(int p = 0; p < sim_one.Np; p++){
+        sim_one.particles.x[p](0) -= 0.5*sim_one.Lx;
+        sim_one.particles.x[p](1) += 0.5*sim_one.dx;
+    }
+    auto new_part_x = sim_one.particles.x;
+    new_part_x.push_back(tmp_part);
+    sim_one.Np += 1;
+    sim_one.particles = Particles(sim_one.Np);
+    sim_one.particles.x = new_part_x;
+    sim_one.delete_last_particle = 1;
+
+
+    sim_one.plates.push_back(ground);
+
+    sim_one.plastic_model = DPVisc; 
+
+    sim_one.use_pradhana = false; 
+    sim_one.use_von_mises_q = false;
+    sim_one.use_material_friction = true;
+
+    sim_one.dp_slope = friction;
+    sim_one.dp_cohesion = 0;
+    sim_one.perzyna_exp = 1;
+    sim_one.perzyna_visc = 0;
+
+    sim_one.simulate();
+
+    auto max_x_it_1 = std::max_element( sim_one.particles.x.begin(), sim_one.particles.x.end(), [](const TV &x1, const TV &x2){return x1(0) < x2(0);} );
+    T max_x_1 = (*max_x_it_1)(0);
+
+
+
+
+    Simulation sim_two;
+    sim_two.initialize(false);
+
+    sim_two.save_grid = true;
+    sim_two.end_frame = 1;
+    sim_two.fps = 2;
+    sim_two.n_threads = 8;   
+    sim_two.cfl = 0.5;     
+    sim_two.flip_ratio = -0.95; 
+
+    sim_two.gravity = TV::Zero();
+    sim_two.gravity[0] = +9.81 * std::sin(theta);
+    sim_two.gravity[1] = -9.81 * std::cos(theta);
+
+    sim_two.elastic_model = Hencky;
+    sim_two.E = 1e5;     
+    sim_two.nu = 0.3;   
+    sim_two.rho = 1000; 
+
+    sim_two.Lx = 0.1;
+    sim_two.Ly = 0.05;
+    #ifdef THREEDIM
+        sim_two.Lz = 0.05;
+    #endif
+    SampleParticles(sim_two, 0.001);
+    for(int p = 0; p < sim_two.Np; p++){
+        sim_two.particles.x[p](0) -= 0.5*sim_two.Lx;
+        sim_two.particles.x[p](1) += 0.5*sim_two.dx;
+    }
+    new_part_x = sim_two.particles.x;
+    new_part_x.push_back(tmp_part);
+    sim_two.Np += 1;
+    sim_two.particles = Particles(sim_two.Np);
+    sim_two.particles.x = new_part_x;
+    sim_two.delete_last_particle = 1;
+
+
+    sim_two.plates.push_back(ground);
+
+    sim_two.plastic_model = DPVisc; 
+
+    sim_two.use_pradhana = false; 
+    sim_two.use_von_mises_q = false;
+    sim_two.use_material_friction = true;
+
+    sim_two.dp_slope = friction;
+    sim_two.dp_cohesion = 0;
+    sim_two.perzyna_exp = 1;
+    sim_two.perzyna_visc = 0;
+
+    sim_two.simulate();
+
+    auto max_x_it_2 = std::max_element( sim_two.particles.x.begin(), sim_two.particles.x.end(), [](const TV &x1, const TV &x2){return x1(0) < x2(0);} );
+    T max_x_2 = (*max_x_it_2)(0);
+
+    T diff = std::abs(max_x_1 - max_x_2);
+    debug(diff);
+    ASSERT_NEAR(diff, 0.0, 1e-13);
+
+}
+
+
+
 TEST(ElasticityTest, BulkModulus) {
 
     Simulation sim;

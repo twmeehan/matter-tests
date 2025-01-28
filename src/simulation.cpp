@@ -117,7 +117,8 @@ void Simulation::simulate(){
     if (use_von_mises_q){
         q_prefac = std::sqrt(3.0)/std::sqrt(2.0);
         d_prefac = std::sqrt(2.0)/std::sqrt(3.0);
-    } else {
+    } 
+    else {
         q_prefac = 1.0 / std::sqrt(2.0);
         d_prefac = std::sqrt(2.0);
     }
@@ -127,8 +128,14 @@ void Simulation::simulate(){
 
     fac_Q = I_ref / (grain_diameter*std::sqrt(rho_s));
 
-    if (use_material_friction)
-        std::fill(particles.muI.begin(), particles.muI.end(), mu_1);
+    if (use_material_friction){
+        if (plastic_model == DPMui || plastic_model == MCCMui){
+            std::fill(particles.muI.begin(), particles.muI.end(), mu_1);
+        } 
+        else {// e.g., DPVisc
+            std::fill(particles.muI.begin(), particles.muI.end(), dp_slope);
+        }
+    }
 
     debug("Number of particles: ", Np);
     debug("Grid spacing dx:     ", dx);
@@ -298,7 +305,7 @@ void Simulation::checkMomentumConservation(){
     debug("               Total part momentum = ", momentum_grid.norm());
     debug("               Total grid momentum = ", momentum_particle.norm());
 
-    if ( (momentum_grid-momentum_particle).norm() > 1e-5 * momentum_particle.norm() ){
+    if ( (momentum_grid-momentum_particle).norm() > 1e-10 * momentum_particle.norm() ){
         debug("MOMENTUM NOT CONSERVED!!!");
         exit = 1;
         return;
@@ -314,7 +321,7 @@ void Simulation::checkMassConservation(){
     debug("               Total grid mass = ", grid_mass_total    );
     debug("               Total part mass = ", particle_mass_total);
 
-    if ( std::abs(grid_mass_total-particle_mass_total) > 1e-5 * particle_mass_total ){
+    if ( std::abs(grid_mass_total-particle_mass_total) > 1e-10 * particle_mass_total ){
         debug("MASS NOT CONSERVED!!!");
         exit = 1;
         return;
