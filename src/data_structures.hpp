@@ -57,7 +57,6 @@ public:
     std::vector<TV> v;
     std::vector<TV> flip;
     std::vector<T> mass;
-    std::vector<T> delta_gamma;
     std::vector<T> friction;
     T xc;
     T yc;

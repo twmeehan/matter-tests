@@ -2,24 +2,37 @@
 
 #include "simulation.hpp"
 
+void Simulation::resizeGrid(){
+    grid.v.resize(grid_nodes);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
+    grid.flip.resize(grid_nodes); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
+    grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0        );
+    if (use_mibf)
+        grid.friction.resize(grid_nodes); std::fill( grid.friction.begin(), grid.friction.end(), 0.0    );
+}
+
 void Simulation::remeshFixed(unsigned int extra_nodes){
     // A fixed grid - must hard-coded for every simulation
 
     grid.x = arange(-dx*(1+extra_nodes), Lx+(2+extra_nodes)*dx, dx);
     grid.y = arange(-dx,                 Ly+(2+extra_nodes)*dx, dx);
+    #ifdef THREEDIM
+        grid.z = arange(-dx*(1+extra_nodes), Lz+(2+extra_nodes)*dx, dx);
+    #endif
 
     grid.xc = grid.x[0];
     grid.yc = grid.y[0];
+    #ifdef THREEDIM
+        grid.zc = grid.z[0];
+    #endif
 
     Nx = grid.x.size();
     Ny = grid.y.size();
-    grid_nodes = Nx*Ny;
-
-    grid.v.resize(grid_nodes);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
-    grid.flip.resize(grid_nodes); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
-    grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
-
-
+    #ifdef THREEDIM
+        Nz = grid.z.size();
+        grid_nodes = Nx*Ny*Nz;
+    #else
+        grid_nodes = Nx*Ny;
+    #endif
 }
 
 void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned int sfz){
@@ -116,10 +129,6 @@ void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned in
 #else
     grid_nodes = Nx*Ny;
 #endif
-
-    grid.v.resize(grid_nodes);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
-    grid.flip.resize(grid_nodes); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
-    grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
 
     #ifdef WARNINGS
         #ifdef THREEDIM
@@ -275,10 +284,6 @@ void Simulation::remeshFixedCont(){
 #ifdef THREEDIM
     grid.zc = grid.z[0];
 #endif
-
-    grid.v.resize(grid_nodes);    std::fill( grid.v.begin(),    grid.v.end(),    TV::Zero() );
-    grid.flip.resize(grid_nodes); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
-    grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
 
     #ifdef WARNINGS
         #ifdef THREEDIM

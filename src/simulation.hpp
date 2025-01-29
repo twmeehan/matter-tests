@@ -121,6 +121,8 @@ public:
 
   void advanceStep();
   void updateDt();
+
+  void resizeGrid();
   void remeshFixed(unsigned int extra_nodes);
   void remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned int sfz);
   void remeshFixedCont();

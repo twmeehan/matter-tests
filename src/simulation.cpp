@@ -230,6 +230,8 @@ void Simulation::advanceStep(){
         PBCAddParticles(4);
     }
 
+    resizeGrid();
+
     timer t_p2g; t_p2g.start();
     P2G();
     t_p2g.stop(); runtime_p2g += t_p2g.get_timing();

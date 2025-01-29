@@ -25,7 +25,7 @@ void Simulation::MUSL(){
     } // end loop over particles
 
 
-    grid.v.resize(grid_nodes); std::fill( grid.v.begin(), grid.v.end(), TV::Zero() );
+    std::fill( grid.v.begin(), grid.v.end(), TV::Zero() );
 
     #pragma omp parallel num_threads(n_threads)
     {

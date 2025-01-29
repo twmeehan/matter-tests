@@ -9,10 +9,6 @@ void Simulation::P2G(){
         debug("P2G");
     #endif
 
-    grid.v.resize(grid_nodes); std::fill( grid.v.begin(), grid.v.end(), TV::Zero() );
-    grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0 );
-    grid.friction.resize(grid_nodes); std::fill( grid.friction.begin(), grid.friction.end(), 0.0 );
-
     #pragma omp parallel num_threads(n_threads)
     {
         std::vector<TV> grid_v_local(grid_nodes, TV::Zero() );
