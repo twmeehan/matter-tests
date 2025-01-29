@@ -6,7 +6,7 @@ _Matter_ is an open-source C++ implementation of the Material Point Method (MPM)
 
 Developed across different sides of the Swiss Alps, this software is designed to be lightweight, easy to install and use, with few dependencies, without significantly compromising speed and performance. Parallelized on shared memory with OpenMP, millions of material points/particles can be simulated on (powerful) desktop workstations.
 
-![logo](media/logo.png)
+![logo](https://larsblatny.github.io/images/matter.png)
 
 ## Gallery
 With _Matter_, you can simulate granular flow on various simple and complex terrains, as demonstrated below.
@@ -14,8 +14,11 @@ With _Matter_, you can simulate granular flow on various simple and complex terr
 <p align="middle">
   <img src="https://larsblatny.github.io/images/collapse_cropped_medium.gif" width="320" />
   <img src="https://larsblatny.github.io/images/double_bump_cropped_medium.gif" width="320" /> 
-  <img src="https://larsblatny.github.io/images/mountain_cropped_medium.gif" width="320" />
 </p>
+<p align="middle">
+  <img src="https://larsblatny.github.io/images/mountain_cropped_large.gif" width="640" />
+</p>
+
 
 ## License and attribution
 Matter is an open-source software licensed under _GNU General Public License v3.0_ (see LICENSE file).
