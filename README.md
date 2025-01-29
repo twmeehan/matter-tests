@@ -8,6 +8,15 @@ Developed across different sides of the Swiss Alps, this software is designed to
 
 ![logo](media/logo.png)
 
+## Gallery
+With _Matter_, you can simulate granular flow on various simple and complex terrains, as demonstrated below.
+
+<p align="middle">
+  <img src="https://larsblatny.github.io/images/collapse_cropped_medium.gif" width="320" />
+  <img src="https://larsblatny.github.io/images/double_bump_cropped_medium.gif" width="320" /> 
+  <img src="https://larsblatny.github.io/images/mountain_cropped_medium.gif" width="320" />
+</p>
+
 ## License and attribution
 Matter is an open-source software licensed under _GNU General Public License v3.0_ (see LICENSE file).
 If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch).
