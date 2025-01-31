@@ -14,6 +14,7 @@ Simulation::Simulation(){
     runtime_g2p = 0;
     runtime_euler = 0;
     runtime_defgrad = 0;
+    runtime_total = 0;
 
     // create grid
     grid = Grid();
@@ -27,7 +28,7 @@ void Simulation::initialize(bool save, std::string dir, std::string name){
     std::cout << "    888b         d888                  aa          aa                              " << std::endl;
     std::cout << "    88`8b       d8'88                  88          88                              " << std::endl;
     std::cout << "    88 `8b     d8' 88  ,adPPYYba,  aaaa88aaaa  aaaa88aaaa   ,adPPYba,  8b,dPPYba,  " << std::endl;
-    std::cout << "    88  `8b   d8'  88  aa     `Y8  aaaa88aaaa  8888888888  a8P_____88  88P     Y8  " << std::endl;
+    std::cout << "    88  `8b   d8'  88  aa     `Y8  aaaa88aaaa  8888888888  a8P     88  88P     Y8  " << std::endl;
     std::cout << "    88   `8b d8'   88  ,adPPPPP88      88          88      adPPPPP88   88          " << std::endl;
     std::cout << "    88    `888'    88  88,    ,88      aa          aa      a8b         88          " << std::endl;
     std::cout << "    88     `8'     88   `adPPYba,                           `adPPYba   88          " << std::endl;
@@ -57,10 +58,10 @@ void Simulation::createDirectory(){
         std::cout << "Simulation " << sim_name << " was created now" << std::endl;
 
     std::string in  = "../src/mpm.cpp";
-    std::string out = (directory + sim_name + "/initial_data.cpp");
+    std::string out = (directory + sim_name + "/initial_setup.cpp");
     bool check = copy_file(in, out);
     if (!check){
-        std::cerr << "Initial data " << in << " was NOT successfully copied to " << out << std::endl;
+        std::cerr << "Initial setup " << in << " was NOT successfully copied to " << out << std::endl;
     }
 
 }
@@ -197,11 +198,15 @@ void Simulation::simulate(){
     }
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Simulation took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " milliseconds" << std::endl;
+    runtime_total = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+    std::cout << "Simulation took " << runtime_total << " milliseconds" << std::endl;
     debug("Runtime P2G     = ", runtime_p2g     * 1000.0, " milliseconds");
     debug("Runtime G2P     = ", runtime_g2p     * 1000.0, " milliseconds");
     debug("Runtime Euler   = ", runtime_euler   * 1000.0, " milliseconds");
     debug("Runtime DefGrad = ", runtime_defgrad * 1000.0, " milliseconds");
+
+    if (save_sim)
+        saveTiming();
 }
 
 

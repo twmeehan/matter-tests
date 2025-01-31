@@ -112,6 +112,7 @@ public:
   void initialize(bool save = true, std::string dir = "output/", std::string name = "dummy");
   void simulate();
   void saveInfo();
+  void saveTiming();
   void saveAvgData();
   void computeAvgData(TM& volavg_cauchy, TM& volavg_kirchh, T& Javg);
   void saveParticleData(std::string extra = "");
@@ -175,6 +176,7 @@ private:
   T runtime_g2p = 0;
   T runtime_euler = 0;
   T runtime_defgrad = 0;
+  T runtime_total = 0;
 
   std::string sim_name;
   std::string directory;
