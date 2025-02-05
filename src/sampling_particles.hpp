@@ -10,7 +10,7 @@
 #ifdef THREEDIM
 
     template <typename S>
-    void SampleParticles(S& sim, T kRadius, T ppc = 8, unsigned int front_type = 0, std::uint32_t attempts = 30, std::uint32_t seed = 42) {
+    void SampleParticles(S& sim, T kRadius, T ppc = 8, unsigned int crop_to_shape = 0, std::uint32_t attempts = 30, std::uint32_t seed = 42) {
         const T Lx = sim.Lx;
         const T Ly = sim.Ly;
         const T Lz = sim.Lz;
@@ -32,15 +32,29 @@
         debug("    dx set to ", sim.dx);
 
          /////// Cylinder
-        if (front_type == 1){
+        if (crop_to_shape == 1){
             for(int p = 0; p < square_samples.size(); p++){
                 if ( (square_samples[p][0]-Lx/2.0)*(square_samples[p][0]-Lx/2.0) + (square_samples[p][2]-Lz/2.0)*(square_samples[p][2]-Lz/2.0) < (Lx/2.0)*(Lx/2.0) ){
                     samples.push_back(square_samples[p]);
                 }
             }
         }
+        //////// Silo
+        else if (crop_to_shape == 2){
+            for(int p = 0; p < square_samples.size(); p++){
+                T x = square_samples[p][0]-Lx/2.0;
+                T y = square_samples[p][1];
+                T z = square_samples[p][2]-Lz/2.0;
+                T r_surface = std::tanh(y) + 1;
+                T r_surface_sq = r_surface * r_surface;
+                T r_point_sq = x*x + z*z;
+                if (r_point_sq < r_surface_sq){
+                    samples.push_back(square_samples[p]);
+                }
+            }
+        }
         else{
-            debug("    No front type specified, using just a square.");
+            debug("    No shape specified, using just a square.");
             samples = square_samples;
         }
 
@@ -65,7 +79,7 @@
 #else // TWODIM
 
     template <typename S>
-    void SampleParticles(S& sim, T kRadius, T ppc = 6, unsigned int front_type = 0, std::uint32_t attempts = 200, std::uint32_t seed = 42){
+    void SampleParticles(S& sim, T kRadius, T ppc = 6, unsigned int crop_to_shape = 0, std::uint32_t attempts = 200, std::uint32_t seed = 42){
         const T Lx = sim.Lx;
         const T Ly = sim.Ly;
         std::uint32_t kAttempts = 200;
@@ -85,87 +99,19 @@
 
         debug("    dx set to ", sim.dx);
 
-        /////// Triangle
-        if (front_type == 1){
-            for(int p = 0; p < square_samples.size(); p++){
-                if (square_samples[p][1] < Ly - Ly/Lx*square_samples[p][0]){
-                    samples.push_back(square_samples[p]);
-                }
-            }
-        }
-        /////// Rounded Edge
-        else if (front_type == 2){
-            for(int p = 0; p < square_samples.size(); p++){
-                if (square_samples[p][0] < Lx-Ly || square_samples[p][1] < std::sqrt(Ly*Ly - (square_samples[p][0]-Lx+Ly)*(square_samples[p][0]-Lx+Ly))){
-                    samples.push_back(square_samples[p]);
-                }
-            }
-        }
-
-        /////// Quadratic Edge
-        else if (front_type == 3){
-            T ym = Ly;
-            T xm = Lx - std::sqrt(ym);
-            for(int p = 0; p < square_samples.size(); p++){
-                if (square_samples[p][0] < xm || square_samples[p][1] < ym - std::pow(square_samples[p][0] - xm, 2) ){
-                    samples.push_back(square_samples[p]);
-                }
-            }
-        }
-
-        /////// Double Quadratic Edge
-        else if (front_type == 4){
-            T ym  = Ly;
-            T xmr = Lx - std::sqrt(ym);
-            T xml = std::sqrt(ym);
-            T xmm = Lx / 2.0;
-
-            for(int p = 0; p < square_samples.size(); p++){
-
-                if (square_samples[p][0] > xmm){
-                    if (square_samples[p][0] < xmr || square_samples[p][1] < ym - std::pow(square_samples[p][0] - xmr, 2) ){
-                        samples.push_back(square_samples[p]);
-                    }
-                } else{
-                    if (square_samples[p][0] > xml || square_samples[p][1] < ym - std::pow(xml - square_samples[p][0], 2) ){
-                        samples.push_back(square_samples[p]);
-                    }
-                }
-
-            }
-        }
         /////// Quadratic Gate
-        else if (front_type == 5){
+        if (crop_to_shape == 1){
+            T height = 0.05; // 0.016;
             for(int p = 0; p < square_samples.size(); p++){
                 T xp = square_samples[p][0];
-                T y_gate = 0.016 + 100*(xp-Lx)*(xp-Lx);
-                if (square_samples[p][1] < (y_gate-kRadius*ppc*2)){
-                    samples.push_back(square_samples[p]);
-                }
-            }
-        }
-        /////// Quadratic Gate Version 2
-        else if (front_type == 6){
-            for(int p = 0; p < square_samples.size(); p++){
-                T xp = square_samples[p][0];
-                T y_gate = 0.05 + 100*(xp-Lx)*(xp-Lx) - 0.5*sim.dx;
+                T y_gate = height + 100*(xp-Lx)*(xp-Lx) - 0.5*sim.dx;
                 if (square_samples[p][1] < y_gate){
                     samples.push_back(square_samples[p]);
                 }
             }
         }
-        /////// Steady mass in front of bump
-        else if (front_type == 7){
-            for(int p = 0; p < square_samples.size(); p++){
-                T xp = square_samples[p][0];
-                T y_ground = 0.0475 / std::cosh(25*(xp-0.13));
-                if (square_samples[p][1] > y_ground){
-                    samples.push_back(square_samples[p]);
-                }
-            }
-        }
         else{
-            debug("    No front type specified (1,2,3), using just a square.");
+            debug("    No shape specified, using just a square.");
             samples = square_samples;
         }
 
