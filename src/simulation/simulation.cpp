@@ -57,11 +57,14 @@ void Simulation::createDirectory(){
     else
         std::cout << "Simulation " << sim_name << " was created now" << std::endl;
 
-    std::string in  = "../src/mpm.cpp";
-    std::string out = (directory + sim_name + "/initial_setup.cpp");
-    bool check = copy_file(in, out);
-    if (!check){
-        std::cerr << "Initial setup " << in << " was NOT successfully copied to " << out << std::endl;
+    std::string file_in  = "../../src/mpm.cpp";
+    std::string file_out = directory + sim_name + "/initial_setup.cpp";
+
+    std::ifstream in(file_in, std::ios::binary);
+    std::ofstream out(file_out, std::ios::binary);
+    out << in.rdbuf();
+    if (!(in && out)){
+        std::cerr << "Initial setup " << file_in << " was NOT successfully copied to " << file_out << std::endl;
     }
 
 }
@@ -144,8 +147,6 @@ void Simulation::simulate(){
     debug("Maximum dt:          ", dt_max);
     debug("Particle volume:     ", particle_volume);
     debug("Particle mass:       ", particle_mass);
-
-    // particles.x0 = particles.x;  // Lagrangian coordinates, using assignment operator to copy
 
     // nonlocal_l_sq = nonlocal_l * nonlocal_l;
     // nonlocal_support = std::ceil(nonlocal_l / dx);

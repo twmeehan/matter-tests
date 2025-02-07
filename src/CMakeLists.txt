@@ -3,20 +3,19 @@ find_package(OpenMP REQUIRED)
 
 add_executable(mpm
 			   mpm.cpp
-			   tools.cpp
-			   simulation.cpp
-			   save_data.cpp
-			   remesh.cpp
-			   deformation_update.cpp
-			   plasticity.cpp
-			   p2g.cpp
-			   g2p.cpp
-			   explicit_euler_update.cpp
-			   boundary_collision.cpp
-			   update_dt.cpp
-			   position_update.cpp
-			   musl.cpp
-			   pbc.cpp
+			   simulation/simulation.cpp
+			   simulation/save_data.cpp
+			   simulation/remesh.cpp
+			   simulation/deformation_update.cpp
+			   simulation/plasticity.cpp
+			   simulation/p2g.cpp
+			   simulation/g2p.cpp
+			   simulation/explicit_euler_update.cpp
+			   simulation/boundary_collision.cpp
+			   simulation/update_dt.cpp
+			   simulation/position_update.cpp
+			   simulation/musl.cpp
+			   simulation/pbc.cpp
 			   )
 
 if (USE_VDB)

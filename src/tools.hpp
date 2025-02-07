@@ -274,10 +274,26 @@ inline T d2Ndu2(T u){
 
 #endif
 
-unsigned int countlines(std::string file_name);
-unsigned int load_array(std::vector<TV>& array, std::string file_name);
-std::vector<T> linspace(T a, T b, size_t N);
-std::vector<T> arange(T start, T stop, T step);
-bool copy_file(std::string source, std::string destination);
+// Taken from: https://gist.github.com/lorenzoriano/5414671
+// linspace(a,b,N) return std::vector of length N in the closed interval [a,b], i.e., including b
+inline std::vector<T> linspace(T a, T b, size_t N) {
+    T h = (b - a) / static_cast<T>(N-1);
+    std::vector<T> xs(N);
+    typename std::vector<T>::iterator x;
+    T val;
+    for (x = xs.begin(), val = a; x != xs.end(); ++x, val += h)
+        *x = val;
+    return xs;
+}
+
+// Taken from: https://stackoverflow.com/questions/21216909/these-python-functions-in-c
+// Works like numpy.arange, does NOT include stop value
+inline std::vector<T> arange(T start, T stop, T step) {
+    std::vector<T> values;
+    for (T value = start; value < stop; value += step)
+        values.push_back(value);
+    return values;
+}
+
 
 #endif  // TOOLS_HPP

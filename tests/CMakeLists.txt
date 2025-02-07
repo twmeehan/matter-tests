@@ -17,20 +17,19 @@ if (USE_VDB)
     add_executable(tests
       tests.cpp
       tests_vdb.cpp
-      ../src/tools.cpp
-      ../src/simulation.cpp
-      ../src/save_data.cpp
-      ../src/remesh.cpp
-      ../src/deformation_update.cpp
-      ../src/plasticity.cpp
-      ../src/p2g.cpp
-      ../src/g2p.cpp
-      ../src/explicit_euler_update.cpp
-      ../src/boundary_collision.cpp
-      ../src/update_dt.cpp
-      ../src/position_update.cpp
-      ../src/musl.cpp
-      ../src/pbc.cpp
+      ../src/simulation/simulation.cpp
+      ../src/simulation/save_data.cpp
+      ../src/simulation/remesh.cpp
+      ../src/simulation/deformation_update.cpp
+      ../src/simulation/plasticity.cpp
+      ../src/simulation/p2g.cpp
+      ../src/simulation/g2p.cpp
+      ../src/simulation/explicit_euler_update.cpp
+      ../src/simulation/boundary_collision.cpp
+      ../src/simulation/update_dt.cpp
+      ../src/simulation/position_update.cpp
+      ../src/simulation/musl.cpp
+      ../src/simulation/pbc.cpp
     )
 
 	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")

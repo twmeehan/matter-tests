@@ -3,9 +3,9 @@
 #ifndef SAMPLING_PARTICLES_VDB_HPP
 #define SAMPLING_PARTICLES_VDB_HPP
 
-#include "tools.hpp"
-#include "data_structures.hpp"
-#include "../deps/tph_poisson-0.3/thinks/poisson_disk_sampling/poisson_disk_sampling.h"
+#include "../tools.hpp"
+#include "../data_structures.hpp"
+#include "../../deps/tph_poisson-0.3/thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
 #include "objects/object_vdb.hpp"
 

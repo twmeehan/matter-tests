@@ -1,8 +1,8 @@
 // Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
 
-#include "simulation.hpp"
 #include "tools.hpp"
-#include "sampling_particles.hpp"
+#include "simulation/simulation.hpp"
+#include "sampling/sampling_particles.hpp"
 
 #include "objects/object_bump.hpp"
 #include "objects/object_chute.hpp"

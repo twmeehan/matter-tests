@@ -1,8 +1,8 @@
 // Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
 
 #include "simulation.hpp"
-#include "plasticity_helpers/mccrma.hpp"
-#include "plasticity_helpers/mcchardexprma.hpp"
+#include "../plasticity_helpers/mccrma.hpp"
+#include "../plasticity_helpers/mcchardexprma.hpp"
 
 void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & Fe_trial){
 

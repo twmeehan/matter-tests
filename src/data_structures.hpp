@@ -27,7 +27,6 @@ public:
   }
 
   std::vector<TV> x;
-  // std::vector<TV> x0;
   std::vector<TV> v;
   std::vector<TV> pic;
   std::vector<TV> flip;

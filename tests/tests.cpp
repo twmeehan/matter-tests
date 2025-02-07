@@ -2,9 +2,9 @@
 
 #include <gtest/gtest.h>
 
-#include "../src/simulation.hpp"
 #include "../src/tools.hpp"
-#include "../src/sampling_particles.hpp"
+#include "../src/simulation/simulation.hpp"
+#include "../src/sampling/sampling_particles.hpp"
 
 #include "../src/objects/object_curve.hpp"
 

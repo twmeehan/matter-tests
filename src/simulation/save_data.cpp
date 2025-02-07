@@ -1,8 +1,8 @@
 // Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
 
 #include "simulation.hpp"
-#include "../deps/tinyply.h"
-#include "tools.hpp"
+#include "../../deps/tinyply.h"
+#include "../tools.hpp"
 
 void Simulation::saveParticleData(std::string extra){
 
