@@ -12,9 +12,13 @@ Developed across different sides of the Swiss Alps, this software is designed to
 With _Matter_, you can simulate granular flow on various simple and complex terrains, as demonstrated below.
 
 <p align="middle">
-  <img src="https://larsblatny.github.io/images/collapse_cropped_medium.gif" width="250" />
-  <img src="https://larsblatny.github.io/images/double_bump_cropped_medium.gif" width="250" /> 
-  <img src="https://larsblatny.github.io/images/mountain_cropped_medium.gif" width="250" />
+  <img src="https://larsblatny.github.io/images/double_bump_cropped_medium.gif" height="250" /> 
+  <img src="https://larsblatny.github.io/images/mountain_cropped_medium.gif" height="250" />
+</p>
+
+<p align="middle">
+  <img src="https://larsblatny.github.io/images/collapse_fps50_cropped_medium.gif" height="262" />
+  <img src="https://larsblatny.github.io/images/silo_fps30_10X_cropped_medium.gif" height="262" /> 
 </p>
 
 ## License and attribution
@@ -42,10 +46,8 @@ If you use Matter in your research, please cite the scientific works where this 
 * Adaptive background **grid extension/reduction** to particle domain
 
 
-* **Finite strain elasticity**. The following (hyper)elastic models are currently available:
-    * Neo-Hookean model
-    * Hencky's elasticity model
-
+* **Finite strain** elastoplastic framework for constitutive models
+  
 
 * The following **(visco)plastic models** are currently available and compatible with Hencky's elasticity model:
     * Von Mises
@@ -62,13 +64,13 @@ If you use Matter in your research, please cite the scientific works where this 
 * Supports **analytical objects** and **complex terrains**
 
 
-* The supported **boundary conditions** are   
+* Supports no-slip as well as frictional **boundary conditions** which can be supplied a **Coulomb friction parameter**
     * No-slip (in code called `STICKY`)
     * Separate slip (in code called `SEPARATE`)
     * Sticky slip (in code called `SLIP`, currently only available for plate objects)   
 
 
-* The boundary conditions above can be supplied a **Coulomb friction parameter**, or what we call "material friction", where an internal friction parameter of a particular plastic model is used as the Coulomb friction for terrain-material interaction.
+* **Material-induced boundary friction (MIBF)**: A potentially variable internal friction parameter of a particular plastic model is used as the Coulomb friction for terrain-material interaction
 
 * **Parallelized** on shared memory with [OpenMP](https://www.openmp.org/)
 
@@ -113,7 +115,7 @@ Rigid objects and terrains (boundaries) are either
 Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in [Viroulet et al. (2017)](https://doi.org/10.1017/jfm.2017.41). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for speed and convenience. In `ObjectPlate`, you can also assign a speed (and controls on the time-evolution of the speed) of the plate. Any plate must either a `top`, `bottom`, `front`, `back`, `left` or `right`. Its usage can be seen in the default example in `mpm.cpp` where it is used to simple set the ground (y = 0).
 
 A terrain/object from a `.vdb` is stored in an instance of the `ObjectVdb` class which is also derived from `ObjectGeneral`.
-Examples of `.vdb`-files are found in the folder `levelsets`. This includes `vdb`-files which defines level sets for particle sampling.
+Examples of `.vdb`-files are found in the folder `levelsets`.
 
 Note that all `ObjectGeneral` instances must be added to the std::vector `objects` and `ObjectPlate` instances are added to the std::vector `plates`.
 
