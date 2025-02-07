@@ -5,7 +5,7 @@
 
 #include "tools.hpp"
 #include "data_structures.hpp"
-#include "../deps/poisson_disk_sampling.hpp"
+#include "../deps/tph_poisson-0.3/thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
 #include "objects/object_vdb.hpp"
 
