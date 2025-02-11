@@ -10,7 +10,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == VM || plastic_model == DP || plastic_model == DPSoft || plastic_model == MCC || plastic_model == VMVisc || plastic_model == DPVisc || plastic_model == MCCVisc || plastic_model == DPMui || plastic_model == MCCMui){
+    else if (plastic_model == VM || plastic_model == DP || plastic_model == DPSoft || plastic_model == MCC || plastic_model == VMVisc || plastic_model == DPVisc || plastic_model == MCCVisc || plastic_model == DPMui || plastic_model == MCCMui || plastic_model == MCCOneVarTV || plastic_model == MCCImplSinhTV || plastic_model == MCCImplExpTV){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log();
@@ -475,7 +475,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         } // end MCCMui
 
 
-        else if (plastic_model == MCC || plastic_model == MCCVisc){
+        else if (plastic_model == MCC || plastic_model == MCCVisc || plastic_model == MCCOneVarTV || plastic_model == MCCImplSinhTV || plastic_model == MCCImplExpTV){
 
             // the trial stress states
             T p_stress = -K * hencky_trace;
@@ -504,8 +504,17 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             else if (hardening_law == ExpImpl){ // Exponential Implicit Hardening
                 perform_rma = MCCHardExpRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
             }
+            else if (hardening_law == Other && plastic_model == MCCOneVarTV) {
+                perform_rma = MCCTVOneVarExplicitRMA(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
+            }
+            else if (hardening_law == Other && plastic_model == MCCImplSinhTV) {
+                perform_rma = MCCTVImplicitSinhRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p], rma_prefac);
+            }
+            else if (hardening_law == Other && plastic_model == MCCImplExpTV) {
+                perform_rma = MCCTVImplicitExpRMA(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, particles.eps_pl_vol[p], rma_prefac);
+            }
             else{
-                debug("You specified an unvalid HARDENING LAW!");
+                debug("You specified an invalid HARDENING LAW!");
                 exit = 1;
             }
 
