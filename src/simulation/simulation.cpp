@@ -155,6 +155,8 @@ void Simulation::simulate(){
     frame = 0;
     final_time = end_frame * frame_dt;
 
+    T time_tolerance = 1e-15;
+
     if (save_sim){
         saveInfo();
         saveParticleData();
@@ -175,7 +177,7 @@ void Simulation::simulate(){
             return;
         time += dt;
         current_time_step++;
-        if( time - frame_dt*(frame+1) >= 0 ){
+        if( frame_dt*(frame+1) - time < time_tolerance ){
             frame++;
             std::cout << "End of frame " << frame << std::endl;
             if (save_sim){
@@ -186,7 +188,7 @@ void Simulation::simulate(){
             }
 
         }
-        if (std::abs(final_time-time) < 1e-15 || final_time < time){
+        if (std::abs(final_time-time) < time_tolerance || final_time < time){
             std::cout << "The simulation ended at time = " << time << std::endl;
             if (save_sim){
                 saveParticleData();
