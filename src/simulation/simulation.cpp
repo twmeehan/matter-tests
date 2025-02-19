@@ -57,7 +57,7 @@ void Simulation::createDirectory(){
     else
         std::cout << "Simulation " << sim_name << " was created now" << std::endl;
 
-    std::string file_in  = "../../src/mpm.cpp";
+    std::string file_in  = std::string(SRC_DIR) + "/mpm.cpp";
     std::string file_out = directory + sim_name + "/initial_setup.cpp";
 
     std::ifstream in(file_in, std::ios::binary);
@@ -65,6 +65,7 @@ void Simulation::createDirectory(){
     out << in.rdbuf();
     if (!(in && out)){
         std::cerr << "Initial setup " << file_in << " was NOT successfully copied to " << file_out << std::endl;
+        exit = 1;
     }
 
 }
@@ -103,6 +104,9 @@ void Simulation::simulate(){
     #else
         #error Unsupported spline degree
     #endif
+
+    if (exit)
+        return;
 
     lambda = nu * E / ( (1.0 + nu) * (1.0 - 2.0*nu) ); // first Lame parameter
     mu = E / (2.0*(1.0+nu)); // shear modulus

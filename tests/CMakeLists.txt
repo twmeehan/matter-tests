@@ -43,34 +43,16 @@ if (USE_VDB)
 	find_package(Boost REQUIRED)
 	include_directories(${Boost_INCLUDE_DIRS} SYSTEM)
 
-	# if (APPLE)
-		message("-- MESSAGE: Will not include Half libraries")
+    message("-- MESSAGE: Will not include Half libraries")
 
-		target_link_libraries (tests GTest::gtest_main
-                            OpenMP::OpenMP_CXX
-                            Eigen3::Eigen
-                            ${OPENVDB_LIBRARIES}
-                            ${OpenEXR_LIBRARIES}
-                            ${TBB_LIBRARIES}
-                            ${Boost_LIBRARIES}
-                        )
-
-	# else (APPLE)
-	# 	message("-- MESSAGE: Will include Half libraries")
-    #
-	# 	find_package(Half QUIET)
-	# 	include_directories(${HALF_INCLUDE_DIRS} SYSTEM)
-    #
-	# 	target_link_libraries (tests GTest::gtest_main
-    #                         OpenMP::OpenMP_CXX
-    #                         Eigen3::Eigen
-    #                         ${OPENVDB_LIBRARIES}
-    #                         ${OpenEXR_LIBRARIES}
-    #                         ${TBB_LIBRARIES}
-    #                         ${Boost_LIBRARIES}
-    #                         ${HALF_LIBRARIES}
-    #                     )
-	# endif (APPLE)
+    target_link_libraries (tests GTest::gtest_main
+                        OpenMP::OpenMP_CXX
+                        Eigen3::Eigen
+                        ${OPENVDB_LIBRARIES}
+                        ${OpenEXR_LIBRARIES}
+                        ${TBB_LIBRARIES}
+                        ${Boost_LIBRARIES}
+                    )
 
 else (USE_VDB)
 
@@ -97,8 +79,11 @@ else (USE_VDB)
 
 endif (USE_VDB)
 
-# Add include directory as a preprocessor definition
 target_compile_definitions(tests PRIVATE INCLUDE_DIR="${CMAKE_SOURCE_DIR}/levelsets")
+target_compile_definitions(tests PRIVATE SRC_DIR="${CMAKE_SOURCE_DIR}/src")
+
+get_target_property(DEFS mpm COMPILE_DEFINITIONS)
+message(STATUS "Compile Definitions: ${DEFS}")
 
 include(GoogleTest)
 gtest_discover_tests(tests)
