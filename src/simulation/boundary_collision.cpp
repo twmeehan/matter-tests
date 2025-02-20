@@ -37,9 +37,32 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     } else{
                         v_rel = v_tang;
                     } // end non-zero friction
-                }
+                } // end moving towards object
 
             } // end SEPARATE
+
+            else if (obj->bc == SLIP) {
+                TV n = obj->normal(Xi);
+                T dot = v_rel.dot(n);
+
+                v_rel = v_rel - dot * n; //  v_rel is now v_tang
+
+                if (dot < 0){ // if moving towards object
+
+                    T friction = obj->friction;
+                    if (use_mibf)
+                        friction = grid.friction[index];
+
+                    if (friction > 0){
+                        if( -dot * friction < v_rel.norm() )
+                            v_rel = v_rel + v_rel.normalized() * dot * friction;
+                        else
+                            v_rel.setZero();
+                    } // end non-zero friction
+                } // end moving towards object
+
+            } // end SLIP
+
             else {
                 debug("INVALID BOUNDARY CONDITION!!!");
                 exit = 1;
@@ -315,7 +338,7 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                             vx_rel += friction * std::abs(vy_rel);
                     }
 
-                    // normal component (y) must be set to zero IF MOVING TOWARDS THE PLATE
+                    // normal component (y) must be set to zero
                     vy_rel = 0;
 
                 } // end top and bottom plate
@@ -334,7 +357,7 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                             vy_rel += friction * std::abs(vx_rel);
                     }
 
-                    // normal component (x) must be set to zero IF MOVING TOWARDS THE PLATE
+                    // normal component (x) must be set to zero
                     vx_rel = 0;
 
                 } // end left or right plate
