@@ -73,16 +73,15 @@ int main(){
     // sim.particles.v = ...
 
     ////// OBJECTS AND TERRAINS
-    T friction = 0.2; // used if SEPARATE or SLIP
-    std::string name;
-    name = "Ground";  ObjectPlate ground = ObjectPlate(0,  1e10, -1e10, bottom, NOSLIP, friction, name);  sim.plates.push_back(ground);
+    ObjectPlate ground = ObjectPlate(0, bottom, NOSLIP);  sim.plates.push_back(ground);
 
     /////// Here are some examples how to use the objects derived from ObjectGeneral:
-    // name = "Bump";    ObjectBump bump    = ObjectBump(SLIPFREE, friction, name);  sim.objects.push_back(&bump);
-    // name = "Gate";    ObjectGate gate    = ObjectGate(SLIPFREE, friction, name);  sim.objects.push_back(&gate);
+    // T friction = 0.2; 
+    // ObjectBump bump = ObjectBump(SLIPFREE, friction);  sim.objects.push_back(&bump);
+    // ObjectGate gate = ObjectGate(SLIPFREE, friction);  sim.objects.push_back(&gate);
 
     /////// Here is an example how to use ObjectVdb (uncomment include files and openvdb::initialize() function above):
-    // name = "Terrain"; ObjectVdb terrain  = ObjectVdb("../levelsets/vdb_file_name.vdb", NOSLIP, friction, name); sim.objects.push_back(&terrain);
+    // ObjectVdb terrain  = ObjectVdb("../levelsets/vdb_file_name.vdb", NOSLIP, friction); sim.objects.push_back(&terrain);
 
     ////// PLASTICITY
     sim.plastic_model = DPVisc; // Perzyna model with Drucker_Prager yield surface

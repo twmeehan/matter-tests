@@ -11,7 +11,7 @@ public:
 
     ~ObjectSilo(){}
 
-    ObjectSilo(BoundaryCondition bc_in, T friction_in, std::string name_in, T cut_in = -1) : ObjectGeneral(bc_in, friction_in, name_in), cut(cut_in)  {}
+    ObjectSilo(BoundaryCondition bc_in, T friction_in, std::string name_in = "", T cut_in = -1) : ObjectGeneral(bc_in, friction_in, name_in), cut(cut_in)  {}
 
     bool inside(const TV& X_in) override {
 

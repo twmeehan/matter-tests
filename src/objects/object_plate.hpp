@@ -10,14 +10,13 @@ public:
 
 #ifdef THREEDIM
 
-    ObjectPlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object = 0.0, T vy_object = 0.0, T vz_object = 0.0, T vmin_factor = 1.0, T load_factor = 0.0) :
+    ObjectPlate(T pos_object, PlateType plate_type, BoundaryCondition bc = NOSLIP, T friction = 0, T pos_lower = -1e15, T pos_upper = 1e15, T vx_object = 0.0, T vy_object = 0.0, T vz_object = 0.0, T vmin_factor = 1.0, T load_factor = 0.0, std::string name = "") :
               pos_object(pos_object),
-              pos_upper(pos_upper),
-              pos_lower(pos_lower),
               plate_type(plate_type),
               bc(bc),
               friction(friction),
-              name(name),
+              pos_lower(pos_lower),
+              pos_upper(pos_upper),
               vx_object(vx_object),
               vy_object(vy_object),
               vz_object(vz_object),
@@ -25,7 +24,8 @@ public:
               vy_object_original(vy_object),
               vz_object_original(vz_object),
               vmin_factor(vmin_factor),
-              load_factor(load_factor) {}
+              load_factor(load_factor),
+              name(name) {}
 
       bool inside(const TV& X_in){
           if (plate_type == left){
@@ -80,20 +80,20 @@ public:
 
 #else // TWODIM
 
-    ObjectPlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object = 0.0, T vy_object = 0.0, T vmin_factor = 1.0, T load_factor = 0.0) :
+    ObjectPlate(T pos_object, PlateType plate_type, BoundaryCondition bc = NOSLIP, T friction = 0, T pos_lower = -1e15, T pos_upper = 1e15, T vx_object = 0.0, T vy_object = 0.0, T vmin_factor = 1.0, T load_factor = 0.0, std::string name = "") :
               pos_object(pos_object),
-              pos_upper(pos_upper),
-              pos_lower(pos_lower),
               plate_type(plate_type),
               bc(bc),
               friction(friction),
-              name(name),
+              pos_lower(pos_lower),
+              pos_upper(pos_upper),
               vx_object(vx_object),
               vy_object(vy_object),
               vx_object_original(vx_object),
               vy_object_original(vy_object),
               vmin_factor(vmin_factor),
-              load_factor(load_factor) {}
+              load_factor(load_factor),
+              name(name) {}
 
     bool inside(const TV& X_in){
         if (plate_type == left){
@@ -171,13 +171,13 @@ public:
   } // end move(dt, frame_dt, time)
 
   T pos_object;
-  T pos_upper;
-  T pos_lower;
 
+  PlateType plate_type;
   BoundaryCondition bc;
   T friction;
-  PlateType plate_type;
-  std::string name;
+
+  T pos_upper;
+  T pos_lower;
 
   T vx_object;
   T vy_object;
@@ -193,6 +193,8 @@ public:
 
   T vmin_factor;
   T load_factor;
+
+  std::string name;
 
 };
 

@@ -16,7 +16,7 @@ public:
 
     ~ObjectChute(){}
 
-    ObjectChute(BoundaryCondition bc_in, T friction_in, std::string name_in, T l1_in = 20, T l2_in = 4.2, T l3_in = 6.05, T a1_in = 13, T a2_in = 20, T a3_in = 37) : ObjectGeneral(bc_in, friction_in, name_in), l1(l1_in), l2(l2_in), l3(l3_in), a1(a1_in*M_PI/180.0), a2(a2_in*M_PI/180.0), a3(a3_in*M_PI/180.0)  {}
+    ObjectChute(BoundaryCondition bc_in, T friction_in, std::string name_in = "", T l1_in = 20, T l2_in = 4.2, T l3_in = 6.05, T a1_in = 13, T a2_in = 20, T a3_in = 37) : ObjectGeneral(bc_in, friction_in, name_in), l1(l1_in), l2(l2_in), l3(l3_in), a1(a1_in*M_PI/180.0), a2(a2_in*M_PI/180.0), a3(a3_in*M_PI/180.0)  {}
 
     bool inside(const TV& X_in) override {
 

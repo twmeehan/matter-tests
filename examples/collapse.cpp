@@ -1,8 +1,8 @@
 // Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
 
-#include "simulation.hpp"
 #include "tools.hpp"
-#include "sampling_particles.hpp"
+#include "simulation/simulation.hpp"
+#include "sampling/sampling_particles.hpp"
 
 #include "objects/object_bump.hpp"
 #include "objects/object_chute.hpp"
@@ -21,14 +21,13 @@ int main(){
     Simulation sim;
 
     sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ "collapse");
-    sim.save_grid = true;   // save grid data
 
+    sim.save_grid = true;
     sim.end_frame = 20;     // last frame to simulate
     sim.fps = 10;           // frames per second
     sim.n_threads = 8;      // number of threads in parallel
     sim.cfl = 0.5;          // CFL constant, typically around 0.5
     sim.flip_ratio = -0.95; // (A)PIC-(A)FLIP ratio in [-1,1].
-    sim.reduce_verbose = true; // reduce the screen output
 
     // INITILIZE ELASTICITY
     sim.elastic_model = Hencky;
@@ -74,16 +73,15 @@ int main(){
     // sim.particles.v = ...
 
     ////// OBJECTS AND TERRAINS
-    T friction = 0.2; // used if SEPARATE or SLIP
-    std::string name;
-    name = "Ground";  ObjectPlate ground = ObjectPlate(0,  1e10, -1e10, bottom, STICKY, friction, name);  sim.plates.push_back(ground);
+    ObjectPlate ground = ObjectPlate(0, bottom, NOSLIP);  sim.plates.push_back(ground);
 
     /////// Here are some examples how to use the objects derived from ObjectGeneral:
-    // name = "Bump";    ObjectBump bump    = ObjectBump(SEPARATE, friction, name);  sim.objects.push_back(&bump);
-    // name = "Gate";    ObjectGate gate    = ObjectGate(SEPARATE, friction, name);  sim.objects.push_back(&gate);
+    // T friction = 0.2; 
+    // ObjectBump bump = ObjectBump(SLIPFREE, friction);  sim.objects.push_back(&bump);
+    // ObjectGate gate = ObjectGate(SLIPFREE, friction);  sim.objects.push_back(&gate);
 
-    /////// Here is an example how to use ObjectVdb:
-    // name = "Terrain"; ObjectVdb terrain  = ObjectVdb("../levelsets/vdb_file_name.vdb", STICKY, friction, name); sim.objects.push_back(&terrain);
+    /////// Here is an example how to use ObjectVdb (uncomment include files and openvdb::initialize() function above):
+    // ObjectVdb terrain  = ObjectVdb("../levelsets/vdb_file_name.vdb", NOSLIP, friction); sim.objects.push_back(&terrain);
 
     ////// PLASTICITY
     sim.plastic_model = DPVisc; // Perzyna model with Drucker_Prager yield surface
