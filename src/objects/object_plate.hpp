@@ -10,11 +10,11 @@ public:
 
 #ifdef THREEDIM
 
-    ObjectPlate(T pos_object, PlateType plate_type, BoundaryCondition bc, T friction, T pos_lower = -1e-15, T pos_upper = 1e15, T vx_object = 0.0, T vy_object = 0.0, T vz_object = 0.0, T vmin_factor = 1.0, T load_factor = 0.0, std::string name) :
+    ObjectPlate(T pos_object, T pos_upper, T pos_lower, PlateType plate_type, BoundaryCondition bc, T friction, std::string name, T vx_object = 0.0, T vy_object = 0.0, T vz_object = 0.0, T vmin_factor = 1.0, T load_factor = 0.0) :
               pos_object(pos_object),
-              plate_type(plate_type),
               pos_upper(pos_upper),
               pos_lower(pos_lower),
+              plate_type(plate_type),
               bc(bc),
               friction(friction),
               name(name),
