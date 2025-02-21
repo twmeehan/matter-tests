@@ -15,11 +15,11 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
         if (colliding) {
             TV v_rel = vi_orig;
 
-            if (obj->bc == STICKY) {
+            if (obj->bc == NOSLIP) {
                 v_rel.setZero();
-            } // end STICKY
+            } // end NOSLIP
 
-            else if (obj->bc == SEPARATE) {
+            else if (obj->bc == SLIPFREE) {
                 TV n = obj->normal(Xi);
                 T dot = v_rel.dot(n);
                 if (dot < 0){ // if moving towards object
@@ -39,9 +39,9 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     } // end non-zero friction
                 } // end moving towards object
 
-            } // end SEPARATE
+            } // end SLIPFREE
 
-            else if (obj->bc == SLIP) {
+            else if (obj->bc == SLIPSTICK) {
                 TV n = obj->normal(Xi);
                 T dot = v_rel.dot(n);
 
@@ -61,7 +61,7 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     } // end non-zero friction
                 } // end moving towards object
 
-            } // end SLIP
+            } // end SLIPSTICK
 
             else {
                 debug("INVALID BOUNDARY CONDITION!!!");
@@ -84,13 +84,13 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
             T vy_rel = vi_orig(1) - obj.vy_object;
             T vz_rel = vi_orig(2) - obj.vz_object;
 
-            if (obj.bc == STICKY) {
+            if (obj.bc == NOSLIP) {
                 vx_rel = 0;
                 vy_rel = 0;
                 vz_rel = 0;
-            } // end STICKY
+            } // end NOSLIP
 
-            else if (obj.bc == SLIP) {
+            else if (obj.bc == SLIPSTICK) {
 
                 T friction = obj.friction;
                     if (use_mibf)
@@ -162,11 +162,11 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     vz_rel = 0;
 
                 } // end front or back plate
-            } // end SLIP
+            } // end SLIPSTICK
 
 
 
-            else if (obj.bc == SEPARATE) {
+            else if (obj.bc == SLIPFREE) {
 
                 T friction = obj.friction;
                     if (use_mibf)
@@ -235,7 +235,7 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     vz_rel = 0;
 
                 } // end front or back plate
-            } // end SEPARATE
+            } // end SLIPFREE
 
 
 
@@ -262,12 +262,12 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
             T vx_rel = vi_orig(0) - obj.vx_object;
             T vy_rel = vi_orig(1) - obj.vy_object;
 
-            if (obj.bc == STICKY) {
+            if (obj.bc == NOSLIP) {
                 vx_rel = 0;
                 vy_rel = 0;
-            } // end STICKY
+            } // end NOSLIP
 
-            else if (obj.bc == SLIP) {
+            else if (obj.bc == SLIPSTICK) {
 
                 T friction = obj.friction;
                     if (use_mibf)
@@ -313,11 +313,11 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
 
                 } // end left or right plate
 
-            } // end SLIP
+            } // end SLIPSTICK
 
 
 
-            else if (obj.bc == SEPARATE) {
+            else if (obj.bc == SLIPFREE) {
 
                 T friction = obj.friction;
                     if (use_mibf)
@@ -361,7 +361,7 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     vx_rel = 0;
 
                 } // end left or right plate
-            } // end SEPARATE
+            } // end SLIPFREE
 
 
 

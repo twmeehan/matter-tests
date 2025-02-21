@@ -65,9 +65,9 @@ If you use Matter in your research, please cite the scientific works where this 
 
 
 * Supports no-slip as well as frictional **boundary conditions** which can be supplied a **Coulomb friction parameter**
-    * No-slip (in code called `STICKY`)
-    * Separate slip (in code called `SEPARATE`)
-    * Sticky slip (in code called `SLIP`, currently only available for plate objects)   
+    * No-slip (`NOSLIP`)
+    * Frictional slip free to separate (`SLIPFREE`)
+    * Frictional slip constrained to boundary (`SLIPSTICK`)   
 
 
 * **Material-induced boundary friction (MIBF)**: A potentially variable internal friction parameter of a particular plastic model is used as the Coulomb friction for terrain-material interaction

@@ -9,7 +9,7 @@
 #include "../src/objects/object_curve.hpp"
 
 
-TEST(BoundaryTest, AnalyticSEPARATE) {
+TEST(BoundaryTest, AnalyticSLIPFREE) {
 
     Simulation sim;
     sim.initialize(false);
@@ -41,7 +41,7 @@ TEST(BoundaryTest, AnalyticSEPARATE) {
     sim.particles.x[0](1) = 1;
 
     std::string name;
-    name = "Curve"; ObjectCurve curve = ObjectCurve(SEPARATE, 0.0, name);  sim.objects.push_back(&curve);
+    name = "Curve"; ObjectCurve curve = ObjectCurve(SLIPFREE, 0.0, name);  sim.objects.push_back(&curve);
 
     sim.simulate();
 
@@ -52,7 +52,7 @@ TEST(BoundaryTest, AnalyticSEPARATE) {
 }
 
 
-TEST(BoundaryTest, AnalyticSLIP) {
+TEST(BoundaryTest, AnalyticSLIPSTICK) {
 
     Simulation sim;
     sim.initialize(false);
@@ -84,7 +84,7 @@ TEST(BoundaryTest, AnalyticSLIP) {
     sim.particles.x[0](1) = 0.9999;
 
     std::string name;
-    name = "Curve"; ObjectCurve curve = ObjectCurve(SLIP, 0.0, name);  sim.objects.push_back(&curve);
+    name = "Curve"; ObjectCurve curve = ObjectCurve(SLIPSTICK, 0.0, name);  sim.objects.push_back(&curve);
 
     sim.simulate();
 
@@ -102,10 +102,10 @@ TEST(BoundaryTest, MIBF) {
 
     #ifdef THREEDIM
         TV tmp_part(0.0, 0.0, 0.0);
-        ObjectPlate ground = ObjectPlate(0,  1e20, -1e20, bottom, SEPARATE, friction, "",   0, 0, 0,  1,0);  
+        ObjectPlate ground = ObjectPlate(0,  1e20, -1e20, bottom, SLIPFREE, friction, "",   0, 0, 0,  1,0);  
     #else
         TV tmp_part(0.0, 0.0);
-        ObjectPlate ground = ObjectPlate(0,  1e20, -1e20, bottom, SEPARATE, friction, "",   0, 0,     1,0);  
+        ObjectPlate ground = ObjectPlate(0,  1e20, -1e20, bottom, SLIPFREE, friction, "",   0, 0,     1,0);  
     #endif
     
 
@@ -261,11 +261,11 @@ TEST(ElasticityTest, BulkModulus) {
 
     std::string name;
     #ifdef THREEDIM
-        name = "Ground";  ObjectPlate ground = ObjectPlate(0-0.5*sim.dx,       1e20, -1e20, bottom, STICKY, 0, name,   0,  vel, 0, vmin_factor, load_factor);  sim.plates.push_back(ground);
-        name = "Compre";  ObjectPlate compre = ObjectPlate(sim.Ly+0.5*sim.dx,  1e20, -1e20, top,    STICKY, 0, name,   0, -vel, 0, vmin_factor, load_factor);  sim.plates.push_back(compre);
+        name = "Ground";  ObjectPlate ground = ObjectPlate(0-0.5*sim.dx,       1e20, -1e20, bottom, NOSLIP, 0, name,   0,  vel, 0, vmin_factor, load_factor);  sim.plates.push_back(ground);
+        name = "Compre";  ObjectPlate compre = ObjectPlate(sim.Ly+0.5*sim.dx,  1e20, -1e20, top,    NOSLIP, 0, name,   0, -vel, 0, vmin_factor, load_factor);  sim.plates.push_back(compre);
     #else
-        name = "Ground";  ObjectPlate ground = ObjectPlate(0-0.5*sim.dx,       1e20, -1e20, bottom, STICKY, 0, name,   0,  vel,    vmin_factor, load_factor);  sim.plates.push_back(ground);
-        name = "Compre";  ObjectPlate compre = ObjectPlate(sim.Ly+0.5*sim.dx,  1e20, -1e20, top,    STICKY, 0, name,   0, -vel,    vmin_factor, load_factor);  sim.plates.push_back(compre);
+        name = "Ground";  ObjectPlate ground = ObjectPlate(0-0.5*sim.dx,       1e20, -1e20, bottom, NOSLIP, 0, name,   0,  vel,    vmin_factor, load_factor);  sim.plates.push_back(ground);
+        name = "Compre";  ObjectPlate compre = ObjectPlate(sim.Ly+0.5*sim.dx,  1e20, -1e20, top,    NOSLIP, 0, name,   0, -vel,    vmin_factor, load_factor);  sim.plates.push_back(compre);
     #endif
 
     sim.elastic_model = Hencky;
@@ -418,13 +418,13 @@ TEST(CollapseTest, DruckerPragerOne) {
 
     std::string name;
     #ifdef THREEDIM
-    name = "Back";    ObjectPlate sideback   = ObjectPlate(0,       1e20, -1e20, back,   SEPARATE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sideback);
-    name = "Front";   ObjectPlate sidefront  = ObjectPlate(sim.Lz,  1e20, -1e20, front,  SEPARATE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sidefront);
-    name = "Left";    ObjectPlate sideleft   = ObjectPlate(0,       1e20, -1e20, left,   SEPARATE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sideleft);
-    name = "Ground";  ObjectPlate ground     = ObjectPlate(0,       1e20, -1e20, bottom, STICKY,   0, name,   0,0,0,  1,0);  sim.plates.push_back(ground);
+    name = "Back";    ObjectPlate sideback   = ObjectPlate(0,       1e20, -1e20, back,   SLIPFREE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sideback);
+    name = "Front";   ObjectPlate sidefront  = ObjectPlate(sim.Lz,  1e20, -1e20, front,  SLIPFREE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sidefront);
+    name = "Left";    ObjectPlate sideleft   = ObjectPlate(0,       1e20, -1e20, left,   SLIPFREE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sideleft);
+    name = "Ground";  ObjectPlate ground     = ObjectPlate(0,       1e20, -1e20, bottom, NOSLIP,   0, name,   0,0,0,  1,0);  sim.plates.push_back(ground);
     #else
-    name = "Left";    ObjectPlate sideleft   = ObjectPlate(0,  1e20, -1e20, left,   SEPARATE, 0, name,   0,0,  1,0);  sim.plates.push_back(sideleft);
-    name = "Ground";  ObjectPlate ground     = ObjectPlate(0,  1e20, -1e20, bottom, STICKY,   0, name,   0,0,  1,0);  sim.plates.push_back(ground);
+    name = "Left";    ObjectPlate sideleft   = ObjectPlate(0,  1e20, -1e20, left,   SLIPFREE, 0, name,   0,0,  1,0);  sim.plates.push_back(sideleft);
+    name = "Ground";  ObjectPlate ground     = ObjectPlate(0,  1e20, -1e20, bottom, NOSLIP,   0, name,   0,0,  1,0);  sim.plates.push_back(ground);
     #endif
 
     sim.simulate();
@@ -494,13 +494,13 @@ TEST(CollapseTest, DruckerPragerTwo) {
 
     std::string name;
     #ifdef THREEDIM
-    name = "Back";    ObjectPlate sideback   = ObjectPlate(0,       1e20, -1e20, back,   SEPARATE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sideback);
-    name = "Front";   ObjectPlate sidefront  = ObjectPlate(sim.Lz,  1e20, -1e20, front,  SEPARATE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sidefront);
-    name = "Left";    ObjectPlate sideleft   = ObjectPlate(0,       1e20, -1e20, left,   SEPARATE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sideleft);
-    name = "Ground";  ObjectPlate ground     = ObjectPlate(0,       1e20, -1e20, bottom, STICKY,   0, name,   0,0,0,  1,0);  sim.plates.push_back(ground);
+    name = "Back";    ObjectPlate sideback   = ObjectPlate(0,       1e20, -1e20, back,   SLIPFREE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sideback);
+    name = "Front";   ObjectPlate sidefront  = ObjectPlate(sim.Lz,  1e20, -1e20, front,  SLIPFREE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sidefront);
+    name = "Left";    ObjectPlate sideleft   = ObjectPlate(0,       1e20, -1e20, left,   SLIPFREE, 0, name,   0,0,0,  1,0);  sim.plates.push_back(sideleft);
+    name = "Ground";  ObjectPlate ground     = ObjectPlate(0,       1e20, -1e20, bottom, NOSLIP,   0, name,   0,0,0,  1,0);  sim.plates.push_back(ground);
     #else
-    name = "Left";    ObjectPlate sideleft   = ObjectPlate(0,  1e20, -1e20, left,   SEPARATE, 0, name,   0,0,  1,0);  sim.plates.push_back(sideleft);
-    name = "Ground";  ObjectPlate ground     = ObjectPlate(0,  1e20, -1e20, bottom, STICKY,   0, name,   0,0,  1,0);  sim.plates.push_back(ground);
+    name = "Left";    ObjectPlate sideleft   = ObjectPlate(0,  1e20, -1e20, left,   SLIPFREE, 0, name,   0,0,  1,0);  sim.plates.push_back(sideleft);
+    name = "Ground";  ObjectPlate ground     = ObjectPlate(0,  1e20, -1e20, bottom, NOSLIP,   0, name,   0,0,  1,0);  sim.plates.push_back(ground);
     #endif
 
     sim.simulate();

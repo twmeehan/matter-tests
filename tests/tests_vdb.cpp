@@ -74,7 +74,7 @@ TEST(BoundaryTest, VDB) {
     sim.particles.x[0](1) = 1;
 
     std::string file_path = std::string(INCLUDE_DIR) + "/curve.vdb";
-    std::string name = "Curve"; ObjectVdb curve  = ObjectVdb(file_path, SEPARATE, 0.0, name); sim.objects.push_back(&curve);
+    std::string name = "Curve"; ObjectVdb curve  = ObjectVdb(file_path, SLIPFREE, 0.0, name); sim.objects.push_back(&curve);
 
 
     sim.simulate();

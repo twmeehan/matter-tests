@@ -54,7 +54,7 @@ enum PlateType { top, bottom, left, right, front, back };
 enum ElasticModel { Hencky, NeoHookean };
 enum PlasticModel { NoPlasticity, VM, DP, DPSoft, MCC, VMVisc, DPVisc, MCCVisc, DPMui, MCCMui};
 enum HardeningLaw { NoHard, ExpExpl, ExpImpl, SinhExpl };
-enum BoundaryCondition { STICKY, SLIP, SEPARATE };
+enum BoundaryCondition { NOSLIP, SLIPSTICK, SLIPFREE };
 
 ///////////////////// TOOLS ////////////////////////
 
