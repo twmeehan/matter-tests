@@ -7,10 +7,16 @@
 #include "../data_structures.hpp"
 #include "../../deps/tph_poisson-0.3/thinks/poisson_disk_sampling/poisson_disk_sampling.h"
 
-#include "objects/object_vdb.hpp"
+#include "../objects/object_vdb.hpp"
 
 template <typename S>
-void SampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 8){
+#ifdef THREEDIM
+void SampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 8)
+#else // TWODIM
+void SampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 4)
+#endif // DIMENSION
+{
+
     debug("Sampling particles from VDB...");
 
     std::uint32_t kAttempts = 30;

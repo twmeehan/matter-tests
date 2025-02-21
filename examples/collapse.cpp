@@ -12,7 +12,7 @@
 
 // Comment if not compiling with OpenVDB:
 // #include "objects/object_vdb.hpp"
-// #include "sampling_particles_vdb.hpp"
+// #include "sampling/sampling_particles_vdb.hpp"
 
 
 int main(){
