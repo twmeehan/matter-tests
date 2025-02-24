@@ -1,52 +1,52 @@
-#ifndef MCCTVIMPLICITSINHRMA_HPP
-#define MCCTVIMPLICITSINHRMA_HPP
+// Copyright (C) 2024 Tobias Verheijen, Lars Blatny. Released under GPL-3.0 license.
+
+#ifndef MCCRMAIMPLICITEXPONENTIALONEVAR_HPP
+#define MCCRMAIMPLICITEXPONENTIALONEVAR_HPP
 
 #include "../tools.hpp"
-#include "limitedSearchSinh.hpp"
+#include "limited_search_exponential.hpp"
 
-
-bool MCCTVImplicitSinhRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T epv, T rma_prefac)
+bool MCCRMAImplicitExponentialOnevar(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rma_prefac, T epv)
 /**
  **** WRITTEN BY TOBIAS VERHEIJEN ****
  *
  * Implicit Return Mapping Algorithm:
  * This method uses a 1-d Newton-Raphson scheme iterating over *epv* values from the following set of equations and the
- * sinh hardening law for p0:
+ * exponential hardening law for p0:
  *
  * p = (epv - epv^{n})K + p_trial
  * q = q_trial / (1 + 2 * mu * (1 + 2 * beta) * delta_gamma)
  * delta_gamma = (p_trial - p) / (2 * K * M^2 * p + M^2 * (beta - 1) * K * p0)
- * p0 = K * sinh(-xi*epv + sinh^{-1}(p00/K))
+ * p0 = p00 * exp(-xi * epv)
  * y = M^2 * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * q^2
  *
  * @param p: Trial p: -K * Tr(epsilon)
  * @param q: Trial q: 2 * G * sqrt(dev(eps):dev(eps))
  * @param exit: Exit flag for program, if error encountered, exit set to 1
- * @param M: Angle of the Critical State Line
- * @param p00: Initial consolidation pressure value, p0
- * @param beta: Cohesion parameter, indicates if the material can undergo tension without deforming (yield surface to the left of p=0)
- * @param mu:  G = Lame parameter
+ * @param M: Slope of the critical state line
+ * @param p00: Initial consolidation pressure value
+ * @param beta: Cohesion parameter
+ * @param mu: G = Lame parameter
  * @param K: Bulk modulus, (lambda + 2*mu/dim)
  * @param xi: xi value for simulation
  * @param epv: Plastic Volumetric Hencky Strain
- * @param rma_prefac: precomputed value, either 2*sqrt(3) or 1. depending on using von_mises_q or not respectively
+ * @param rma_prefac: precomputed value, either 2*sqrt(3) or 1. depending on using von_mises_q or not 
  * @return true if deformation is plastic, false if deformation is not plastic
  */
 {
-    T p0 = std::max(T(0.01), K * std::sinh(-xi * epv + std::asinh(p00 / K)));
-    T Msq = M * M;
-    T damping_factor = 1. + 2. * beta;
-    T y = Msq * (p*p + (beta - 1.) * p0*p - beta * p0*p0) + damping_factor * q*q;
+    T p0_t = p00 * std::exp(-xi * epv);
+    T Msq = M*M;
+    T damping_factor = 1 + 2. * beta;
+    T y = Msq * (p*p + (beta - 1.) * p0_t*p - beta * p0_t*p0_t) + damping_factor * q*q;
 
     // If y <= 0 indicates that the p, q position falls within the yield surface
-    if (y <= 0) {
+    if (y <= 0){
         return false;
     }
 
-    // store initial values and rescale
-    T p0_t = p0;
+    // store initial values and rescale 
     T scale_factor = 1./p0_t;
-    T p0_min = 0.01 * scale_factor; p00 *= scale_factor; p0 = 1.; p *= scale_factor; q *= scale_factor; mu *= scale_factor; K *= scale_factor;
+    T p0 = 1.;  p00 *= scale_factor;  p *= scale_factor;  q *= scale_factor;  mu *= scale_factor;  K *= scale_factor;
 
     T p_t = p;  T q_t = q;  T epv_t = epv;
 
@@ -57,57 +57,57 @@ bool MCCTVImplicitSinhRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, 
     }
 
     // Newton-Raphson iterative root finding
-    int max_iter = 40;
+    int max_iter = 30;
     for (int iter = 0;  iter < max_iter;  iter++) {
         T midpoint = (p0 - beta * p0) * 0.5;  // Find p-center of yield surface to avoid div-by-0 error
-        if (std::abs(p - midpoint) <= T(1.e-4)) {
-            // if p_t == midpoint then we map q to top of yield surface since no plastic change
+        if (std::abs(p - midpoint) <= 1e-4) {
+            // if p == midpoint then we map q to top of yield surface since no plastic change
             q = M * std::sqrt((p0 - p) * (beta * p0 + p) / damping_factor);
-
+            
             // rescale values
-            p *= p0_t;
             q *= p0_t;
+            p *= p0_t;
             return true;
         }
 
         p = (epv - epv_t) * K + p_t;  // compute current p value
 
-        // Compute p0 value
-        T p0_helper = K * std::sinh(-xi * epv + std::asinh(p00/K));
-        p0 = std::max(p0_min, p0_helper);
+        p0 = p00 * std::exp(-xi * epv);  // compute current p0 value
 
         // define delta_gamma helper
         T denom = 2. * K * Msq * p + Msq * (beta - 1.) * K * p0;
         T dg_step = (p_t - p) / denom;  // compute current delta_gamma value
 
         // define q helper
-        T q_denom = 1. + 2. * mu * damping_factor * dg_step;
+        T q_denom = 1 + 2. * mu * damping_factor * dg_step;
         q = q_t / q_denom;  // compute current q value
 
         // compute yield surface
         y = Msq * (p - p0) * (p + beta * p0) + damping_factor * q * q;
 
         // Check for convergence, iteration > 3 check is done to ensure some displacement is measured.
-        if (iter > 3 && std::abs(y) < 1e-3 * scale_factor) {
+        if (iter > 3 && abs(y) < 1.e-3 * scale_factor){
             break;
         }
 
         if (iter == max_iter - 1) {  // did not break loop
-            if (p0 > p0_min) {
+            if (p0 > 1.e-3 * scale_factor) {
                 debug("RMA: FATAL did not exit loop at iteration = ", iter, ", iteration = ", iter);
                 debug(iter, ":  r1   = ", y);
                 debug(iter, ":  y    = ", y);
                 debug(iter, ":  p0   = ", p0);
-                debug(iter, ":  p0_t   = ", p0_t);
-                debug(iter, ":  pt   = ", p_t);
-                debug(iter, ":  qt   = ", q_t);
-                debug(iter, ":  epv_t   = ", epv_t);
-                debug(iter, ":  epv   = ", epv);
-                debug(iter, ":  p    = ", p);
-                debug(iter, ":  q    = ", q);
+                debug(iter, ":  p0_t = ", p0_t);
                 debug(iter, ":  K    = ", K);
-                debug(iter, ":  mu    = ", mu);
-
+                debug(iter, ":  G    = ", mu);
+                debug(iter, ": check value = ", 1.e-3 * scale_factor);
+                debug(iter, ":  pt   = ", p_t / scale_factor);
+                debug(iter, ":  qt   = ", q_t / scale_factor);
+                debug(iter, ":  scale factor   = ", scale_factor);
+                debug(iter, ":  epvt   = ", epv_t);
+                debug(iter, ":  epv   = ", epv);
+                debug(iter, ":  p    = ", p / scale_factor);
+                debug(iter, ":  q    = ", q / scale_factor);
+                
                 exit = 1;
             } else {  // p0 too small
                 p = 1e-15;
@@ -118,27 +118,18 @@ bool MCCTVImplicitSinhRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, 
 
         // Compute derivative helpers
         T dp_depv = K;  // compute dp/depv
-
-        // Compute dp0/depv, the if statement helps to make a continuous max() approximation
-        T dp0_depv;
-        T dp0_depv_helper = -xi * K * std::cosh(-xi * epv + std::asinh(p00 / K));
-        if (p0_helper > p0_min){
-            dp0_depv = 0.5 * (dp0_depv_helper + dp0_depv_helper - p0_min);
-        } else {
-            dp0_depv = 0.5 * (dp0_depv_helper + p0_min - dp0_depv_helper);
-        }
-
+        T dp0_depv = -xi * p0;  // compute dp0/depv
         T ddelta_gamma_depv = (-dp_depv / denom) - (p_t - p) * (2. * K * Msq * dp_depv + Msq * (beta - 1.) * K * dp0_depv) \
  / (denom * denom);  // compute ddg/depv
         T dq_depv = -q_t * 2. * mu * damping_factor * ddelta_gamma_depv / (q_denom * q_denom);  // compute dq/depv
 
         // Get direction for epv update
         T dy_depv = Msq * (dp_depv - dp0_depv) * (p + beta * p0) + \
-                     Msq * (p - p0) * (beta * dp0_depv + dp_depv) + \
-                     2. * damping_factor * q * dq_depv;  // compute dy/depv
+                Msq * (p - p0) * (beta * dp0_depv + dp_depv) + \
+                2. * damping_factor * q * dq_depv;  // compute dy/depv
 
         // Take scaled-admissible Newton-Raphson step: x^{n+1} = x^{n} - scale * f(x^{n}) / f'(x^{n})
-        epv = limited_search_sinh(epv, epv_t, y / dy_depv, xi, K, p_t, p00, p0_min, beta, right);
+        epv = limited_search_exponential(epv, epv_t, y / dy_depv, xi, K, p_t, p00, beta, right);
 
         if (epv == std::numeric_limits<double>::infinity()) {
             debug("RMA: FATAL no valid epv value found = ", iter, ", iteration = ", iter);
@@ -174,4 +165,4 @@ bool MCCTVImplicitSinhRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, 
     return true;  // This indicates plasticity
 }
 
-#endif // MCCTVIMPLICITSINHRMA_HPP
+#endif // MCCRMAIMPLICITEXPONENTIALONEVAR_HPP

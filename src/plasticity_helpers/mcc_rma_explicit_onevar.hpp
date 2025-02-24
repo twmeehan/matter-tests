@@ -1,22 +1,23 @@
-#ifndef MCCTVONEVAREXPLICITRMA_HPP
-#define MCCTVONEVAREXPLICITRMA_HPP
+// Copyright (C) 2024 Tobias Verheijen, Lars Blatny. Released under GPL-3.0 license.
+
+#ifndef MCCRMAEXPLICITONEVAR_HPP
+#define MCCRMAEXPLICITONEVAR_HPP
 
 #include "../tools.hpp"
 
-
-bool MCCTVOneVarExplicitRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_prefac)
+bool MCCRMAExplicitOnevar(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_prefac)
 /**
  **** WRITTEN BY TOBIAS VERHEIJEN ****
  *
  * @param p: p_stress: -K * Tr(epsilon)
  * @param q: q_stress: 2 * G * sqrt(dev(eps):dev(eps))
  * @param exit: Exit flag for program, if error encountered, exit set to 1
- * @param M: Angle of the Critical State Line
- * @param p0: Consolidation pressure, boundary of the yield surface (p limit, above this value the strain will be positive and thus outside of the yield surface)
- * @param beta: Cohesion parameter, indicates if the material can undergo tension without deforming (yield surface to the left of p=0)
+ * @param M: Slope of the critical state line
+ * @param p0: Consolidation pressure
+ * @param beta: Cohesion parameter
  * @param mu: G = Lame parameter
  * @param K: Bulk modulus, (lambda + 2*mu/dim)
- * @param rma_prefac: precomputed value, either 2*sqrt(3) or 1. depending on using von_mises_q or not respectively
+ * @param rma_prefac: precomputed value, either 2*sqrt(3) or 1. depending on using von_mises_q or not
  * @return true if deformation is plastic, false if deformation is not plastic
  */
 {
@@ -84,4 +85,4 @@ bool MCCTVOneVarExplicitRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K,
 }
 
 
-#endif // MCCTVONEVAREXPLICITRMA_HPP
+#endif // MCCRMAEXPLICITONEVAR_HPP

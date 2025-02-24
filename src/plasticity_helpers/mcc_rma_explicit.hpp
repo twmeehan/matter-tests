@@ -1,11 +1,11 @@
 // Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
 
-#ifndef MCCRMA_HPP
-#define MCCRMA_HPP
+#ifndef MCCRMAEXPLICIT_HPP
+#define MCCRMAEXPLICIT_HPP
 
 #include "../tools.hpp"
 
-bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_prefac)
+bool MCCRMAExplicit(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_prefac)
 {
     // T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
     T y = M * M * (p - p0) * (p + beta * p0) + (q * q);
@@ -96,4 +96,4 @@ bool MCCRMA(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T rma_prefac)
 }
 
 
-#endif // MCCRMA_HPP
+#endif // MCCRMAEXPLICIT_HPP
