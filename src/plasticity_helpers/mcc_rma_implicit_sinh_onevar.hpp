@@ -36,7 +36,8 @@ bool MCCRMAImplicitSinhOnevar(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T
 {
     T p0 = std::max(T(0.01), K * std::sinh(-xi * epv + std::asinh(p00 / K)));
     T Msq = M * M;
-    T damping_factor = 1. + 2. * beta;
+    // T damping_factor = 1. + 2. * beta;
+    T damping_factor = 1;
     T y = Msq * (p*p + (beta - 1.) * p0*p - beta * p0*p0) + damping_factor * q*q;
 
     // If y <= 0 indicates that the p, q position falls within the yield surface

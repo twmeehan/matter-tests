@@ -36,7 +36,8 @@ bool MCCRMAImplicitExponentialOnevar(T& p, T& q, int& exit, T M, T p00, T beta, 
 {
     T p0_t = p00 * std::exp(-xi * epv);
     T Msq = M*M;
-    T damping_factor = 1 + 2. * beta;
+    // T damping_factor = 1 + 2. * beta;
+    T damping_factor = 1;
     T y = Msq * (p*p + (beta - 1.) * p0_t*p - beta * p0_t*p0_t) + damping_factor * q*q;
 
     // If y <= 0 indicates that the p, q position falls within the yield surface
