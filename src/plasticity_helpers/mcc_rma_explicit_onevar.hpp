@@ -22,7 +22,8 @@ bool MCCRMAExplicitOnevar(T& p, T& q, int& exit, T M, T p0, T beta, T mu, T K, T
  */
 {
     T Msq = M * M;
-    T damping_factor = 1. + 2.*beta;
+    // T damping_factor = 1. + 2.*beta;
+    T damping_factor = 1;
     T y = Msq * (p - p0) * (p + beta * p0) + damping_factor * (q * q);
 
     // If y <= 0 indicates that the p, q position falls within the yield surface
