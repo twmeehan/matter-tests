@@ -424,12 +424,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             else if (hardening_law == ExpoImpl){ // Exponential Implicit Hardening
                    perform_rma = MCCRMAImplicitExponentialOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
                 // perform_rma =       MCCRMAImplicitExponential(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
-                p_c = std::max( p0 * std::exp(-xi*particles.eps_pl_vol[p]) , p_stress+T(0.001) );
             }
             else if (hardening_law == SinhImpl) {
                    perform_rma = MCCRMAImplicitSinhOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
                 // perform_rma = <no alternative at the moment>
-                p_c = std::max( K * std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)) , p_stress+T(0.001) );
             }
             else{
                 debug("You specified an invalid HARDENING LAW!");
@@ -446,13 +444,19 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 T ep = p_stress / (K*dim);
                 T eps_pl_vol_inst = hencky_trace + dim * ep;
-                particles.eps_pl_vol[p]     += eps_pl_vol_inst;
+                particles.eps_pl_vol[p] += eps_pl_vol_inst;
 
                 T q_yield = q_stress;
                 if (q_trial < (q_yield + 1e-4)) {
                     q_stress = q_yield; // this is to ensure that fac_c below becomes negative and thus gamma_dot_S positive
                 }
                 else{
+                    if (hardening_law == ExpoImpl){
+                        p_c = std::max( p0 * std::exp(-xi*particles.eps_pl_vol[p]) ,                    p_stress+T(0.001) );
+                    }
+                    else if (hardening_law == SinhImpl){
+                        p_c = std::max( K * std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)) , p_stress+T(0.001) );
+                    }
                     T p_special = p_stress + beta * p_c; // always equal or larger than 0
 
                     T fac_a = f_mu_prefac * dt; // always positive
