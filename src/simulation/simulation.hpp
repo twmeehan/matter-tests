@@ -104,6 +104,8 @@ public:
   T mu_1 = std::tan(20.9*M_PI/180.0);
   T mu_2 = std::tan(32.8*M_PI/180.0);;
 
+  T stress_tolerance = 1e-5;
+
   // Objects
   std::vector<ObjectPlate> plates;
   std::vector<ObjectGeneral*> objects;
