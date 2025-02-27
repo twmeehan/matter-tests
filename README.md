@@ -146,7 +146,6 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 | `pbc`        | false | Use periodic boundary conditions, see `pbc.cpp`. If `pbc_special = true` one may code the periodicity in `position_update.cpp`
 | `gravity`    | (0,0,(0)) | Gravitational acceleration vector. If `gravity_special = true` one may code the gravity evolution in `update_dt.cpp` where the gravity is increased linearly to its specified value within `gravity_time`.
 | `rho`                   |  1000           | Density (kg/m3)
-| `delete_last_particle`  | 0               | Delete the n last particles sampled
 | `use_mibf` | false           | Use Material-Induced Boundary Friction (MIBF), only relevant for certain plasticity models.
 | `musl`                 | false          | Use MUSL instead of USL
 | `use_von_mises_q`      | false          | If `true` Define q (the "equivalent shear stress") used in plasticity models as the von Mises equivalent stress q = sqrt(3/2 s:s). If `false`, use q = sqrt(1/2 s:s). If using the `DPSoft` model, this will always be interpreted as `true`.

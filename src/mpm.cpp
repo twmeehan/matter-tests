@@ -56,18 +56,7 @@ int main(){
         sim.particles.x[p](0) -= 0.5*sim.Lx;
         sim.particles.x[p](1) += 0.5*sim.dx;
     }
-
-    ////// OPTIONAL: ADD INDIVIDUAL PARTICLES
-    auto new_particle_x = sim.particles.x;
-    #ifdef THREEDIM
-        TV tmp_particle(0.0, 0.0, 0.0);
-    #else
-        TV tmp_particle(0.0, 0.0);
-    #endif
-    new_particle_x.push_back(tmp_particle);
-    sim.Np += 1;
-    sim.particles = Particles(sim.Np);
-    sim.particles.x = new_particle_x;
+    sim.grid_reference_point = TV::Zero();
 
     ////// OPTIONAL: INITIAL PARTICLE VELOCITIES
     // sim.particles.v = ...

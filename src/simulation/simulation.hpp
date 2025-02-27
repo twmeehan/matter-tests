@@ -59,13 +59,14 @@ public:
   T Lz = 1;
 #endif
 
+  TV grid_reference_point = 2e10 * TV::Ones();
+
   // Particle data
   Particles particles;
   unsigned int Np;
   T particle_mass;
   T particle_volume; // initial particle volume
   T dx;
-  unsigned int delete_last_particle = 0;
 
   // Elastoplasticity
   ElasticModel elastic_model = Hencky;
@@ -151,8 +152,6 @@ public:
 
   void boundaryCollision(int index, TV Xi, TV& vi);
   void overwriteGridVelocity(TV Xi, TV& vi);
-
-  void deleteLastParticle(unsigned int n);
 
   T calculateBulkModulus();
   void checkMomentumConservation();
