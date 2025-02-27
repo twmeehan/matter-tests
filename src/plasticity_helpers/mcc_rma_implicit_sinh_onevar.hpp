@@ -62,7 +62,7 @@ bool MCCRMAImplicitSinhOnevar(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T
     int max_iter = 40;
     for (int iter = 0;  iter < max_iter;  iter++) {
         T midpoint = (p0 - beta * p0) * 0.5;  // Find p-center of yield surface to avoid div-by-0 error
-        if (std::abs(p - midpoint) <= T(1.e-4)) {
+        if (std::abs(p - midpoint) < T(1.e-4)) {
             // if p_t == midpoint then we map q to top of yield surface since no plastic change
             q = M * std::sqrt((p0 - p) * (beta * p0 + p) / damping_factor);
 
