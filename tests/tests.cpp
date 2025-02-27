@@ -97,12 +97,6 @@ TEST(BoundaryTest, MIBF) {
 
     T friction = std::tan(30.0 * M_PI / 180.0);
     T theta = 32 * M_PI / 180;
-
-    #ifdef THREEDIM
-        TV tmp_part(0.0, 0.0, 0.0);
-    #else
-        TV tmp_part(0.0, 0.0);
-    #endif
     
     ObjectPlate ground = ObjectPlate(0,  bottom, SLIPFREE, friction);  
     
@@ -135,13 +129,7 @@ TEST(BoundaryTest, MIBF) {
         sim_one.particles.x[p](0) -= 0.5*sim_one.Lx;
         sim_one.particles.x[p](1) += 0.5*sim_one.dx;
     }
-    auto new_part_x = sim_one.particles.x;
-    new_part_x.push_back(tmp_part);
-    sim_one.Np += 1;
-    sim_one.particles = Particles(sim_one.Np);
-    sim_one.particles.x = new_part_x;
-    sim_one.delete_last_particle = 1;
-
+    sim_one.grid_reference_point = TV::Zero();
 
     sim_one.plates.push_back(ground);
 
@@ -193,13 +181,7 @@ TEST(BoundaryTest, MIBF) {
         sim_two.particles.x[p](0) -= 0.5*sim_two.Lx;
         sim_two.particles.x[p](1) += 0.5*sim_two.dx;
     }
-    new_part_x = sim_two.particles.x;
-    new_part_x.push_back(tmp_part);
-    sim_two.Np += 1;
-    sim_two.particles = Particles(sim_two.Np);
-    sim_two.particles.x = new_part_x;
-    sim_two.delete_last_particle = 1;
-
+    sim_two.grid_reference_point = TV::Zero();
 
     sim_two.plates.push_back(ground);
 
@@ -390,16 +372,7 @@ TEST(CollapseTest, DruckerPragerOne) {
     for(int p = 0; p < sim.Np; p++){
         sim.particles.x[p](1) += 0.5*sim.dx;
     }
-    auto new_part_x = sim.particles.x;
-    #ifdef THREEDIM
-        TV tmp_part(sim.Lx/2.0, 0.0, 0.0);
-    #else
-        TV tmp_part(sim.Lx/2.0, 0.0);
-    #endif
-    new_part_x.push_back(tmp_part);
-    sim.Np += 1;
-    sim.particles = Particles(sim.Np);
-    sim.particles.x = new_part_x;
+    sim.grid_reference_point = TV::Zero();
 
     sim.elastic_model = Hencky;
     sim.plastic_model = DPSoft;
@@ -464,16 +437,7 @@ TEST(CollapseTest, DruckerPragerTwo) {
     for(int p = 0; p < sim.Np; p++){
         sim.particles.x[p](1) += 0.5*sim.dx;
     }
-    auto new_part_x = sim.particles.x;
-    #ifdef THREEDIM
-        TV tmp_part(sim.Lx/2.0, 0.0, 0.0);
-    #else
-        TV tmp_part(sim.Lx/2.0, 0.0);
-    #endif
-    new_part_x.push_back(tmp_part);
-    sim.Np += 1;
-    sim.particles = Particles(sim.Np);
-    sim.particles.x = new_part_x;
+    sim.grid_reference_point = TV::Zero();
 
     sim.elastic_model = Hencky;
     sim.plastic_model = DPVisc;

@@ -226,13 +226,10 @@ void Simulation::advanceStep(){
     if (pbc){
         if (current_time_step == 0)
             remeshFixed(4);
-            if (delete_last_particle)
-                deleteLastParticle(delete_last_particle);
-    }else{ //  not pbc
+    }
+    else{
         if (current_time_step == 0) {
             remeshFixedInit(2,2,2);
-            if (delete_last_particle)
-                deleteLastParticle(delete_last_particle);
         } else {
             remeshFixedCont();
         }
@@ -339,28 +336,6 @@ void Simulation::checkMassConservation(){
         debug("MASS NOT CONSERVED!!!");
         exit = 1;
         return;
-    }
-}
-
-
-void Simulation::deleteLastParticle(unsigned int n){
-
-    for (unsigned int i = 0; i < n; i++) {
-
-        auto new_part_x = particles.x;
-        new_part_x.pop_back();
-
-        Np -= 1;
-
-        if (new_part_x.size() != Np){
-            debug("PARTICLE NUMBER MISMATCH!!!");
-            exit = 1;
-            return;
-        }
-
-        particles = Particles(Np);
-        particles.x = new_part_x;
-
     }
 }
 

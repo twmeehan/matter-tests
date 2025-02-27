@@ -1,11 +1,11 @@
 // Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
 
-#ifndef MCCHARDEXPRMA_HPP
-#define MCCHARDEXPRMA_HPP
+#ifndef MCCRMAIMPLICITEXPONENTIAL_HPP
+#define MCCRMAIMPLICITEXPONENTIAL_HPP
 
 #include "../tools.hpp"
 
-bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rma_prefac, T epv)
+bool MCCRMAImplicitExponential(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T rma_prefac, T epv)
 {
     T p0 = std::max(T(1e-2), p00 * std::exp(-xi*epv));
     // T y = M * M * (p - p0) * (p + beta * p0) + (1 + 2 * beta) * (q * q);
@@ -99,4 +99,4 @@ bool MCCHardExpRMA(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T K, T xi, T
 }
 
 
-#endif // MCCHARDEXPRMA_HPP
+#endif // MCCRMAIMPLICITEXPONENTIAL_HPP
