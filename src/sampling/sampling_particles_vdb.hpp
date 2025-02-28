@@ -11,9 +11,9 @@
 
 template <typename S>
 #ifdef THREEDIM
-void SampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 8)
+void sampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 8)
 #else // TWODIM
-void SampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 6)
+void sampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 6)
 #endif // DIMENSION
 {
 
@@ -74,7 +74,7 @@ void SampleParticlesFromVdb(S& sim, ObjectVdb& obj, T kRadius, T ppc = 6)
     sim.particles = Particles(sim.Np);
     sim.particles.x = samples;
 
-} // end SampleParticles
+} // end sampleParticles
 
 
 

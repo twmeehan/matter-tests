@@ -10,7 +10,7 @@
 #ifdef THREEDIM
 
     template <typename S>
-    void SampleParticles(S& sim, T kRadius, T ppc = 8, unsigned int crop_to_shape = 0, std::uint32_t attempts = 30, std::uint32_t seed = 42) {
+    void sampleParticles(S& sim, T kRadius, T ppc = 8, unsigned int crop_to_shape = 0, std::uint32_t attempts = 30, std::uint32_t seed = 42) {
         const T Lx = sim.Lx;
         const T Ly = sim.Ly;
         const T Lz = sim.Lz;
@@ -74,12 +74,12 @@
         // sim.particle_volume = std::pow(dx_p, 3);
         // sim.particle_mass = sim.rho * sim.particle_volume;
 
-    } // end SampleParticles
+    } // end sampleParticles
 
 #else // TWODIM
 
     template <typename S>
-    void SampleParticles(S& sim, T kRadius, T ppc = 6, unsigned int crop_to_shape = 0, std::uint32_t attempts = 200, std::uint32_t seed = 42){
+    void sampleParticles(S& sim, T kRadius, T ppc = 6, unsigned int crop_to_shape = 0, std::uint32_t attempts = 200, std::uint32_t seed = 42){
         const T Lx = sim.Lx;
         const T Ly = sim.Ly;
         std::uint32_t kAttempts = 200;
@@ -126,7 +126,7 @@
         }
 
 
-    } // end SampleParticles
+    } // end sampleParticles
 
 #endif // DIMENSION
 

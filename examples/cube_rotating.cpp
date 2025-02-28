@@ -27,7 +27,7 @@ int main(){
     #ifdef THREEDIM
         sim.Lz = 0.05;
     #endif
-    SampleParticles(sim, 0.01);
+    sampleParticles(sim, 0.01);
 
     T total_energy_init = 0;
     for(int p = 0; p < sim.Np; p++){

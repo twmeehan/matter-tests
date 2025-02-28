@@ -49,7 +49,7 @@ int main(){
     #ifdef THREEDIM
         sim.Lz = 5;
     #endif
-    SampleParticles(sim, k_rad);
+    sampleParticles(sim, k_rad);
 
     ////// OPTIONAL: CHANGE INITIAL PARTICLE POSITIONS
     for(int p = 0; p < sim.Np; p++){

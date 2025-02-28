@@ -124,7 +124,7 @@ TEST(BoundaryTest, MIBF) {
     #ifdef THREEDIM
         sim_one.Lz = 0.05;
     #endif
-    SampleParticles(sim_one, 0.001);
+    sampleParticles(sim_one, 0.001);
     for(int p = 0; p < sim_one.Np; p++){
         sim_one.particles.x[p](0) -= 0.5*sim_one.Lx;
         sim_one.particles.x[p](1) += 0.5*sim_one.dx;
@@ -176,7 +176,7 @@ TEST(BoundaryTest, MIBF) {
     #ifdef THREEDIM
         sim_two.Lz = 0.05;
     #endif
-    SampleParticles(sim_two, 0.001);
+    sampleParticles(sim_two, 0.001);
     for(int p = 0; p < sim_two.Np; p++){
         sim_two.particles.x[p](0) -= 0.5*sim_two.Lx;
         sim_two.particles.x[p](1) += 0.5*sim_two.dx;
@@ -228,9 +228,9 @@ TEST(ElasticityTest, BulkModulus) {
     sim.Ly = 1;
     #ifdef THREEDIM
     sim.Lz = 0.2;
-        SampleParticles(sim, 0.02, 8);
+        sampleParticles(sim, 0.02, 8);
     #else
-        SampleParticles(sim, 0.02, 4);
+        sampleParticles(sim, 0.02, 4);
     #endif
 
     T vel = 0.001;
@@ -296,7 +296,7 @@ TEST(EnergyTest, Rotation) {
     #ifdef THREEDIM
         sim.Lz = 0.05;
     #endif
-    SampleParticles(sim, 0.01);
+    sampleParticles(sim, 0.01);
 
     T total_energy_init = 0;
     for(int p = 0; p < sim.Np; p++){
@@ -365,9 +365,9 @@ TEST(CollapseTest, DruckerPragerOne) {
     T k_rad = 0.0015;
     #ifdef THREEDIM
         sim.Lz = 0.10;
-        SampleParticles(sim, k_rad, 8);
+        sampleParticles(sim, k_rad, 8);
     #else
-        SampleParticles(sim, k_rad, 4);
+        sampleParticles(sim, k_rad, 4);
     #endif
     for(int p = 0; p < sim.Np; p++){
         sim.particles.x[p](1) += 0.5*sim.dx;
@@ -430,9 +430,9 @@ TEST(CollapseTest, DruckerPragerTwo) {
     T k_rad = 0.0015;
     #ifdef THREEDIM
         sim.Lz = 0.10;
-        SampleParticles(sim, k_rad, 8);
+        sampleParticles(sim, k_rad, 8);
     #else
-        SampleParticles(sim, k_rad, 4);
+        sampleParticles(sim, k_rad, 4);
     #endif
     for(int p = 0; p < sim.Np; p++){
         sim.particles.x[p](1) += 0.5*sim.dx;
