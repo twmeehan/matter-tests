@@ -34,7 +34,7 @@ If you use Matter in your research, please cite the scientific works where this 
 * Both **2D** (plane strain) and **3D**
 
 
-* Supports Update Stress Last **(USL)** and Modified Update Stress Last **(MUSL)** udated Lagrangian **symplectic** (explicit) MPM
+* Supports Update Stress Last **(USL)** and Modified Update Stress Last **(MUSL)** updated Lagrangian **symplectic** (explicit) MPM
 
 
 * Particle <-> grid interplation with **quadratic** and **cubic B-splines** with various transfer schemes:
@@ -76,35 +76,88 @@ If you use Matter in your research, please cite the scientific works where this 
 
 * Initial particle positions can be sampled using the **Poisson disk sampling** scheme by R. Bridson, ACM SIGGRAPH 2007, here based on the implementation by [Tommy Hinks](https://github.com/thinks/poisson-disk-sampling)
 
-## Limitations
-
-* Optimized for dense (not sparse) topologies. On sparse topologies, the simulations can be rather slow. This follows from the chosen grid data format, which may be replaced in the future. However, the current choice keeps the code simple and organized.
-
-* Supports only single-materials, however, one can easily extend this to multi-material problems. E.g., one can create particle quantities for the relevant material parameters (see `data_structures.hpp`) which can then be used in the material models (see, e.g., `plasticity.cpp`)
 
 ## Get started
 
 #### Installing dependencies
 
-The only required dependencies are **[CMake](https://cmake.org/)**, **[OpenMP](https://www.openmp.org/)** and the C++ linear algebra template library **[Eigen](https://eigen.tuxfamily.org/)**. The option `-DUSE_VDB=ON` also requires **[OpenVDB](https://www.openvdb.org/)**, however, this can be turned off if only analytic objects are used.
+The required non-header-only dependencies are **[CMake](https://cmake.org/)**, **[OpenMP](https://www.openmp.org/)**. The standard C++ linear algebra template library **[Eigen](https://eigen.tuxfamily.org/)** is required. The option `-DUSE_VDB=ON` also requires **[OpenVDB](https://www.openvdb.org/)**, however, this can be turned off if only analytic objects are used. 
 
-On Mac, you can install OpenMP through Homebrew with
-`brew install libomp`
-and Eigen can be obtained through
-`brew install eigen`.
+On Mac, you can download/install the depencies with Homebrew through   
+`brew install cmake libomp eigen`    
+and OpenVDB with (although this may require other dependecies, see https://formulae.brew.sh/formula/openvdb)    
+`brew install openvdb`
+
+Linux lazy-command:    
+`sudo apt-get install cmake libeigen3-dev libopenvdb-dev libtbb-dev libboost-all-dev libilmbase-dev libopenexr-dev`    
+where only the two first are needed if only using analytic objects.
 
 #### Build and run the code
 
-1. Set up your simulation parameters and initial state in `mpm.cpp`. The default `mpm.cpp` file in the master branch sets up a simple granular collapse and explains the main options. In the `examples` folder, other examples are presented (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`). In `tools.hpp`, the user must specify the dimension of the simulation (default: 2D) and order of interpolation (default: quadratic).
+1. Set up your simulation parameters and initial state in `mpm.cpp`.  In `tools.hpp`, the user can specify the dimension of the simulation (default: 2D) and order of interpolation (default: quadratic). 
 
-2. Create a build directory: `mkdir build`
+2. Create a build directory:     
+   `mkdir build`
 
-3. From the build directory (`cd build`), specify CMake options: `cmake -DCMAKE_BUILD_TYPE=Release -DUSE_VDB=ON ..`
+3. Enter the build directory:    
+   `cd build`
+   
+4. Specify CMake options:     
+   `cmake -DCMAKE_BUILD_TYPE=Release -DUSE_VDB=ON ..`     
+   or
+   `cmake -DCMAKE_BUILD_TYPE=Release -DUSE_VDB=OFF ..`       
 
-4. Compile with `make -j <number of cores for compilation>` (NB: the number of threads for the _simulation_ is specified in `mpm.cpp`)
+5. Compile (NB: the number of threads for the _simulation_ is specified in `mpm.cpp`)      
+   `make -j <number of cores for compilation>` 
 
-5. Run the executable: `./src/mpm`
+6. Run the executable:      
+   `./src/mpm`
 
+#### Example of setup file
+
+Here is a minimal setup file `mpm.cpp` for a simple granular collapse.    
+
+```cpp
+#include "tools.hpp"
+#include "simulation/simulation.hpp"
+#include "sampling/sampling_particles.hpp"
+#include "objects/object_plate.hpp"
+
+int main(){
+
+    Simulation sim;
+
+    sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ "collapse");
+
+    sim.end_frame = 20;     // last frame to simulate
+    sim.fps = 10;           // frames per second
+    sim.n_threads = 8;      // number of threads in parallel
+
+    sim.Lx = 1;
+    sim.Ly = 1;
+    // sim.Lz = 0.1; // if 3D
+    SampleParticles(sim, /*sampling radius*/ 0.01);
+
+    ObjectPlate ground = ObjectPlate(/*position*/ 0, /*plate type*/ bottom, /*boundary condition*/ SLIPFREE, /*friction*/ 0.5);  
+    sim.plates.push_back(ground);
+
+    sim.rho = 1000;         // Density (kg/m3)
+    sim.gravity[1] = -9.81; // Gravity
+
+    sim.E = 1e6;    // Young's modulus (Pa)
+    sim.nu = 0.3;   // Poisson's ratio (-)
+
+    sim.plastic_model = DP; // Drucker-Prager yield
+    sim.dp_slope = 0.5;     // Internal friction
+    sim.dp_cohesion = 0;    // Cohesion
+
+    sim.simulate();
+
+	return 0;
+}
+```
+
+In the `examples` folder, other examples will be archived (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`).
 
 #### Objects and terrains
 
@@ -112,22 +165,22 @@ Rigid objects and terrains (boundaries) are either
 * formulated analytically as level sets (signed distance functions)   
 * or imported as `.vdb` level sets files using [OpenVDB](https://www.openvdb.org/)   
 
-Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in [Viroulet et al. (2017)](https://doi.org/10.1017/jfm.2017.41). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for speed and convenience. In `ObjectPlate`, you can also assign a speed (and controls on the time-evolution of the speed) of the plate. Any plate must either a `top`, `bottom`, `front`, `back`, `left` or `right`. Its usage can be seen in the default example in `mpm.cpp` where it is used to simple set the ground (y = 0).
+Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in [Viroulet et al. (2017)](https://doi.org/10.1017/jfm.2017.41). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for efficiency and convenience. In `ObjectPlate`, you can also assign a speed to the plate, as well as controls on the time-evolution of the speed. Any plate must either a `top`, `bottom`, `front`, `back`, `left` or `right`. 
 
-A terrain/object from a `.vdb` is stored in an instance of the `ObjectVdb` class which is also derived from `ObjectGeneral`.
+A terrain/object from a `.vdb` is stored in an instance of the `ObjectVdb` class which is derived from `ObjectGeneral`.
 Examples of `.vdb`-files are found in the folder `levelsets`.
 
-Note that all `ObjectGeneral` instances must be added to the std::vector `objects` and `ObjectPlate` instances are added to the std::vector `plates`.
+Note that all `ObjectGeneral` instances must be added to the vector `objects` and `ObjectPlate` instances are added to the vector `plates`.
 
 
 #### Saving simulation data
 
-The directory to save the output data is specified by the user in `mpm.cpp`.
+The directory to save the output data is specified by the user in the setup file `mpm.cpp`.
 Particle data is saved as **binary PLY-files** (using [tinyply](https://github.com/ddiakopoulos/tinyply)) with the format (`particles_fX.ply`) where X represents the frame number (from 0 to `end_frame` as specified by the user).
 
-We recommend [SideFX's Houdini](https://www.sidefx.com) for visualization the particle data. In the file `visualize.hipnc` in the `postprocess` directory, we show how to make a simple visualization of the data. Some simple post-processing can also be done directly in Houdini. PLY files can also be easily imported in Python for post-processing. This is shown in the file `load_ply.py` which can be found in the `postprocess` directory.
+We recommend [SideFX's Houdini](https://www.sidefx.com) for visualization the particle data. In the file `visualize.hipnc` in the `postprocess` directory, we show how to make a simple visualization of the data. Some simple post-processing can also be done directly in Houdini. PLY files can also be easily read by Python. This is shown in the file `load_ply.py` which can be found in the `postprocess` directory.
 
-Optionally, the grid data can also be saved if `save_grid = true`. Then, the grid data is saved as `grid_fX.ply`. By default, the grid data is not saved.
+Optionally, the grid data can be saved if `save_grid = true`. Then, the grid data is saved as `grid_fX.ply`. By default, the grid data is not saved.
 
 
 #### Key parameters and options
@@ -141,17 +194,18 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 | `save_grid`  | false | Save grid data to file
 | `cfl`        | 0.5     | CFL constant, typically around 0.5
 | `cfl_elastic`| 0.5     | CFL-like constant for elastic wave speed, typically around 0.5
-| `flip_ratio` | -0.95  | (A)PIC-(A)FLIP ratio in the range [-1,1]. Positive numbers [0,1]: PIC/FLIP where 1 equals pure FLIP. Negative numbers [-1,0): APIC/AFLIP where -1 equals pure AFLIP
+| `flip_ratio` | -0.95  | (A)PIC-(A)FLIP ratio in the range [-1,1]. Positive numbers [0,1]: PIC/FLIP where 1 equals pure FLIP. Negative numbers [-1,0): APIC/AFLIP where -1 equals pure AFLIP.
 | `reduce_verbose` | false | Reduce writing to screen
-| `pbc`        | false | Use periodic boundary conditions, see `pbc.cpp`. If `pbc_special = true` one may code the periodicity in `position_update.cpp`
-| `gravity`    | (0,0,(0)) | Gravitational acceleration vector. If `gravity_special = true` one may code the gravity evolution in `update_dt.cpp` where the gravity is increased linearly to its specified value within `gravity_time`.
+| `gravity`    | (0,0,(0)) | Gravitational acceleration vector. If `gravity_special = true` one may code the gravity evolution in `update_dt.cpp`.
 | `rho`                   |  1000           | Density (kg/m3)
-| `use_mibf` | false           | Use Material-Induced Boundary Friction (MIBF), only relevant for certain plasticity models.
 | `musl`                 | false          | Use MUSL instead of USL
-| `use_von_mises_q`      | false          | If `true` Define q (the "equivalent shear stress") used in plasticity models as the von Mises equivalent stress q = sqrt(3/2 s:s). If `false`, use q = sqrt(1/2 s:s). If using the `DPSoft` model, this will always be interpreted as `true`.
+| `use_mibf` | false           | Use Material-Induced Boundary Friction (MIBF), only relevant for certain plasticity models
+| `use_von_mises_q`      | false          | If `true` define the "equivalent shear stress" q as the von Mises equivalent stress q = sqrt(3/2 s:s), otherwise q = sqrt(1/2 s:s). 
+| `pbc`        | false | Use periodic boundary conditions, see `pbc.cpp`. If `pbc_special = true` one may code the periodicity in `position_update.cpp`
 | `Lx`, `Ly` and `Lz`    | 1.0            | The material sample space used in `SampleParticles(...)`
+| `grid_reference_point` | - | Optionally provide a point to be considered in the initial adaptive grid creation, otherwise it only considers the particle domain
 | `elastic_model`        | Hencky | Elastic model. Note that Hencky's model must be used when combined with a plastic model. 
-| `plastic_model`        | NoPlasticity   | Plastic model, plastic parameters are set according to the model used
+| `plastic_model`        | NoPlasticity   | Plastic model. Parameters are set according to the model used, see below.
 | `E`                    | 1e6   | The 3D Young's modulus (Pa)
 | `nu`                   | 0.3  | The 3D Poisson's ratio (-)
 
@@ -204,12 +258,22 @@ Here is a list of the various plastic models and their parameters:
 | |                     | `mu_1`         | 0.382           |      
 | |                     | `mu_2`         | 0.644           |
 
-In the MCC-based models, one must also choose a corresponding hardening law, either 1) an exponential explicit law `ExpExpl`, 2) a hyperbolic sine explicit law `SinhExpl` or 3) an exponential implicit law `ExpImpl`.
+In the MCC-based models, one must also choose a corresponding hardening law, either 
+1) an exponential explicit law `ExpoExpl`,    
+2)  a hyperbolic sine explicit law `SinhExpl`,     
+3) an exponential implicit law `ExpoImpl`,     
+4) a hyperbolic sine implicit law `SinhImpl`.     
 
+
+## Limitations
+
+* Optimized for dense (not sparse) topologies. On sparse topologies, the simulations can be rather slow. This follows from the chosen grid data format, which may be replaced in the future. However, the current choice keeps the code simple and organized.
+
+* Supports only single-materials, however, one can easily extend this to multi-material problems. E.g., one can create particle quantities for the relevant material parameters (see `data_structures.hpp`) which can then be used in the material models (see, e.g., `plasticity.cpp`)
 
 ### Troubleshooting
 
-* On Mac, if OpenMP was installed through Homebrew, you might need to use the following CMake options when building, depending on your version:   
+* On Mac, especially if OpenMP was installed through Homebrew, you might need to specify certiain paths for CMake, e.g.,       
 `cmake -DCMAKE_BUILD_TYPE=Release -DOpenMP_CXX_FLAG="-Xclang -fopenmp" -DOpenMP_CXX_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_C_FLAG="-Xclang -fopenmp" -DOpenMP_C_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/opt/homebrew/opt/libomp/lib/libomp.dylib ..`
 
 * Eigen error? Remember to specify vectors with 3 elements for 3D problems and 2 elements for 2D problems. The dimension of the problem is chosen as a global variable in `tools.hpp`.
