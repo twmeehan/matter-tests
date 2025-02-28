@@ -135,7 +135,7 @@ int main(){
 
     sim.Lx = 1;
     sim.Ly = 1;
-    // sim.Lz = 0.1; // if 3D
+    sim.Lz = 1; // ONLY IF 3D, OTHERWISE REMOVE LINE
     SampleParticles(sim, /*sampling radius*/ 0.01);
 
     ObjectPlate ground = ObjectPlate(/*position*/ 0, /*plate type*/ bottom, /*boundary condition*/ SLIPFREE, /*friction*/ 0.5);  
@@ -152,8 +152,7 @@ int main(){
     sim.dp_cohesion = 0;    // Cohesion
 
     sim.simulate();
-
-	return 0;
+    return 0;
 }
 ```
 
@@ -258,11 +257,11 @@ Here is a list of the various plastic models and their parameters:
 | |                     | `mu_1`         | 0.382           |      
 | |                     | `mu_2`         | 0.644           |
 
-In the MCC-based models, one must also choose a corresponding hardening law, either 
-1) an exponential explicit law `ExpoExpl`,    
-2)  a hyperbolic sine explicit law `SinhExpl`,     
-3) an exponential implicit law `ExpoImpl`,     
-4) a hyperbolic sine implicit law `SinhImpl`.     
+In the MCC-based models, one must also choose a corresponding hardening law: 
+* exponential explicit law `ExpoExpl`    
+* hyperbolic sine explicit law `SinhExpl`     
+* exponential implicit law `ExpoImpl`     
+* hyperbolic sine implicit law `SinhImpl`     
 
 
 ## Limitations
