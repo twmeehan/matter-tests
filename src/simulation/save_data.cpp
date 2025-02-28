@@ -137,7 +137,7 @@ void Simulation::saveParticleData(std::string extra){
             tinyply::Type::INVALID,
             0);
 
-        if (plastic_model == DPVisc || plastic_model == DPMui || plastic_model == MCCMui){
+        if ( (plastic_model == DPVisc && use_mibf) || (plastic_model == MCCVisc && use_mibf) || plastic_model == DPMui || plastic_model == MCCMui){
             file.add_properties_to_element(
                 "vertex",
                 { "muI" },
@@ -146,7 +146,7 @@ void Simulation::saveParticleData(std::string extra){
                 reinterpret_cast<uint8_t*>(particles.muI.data()),
                 tinyply::Type::INVALID,
                 0);
-        } // end if mibf models
+        } // end if MIBF models
 
         if (plastic_model == DPMui || plastic_model == MCCMui){
 
@@ -158,7 +158,7 @@ void Simulation::saveParticleData(std::string extra){
                 reinterpret_cast<uint8_t*>(particles.viscosity.data()),
                 tinyply::Type::INVALID,
                 0);
-        } // end if MuI
+        } // end if MuI models
 
     } // end if plasticity
 

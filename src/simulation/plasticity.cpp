@@ -319,7 +319,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
                 if (use_mibf){
                     if (std::abs(p_trial + p_shift) < 1e-10)
-                        particles.muI[p] = 1e15;
+                        particles.muI[p] = 1e10;
                     else
                         particles.muI[p] = ((q_trial - f_mu_prefac * delta_gamma) - dp_cohesion) / (p_trial + p_shift);
                 }
@@ -487,21 +487,26 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = p_stress;
             T q_trial = q_stress;
 
-            bool perform_rma;
+            if (plastic_model == MCCVisc){
+                if (use_mibf)
+                    particles.muI[p] = M;
+            }
 
+            bool perform_rma;
+            T p_c;
             if (hardening_law == NoHard){ // Exponential Explicit Hardening
                    perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p0, beta, mu, K, rma_prefac);
                 // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, rma_prefac);
             }
             else if (hardening_law == ExpoExpl){ // Exponential Explicit Hardening
-                T particle_p0 = std::max(stress_tolerance, p0*std::exp(-xi*particles.eps_pl_vol[p]));
-                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
-                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
+                p_c = std::max(stress_tolerance, p0*std::exp(-xi*particles.eps_pl_vol[p]));
+                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p_c, beta, mu, K, rma_prefac);
+                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p_c, beta, mu, K, rma_prefac);
             }
             else if (hardening_law == SinhExpl){ // Sinh Explicit Hardening
-                T particle_p0 = std::max(stress_tolerance, K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
-                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
-                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, particle_p0, beta, mu, K, rma_prefac);
+                p_c = std::max(stress_tolerance, K*std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
+                   perform_rma =       MCCRMAExplicit(p_stress, q_stress, exit, M, p_c, beta, mu, K, rma_prefac);
+                // perform_rma = MCCRMAExplicitOnevar(p_stress, q_stress, exit, M, p_c, beta, mu, K, rma_prefac);
             }
             else if (hardening_law == ExpoImpl){ // Exponential Implicit Hardening
                    perform_rma = MCCRMAImplicitExponentialOnevar(p_stress, q_stress, exit, M, p0, beta, mu, K, xi, rma_prefac, particles.eps_pl_vol[p]);
@@ -532,7 +537,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     if (perzyna_exp == 1){
                         delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*perzyna_visc/dt);
                         if (delta_gamma < 0){
-                            if (delta_gamma > -1e-15){
+                            if (delta_gamma > -1e-14){
                                 delta_gamma = 0;
                             }
                             else{
@@ -578,6 +583,22 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     } // end if perzyna_exp == 1
 
                     q_stress = std::max(q_yield, q_trial - f_mu_prefac * delta_gamma); // delta_gamma = dt * gamma_dot_S
+
+                    if (use_mibf){
+                        if (hardening_law == ExpoImpl){
+                            p_c = std::max(T(0), p0 * std::exp(-xi*particles.eps_pl_vol[p]));
+                        }
+                        else if (hardening_law == SinhImpl){
+                            p_c = std::max(T(0), K * std::sinh(-xi*particles.eps_pl_vol[p] + std::asinh(p0/K)));
+                        }
+
+                        if ( (p_stress < -beta * p_c + stress_tolerance) || (p_stress > p_c - stress_tolerance) ){
+                            particles.muI[p] = M;
+                        }
+                        else{
+                            particles.muI[p] = q_stress / std::sqrt((p_stress + beta * p_c) * (p_c - p_stress));
+                        }
+                    }
 
                 } //  end if MCCVisc
                 ////////////////////////////////////////////////////////////////
