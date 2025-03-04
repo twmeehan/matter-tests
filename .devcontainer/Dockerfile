@@ -10,7 +10,6 @@ RUN apt-get update && apt-get install -y \
     git \
     build-essential \
     libeigen3-dev \
-    libgtest-dev \
     libopenvdb-dev \
     libtbb-dev \
     libboost-all-dev \

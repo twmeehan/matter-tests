@@ -4,7 +4,7 @@
 
 _Matter_ is an open-source C++ implementation of the Material Point Method (MPM) with elasto-viscoplastic rheologies, specifically designed to model the mechanics and flow of granular matter. However, its usage extends to simulate a variety of different _matter_ undergoing small and large deformations.    
 
-Developed across different sides of the Swiss Alps, this software is designed to be lightweight, easy to install and use, with few dependencies, without significantly compromising speed and performance. Parallelized on shared memory with OpenMP, millions of material points/particles can be simulated on (powerful) desktop workstations.
+Developed across different sides of the Swiss Alps, this software is designed to be lightweight, easy to install and use, with few dependencies, without significantly compromising speed and performance. Parallelized on shared memory with OpenMP, millions of material points/particles can be simulated on desktops and laptops.
 
 ![logo](https://larsblatny.github.io/images/matter.png)
 
@@ -79,20 +79,26 @@ If you use Matter in your research, please cite the scientific works where this 
 
 ## Get started
 
-#### Installing dependencies
+### Installing dependencies
 
 The required non-header-only dependencies are **[CMake](https://cmake.org/)**, **[OpenMP](https://www.openmp.org/)**. The standard C++ linear algebra template library **[Eigen](https://eigen.tuxfamily.org/)** is required. The option `-DUSE_VDB=ON` also requires **[OpenVDB](https://www.openvdb.org/)**, however, this can be turned off if only analytic objects are used. 
 
-On Mac, you can download/install the depencies with Homebrew through   
-`brew install cmake libomp eigen`    
+##### Linux
+Install all dependencies with this simple command:        
+`sudo apt-get install -y cmake libeigen3-dev libopenvdb-dev libtbb-dev libboost-all-dev libilmbase-dev libopenexr-dev`    
+where only `cmake` and `libeigen3-dev` are required. 
+
+##### MacOS
+You can download/install the required dependencies with [Homebrew](https://brew.sh/) through   
+`brew install cmake eigen libomp`    
 and OpenVDB with (although this may require other dependecies, see https://formulae.brew.sh/formula/openvdb)    
-`brew install openvdb`
+`brew install openvdb`    
 
-Linux lazy-command:    
-`sudo apt-get install cmake libeigen3-dev libopenvdb-dev libtbb-dev libboost-all-dev libilmbase-dev libopenexr-dev`    
-where only the two first are needed if only using analytic objects.
+However, we recommend instead using [VSCode Dev Containers](https://code.visualstudio.com/docs/devcontainers/tutorial). 
+Download [VSCode](https://code.visualstudio.com/) and [Docker](https://www.docker.com/products/docker-desktop/). In VSCode, install the "Dev Containers" extension. When you open the Matter repository in VSCode, you will be asked if you want to run it in a container. When you accept, a container will be set up and you are ready to simulate!
 
-#### Build and run the code
+
+### Build and run the code
 
 1. Set up your simulation parameters and initial state in `mpm.cpp`.  In `tools.hpp`, the user can specify the dimension of the simulation (default: 2D) and order of interpolation (default: quadratic). 
 
@@ -104,7 +110,7 @@ where only the two first are needed if only using analytic objects.
    
 4. Specify CMake options:     
    `cmake -DCMAKE_BUILD_TYPE=Release -DUSE_VDB=ON ..`     
-   or
+   or    
    `cmake -DCMAKE_BUILD_TYPE=Release -DUSE_VDB=OFF ..`       
 
 5. Compile (NB: the number of threads for the _simulation_ is specified in `mpm.cpp`)      
@@ -113,7 +119,7 @@ where only the two first are needed if only using analytic objects.
 6. Run the executable:      
    `./src/mpm`
 
-#### Example of setup file
+### Example of setup file
 
 Here is a minimal setup file `mpm.cpp` for a simple granular collapse.    
 
@@ -138,7 +144,7 @@ int main(){
     sim.Lz = 1; // ONLY IF 3D, OTHERWISE REMOVE LINE
     SampleParticles(sim, /*sampling radius*/ 0.01);
 
-    ObjectPlate ground = ObjectPlate(/*position*/ 0, /*plate type*/ bottom, /*boundary condition*/ SLIPFREE, /*friction*/ 0.5);  
+    ObjectPlate ground = ObjectPlate(/*position*/ 0, /*type*/ bottom, /*boundary cond.*/ SLIPFREE, /*friction*/ 0.5);  
     sim.plates.push_back(ground);
 
     sim.rho = 1000;         // Density (kg/m3)
@@ -158,7 +164,7 @@ int main(){
 
 In the `examples` folder, other examples will be archived (to use one of these examples, simply copy it into the `src` folder and rename it `mpm.cpp`).
 
-#### Objects and terrains
+### Objects and terrains
 
 Rigid objects and terrains (boundaries) are either   
 * formulated analytically as level sets (signed distance functions)   
@@ -172,7 +178,7 @@ Examples of `.vdb`-files are found in the folder `levelsets`.
 Note that all `ObjectGeneral` instances must be added to the vector `objects` and `ObjectPlate` instances are added to the vector `plates`.
 
 
-#### Saving simulation data
+### Saving simulation data
 
 The directory to save the output data is specified by the user in the setup file `mpm.cpp`.
 Particle data is saved as **binary PLY-files** (using [tinyply](https://github.com/ddiakopoulos/tinyply)) with the format (`particles_fX.ply`) where X represents the frame number (from 0 to `end_frame` as specified by the user).
@@ -182,7 +188,7 @@ We recommend [SideFX's Houdini](https://www.sidefx.com) for visualization the pa
 Optionally, the grid data can be saved if `save_grid = true`. Then, the grid data is saved as `grid_fX.ply`. By default, the grid data is not saved.
 
 
-#### Key parameters and options
+### Key parameters and options
 This is a non-exhaustive list of parameters and options (of the `Simulation` class) to be specified in the input file `mpm.cpp`. See `simulation.hpp` for the complete list, and take advantage of the current `mpm.cpp` example file. Other example files are found in the `examples` directory.
 
 | Parameter  | Default value  | Description  |
@@ -213,42 +219,42 @@ Here is a list of the various plastic models and their parameters:
 
 | Model                                | Name                  | Parameters                | Default value   |
 |  ----                                | ----     |    ----        |          ---    |
-| Von Mises                            | **VM**   | `q_max`        | 100.0           |
-| Drucker-Prager                       | **DP**   | `dp_slope`     | 1.0             |
+| Von Mises                            | `VM`   | `q_max`        | 100.0           |
+| Drucker-Prager                       | `DP`   | `dp_slope`     | 1.0             |
 |                                      |          | `dp_cohesion`  | 0.0             |
-| Drucker-Prager with strain-softening | **DPSoft** | `dp_slope`   | 1.0             |
+| Drucker-Prager with strain-softening | `DPSoft` | `dp_slope`   | 1.0             |
 |                                      |            | `dp_cohesion`  | 0.0           |
 |                                      |            | `xi`           | 0.0           |  
 |                                      |            | `use_pradhana` | true          |  
-| Modified Cam-Clay | **MCC**  | `beta`         | 0.0             |
+| Modified Cam-Clay | `MCC`  | `beta`         | 0.0             |
 |                   |          | `p0`           | 1000.0          |
 |                   |          | `xi`           | 0.0             |
 |                   |          | `M`            | 1.0             |      
-| Perzyna-Von Mises | **VMVisc** | `q_max` | 100.0         |
+| Perzyna-Von Mises | `VMVisc` | `q_max` | 100.0         |
 | |                     | `q_min`        | 100.0           |
 | |                     | `p_min`        | -1.0e20         |
 | |                     | `xi`           | 0.0             |  
 | |                     | `perzyna_exp`  | 1.0             |      
 | |                     | `perzyna_visc` | 0.0             |  
-| Perzyna-Drucker-Prager | **DPVisc** | `dp_slope`  | 1.0  |
+| Perzyna-Drucker-Prager | `DPVisc` | `dp_slope`  | 1.0  |
 | |                     | `dp_cohesion`  | 0.0             |
 | |                     | `use_pradhana` | true            |
 | |                     | `perzyna_exp`  | 1.0             |      
 | |                     | `perzyna_visc` | 0.0             |
-| Perzyna-Modified Cam-Clay | **MCCVisc**  | `beta`  | 0.0 |
+| Perzyna-Modified Cam-Clay | `MCCVisc`  | `beta`  | 0.0 |
 | |                     | `p0`           | 1000.0          |
 | |                     | `xi`           | 0.0             |
 | |                     | `M`            | 1.0             |  
 | |                     | `perzyna_exp`  | 1.0             |      
 | |                     | `perzyna_visc` | 0.0             |
-| $\mu(I)$-rheology     | **DPMui**  | `dp_cohesion` | 0.0 |
+| $\mu(I)$-rheology     | `DPMui`  | `dp_cohesion` | 0.0 |
 | |                     | `use_pradhana` | true            |
 | |                     | `rho_s`        | 1.0             |      
 | |                     | `grain_diameter`| 0.001          |
 | |                     | `I_ref`        | 0.279           |      
 | |                     | `mu_1`         | 0.382           |      
 | |                     | `mu_2`         | 0.644           |      
-| Critical state $\mu(I)$-rheology | **MCCMui**  | `beta` | 0.0  |
+| Critical state $\mu(I)$-rheology | `MCCMui`  | `beta` | 0.0  |
 | |                     | `p0`           | 1000.0          |
 | |                     | `xi`           | 0.0             |
 | |                     | `rho_s`        | 1000.0          |      
@@ -270,7 +276,7 @@ In the MCC-based models, one must also choose a corresponding hardening law:
 
 * Supports only single-materials, however, one can easily extend this to multi-material problems. E.g., one can create particle quantities for the relevant material parameters (see `data_structures.hpp`) which can then be used in the material models (see, e.g., `plasticity.cpp`)
 
-### Troubleshooting
+## Troubleshooting
 
 * On Mac, especially if OpenMP was installed through Homebrew, you might need to specify certiain paths for CMake, e.g.,       
 `cmake -DCMAKE_BUILD_TYPE=Release -DOpenMP_CXX_FLAG="-Xclang -fopenmp" -DOpenMP_CXX_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_CXX_LIB_NAMES=libomp -DOpenMP_C_FLAG="-Xclang -fopenmp" -DOpenMP_C_INCLUDE_DIR=/opt/homebrew/opt/libomp/include -DOpenMP_C_LIB_NAMES=libomp -DOpenMP_libomp_LIBRARY=/opt/homebrew/opt/libomp/lib/libomp.dylib ..`
