@@ -12,8 +12,8 @@ Developed across different sides of the Swiss Alps, this software is designed to
 With _Matter_, you can simulate granular flow on various simple and complex terrains, as demonstrated below.
 
 <p align="middle">
-  <img src="https://larsblatny.github.io/images/double_bump_cropped_medium.gif" height="250" /> 
-  <img src="https://larsblatny.github.io/images/mountain_cropped_medium.gif" height="250" />
+  <img src="https://larsblatny.github.io/images/double_bump_cropped_medium.gif" height="265" /> 
+  <img src="https://larsblatny.github.io/images/mountain_cropped_medium_new.gif" height="265" />
 </p>
 
 <p align="middle">
