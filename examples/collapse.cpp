@@ -78,8 +78,8 @@ int main(){
     sim.use_pradhana = true; // Supress unwanted volume expansion in Drucker-Prager models
     sim.use_von_mises_q = false; // [default: false] if true, q is defined as q = sqrt(3/2 * s:s), otherwise q = sqrt(1/2 * s:s)
 
-    sim.dp_slope = std::tan(30*M_PI/180.0); // Internal friction
-    sim.dp_cohesion = 0; // Yield surface's intercection of q-axis (in Pa), 0 is the cohesionless case
+    sim.M = std::tan(30*M_PI/180.0); // Internal friction
+    sim.q_cohesion = 0; // Yield surface's intercection of q-axis (in Pa), 0 is the cohesionless case
     sim.perzyna_exp = 1; // Exponent in Perzyna models
     sim.perzyna_visc = 0; // Viscous time parameter is Perzyna models
 

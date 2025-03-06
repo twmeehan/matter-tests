@@ -86,15 +86,14 @@ public:
   T xi = 0;
 
   // Drucker Prager
-  T dp_slope = 1;
-  T dp_cohesion = 0;
+  T M = 1;
+  T q_cohesion = 0;
 
   // Perzyna
   T perzyna_exp = 1;
   T perzyna_visc = 0;
 
   // MCC
-  T M = 1;
   T beta = 0;
   T p0 = 1000;
 

@@ -141,7 +141,7 @@ void Simulation::simulate(){
             std::fill(particles.muI.begin(), particles.muI.end(), mu_1);
         } 
         else {// e.g., DPVisc
-            std::fill(particles.muI.begin(), particles.muI.end(), dp_slope);
+            std::fill(particles.muI.begin(), particles.muI.end(), M);
         }
     }
 

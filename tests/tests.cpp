@@ -139,8 +139,8 @@ TEST(BoundaryTest, MIBF) {
     sim_one.use_von_mises_q = false;
     sim_one.use_mibf = true;
 
-    sim_one.dp_slope = friction;
-    sim_one.dp_cohesion = 0;
+    sim_one.M = friction;
+    sim_one.q_cohesion = 0;
     sim_one.perzyna_exp = 1;
     sim_one.perzyna_visc = 0;
 
@@ -191,8 +191,8 @@ TEST(BoundaryTest, MIBF) {
     sim_two.use_von_mises_q = false;
     sim_two.use_mibf = true;
 
-    sim_two.dp_slope = friction;
-    sim_two.dp_cohesion = 0;
+    sim_two.M = friction;
+    sim_two.q_cohesion = 0;
     sim_two.perzyna_exp = 1;
     sim_two.perzyna_visc = 0;
 
@@ -382,8 +382,8 @@ TEST(CollapseTest, DruckerPragerOne) {
 
     sim.xi = 0;
 
-    sim.dp_cohesion = 0;
-    sim.dp_slope = std::tan(30.0 * M_PI / 180.0);
+    sim.q_cohesion = 0;
+    sim.M = std::tan(30.0 * M_PI / 180.0);
 
     #ifdef THREEDIM
     ObjectPlate sideback   = ObjectPlate(0,       back,   SLIPFREE);  sim.plates.push_back(sideback);
@@ -448,8 +448,8 @@ TEST(CollapseTest, DruckerPragerTwo) {
     sim.perzyna_visc = 0;
     sim.perzyna_exp = 1;
 
-    sim.dp_cohesion = 0;
-    sim.dp_slope = std::tan(30.0 * M_PI / 180.0);
+    sim.q_cohesion = 0;
+    sim.M = std::tan(30.0 * M_PI / 180.0);
 
     #ifdef THREEDIM
     ObjectPlate sideback   = ObjectPlate(0,       back,   SLIPFREE);  sim.plates.push_back(sideback);

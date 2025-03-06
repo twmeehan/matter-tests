@@ -30,6 +30,9 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
             T yield_stress = q_max;
 
+            // If hardening law:
+            // yield stress = f(q_max, hardening variable) ....
+
             T delta_gamma = hencky_deviatoric_norm - yield_stress / e_mu_prefac; // this is eps_pl_dev_instant
 
             if (delta_gamma > 0){ // project to yield surface
@@ -50,13 +53,13 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = -K * hencky_trace;
             T q_trial = e_mu_prefac * hencky_deviatoric_norm;
 
-            T q_yield = dp_slope * p_trial + dp_cohesion;
+            T q_yield = M * p_trial + q_cohesion;
 
             // left of tip
             if (q_yield < 1e-10){
                 plastic_count++;
 
-                T p_proj = -dp_cohesion/dp_slope; // larger than p_trial
+                T p_proj = -q_cohesion/M; // larger than p_trial
                 hencky = -p_proj/(K*dim) * TV::Ones();
                 particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
 
@@ -86,14 +89,14 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = -K * hencky_trace;
             T q_trial = e_mu_prefac * hencky_deviatoric_norm;
 
-            T p_tip_orig = -dp_cohesion/dp_slope;
+            T p_tip_orig = -q_cohesion/M;
             T p_tip      = p_tip_orig * std::exp(-xi * particles.eps_pl_dev[p]);
             T p_shift = 0;
             if (use_pradhana)
                 p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain!
 
             // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
-            T q_yield = dp_slope * (p_trial+p_shift) + (-p_tip*dp_slope); // not sure if we should really shift this intersection!!!
+            T q_yield = M * (p_trial+p_shift) + (-p_tip*M); // not sure if we should really shift this intersection!!!
 
             // if left of shifted tip,
             // => project to the original tip given by cohesion only (i.e., not the shifted tip)
@@ -144,7 +147,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 }
                 // if right of tip: p_trial becomes p
                 else{
-                    T q_yield_new = dp_slope * (p_trial+p_shift) + (-p_proj*dp_slope) ;
+                    T q_yield_new = M * (p_trial+p_shift) + (-p_proj*M) ;
                     T delta_gamma = d_prefac * (hencky_deviatoric_norm - q_yield_new / e_mu_prefac);
                     hencky -= (1.0/d_prefac) * delta_gamma * hencky_deviatoric;
                     particles.F[p] = svd.matrixU() * hencky.array().exp().matrix().asDiagonal() * svd.matrixV().transpose();
@@ -236,16 +239,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = -K * hencky_trace;
             T q_trial = e_mu_prefac * hencky_deviatoric_norm;
 
-            T p_tip   = -dp_cohesion/dp_slope;
+            T p_tip   = -q_cohesion/M;
             T p_shift = 0;
             if (use_pradhana)
                 p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain! Force to be zero if using classical volume-expanding non-ass. DP
 
             // if positive volume gain, the q=0 intersection for the yield surface is shifted to the right, at a larger p.
-            T q_yield = dp_slope * (p_trial+p_shift) + dp_cohesion;
+            T q_yield = M * (p_trial+p_shift) + q_cohesion;
 
             if (use_mibf)
-                particles.muI[p] = dp_slope;
+                particles.muI[p] = M;
 
             // if left of shifted tip,
             // => project to the original tip given by cohesion only (i.e., not the shifted tip)
@@ -321,7 +324,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                     if (std::abs(p_trial + p_shift) < 1e-10)
                         particles.muI[p] = 1e10;
                     else
-                        particles.muI[p] = ((q_trial - f_mu_prefac * delta_gamma) - dp_cohesion) / (p_trial + p_shift);
+                        particles.muI[p] = ((q_trial - f_mu_prefac * delta_gamma) - q_cohesion) / (p_trial + p_shift);
                 }
 
                 hencky -= (1.0/d_prefac) * delta_gamma * hencky_deviatoric;
@@ -338,7 +341,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             T p_trial = -K * hencky_trace;
             T q_trial = e_mu_prefac * hencky_deviatoric_norm;
 
-            T p_tip   = -dp_cohesion/mu_1;
+            T p_tip   = -q_cohesion/mu_1;
             T p_shift = 0;
             if (use_pradhana)
                 p_shift = -K * particles.eps_pl_vol_pradhana[p]; // Negative if volume gain! Force to be zero if using classical volume-expanding non-ass. DP
@@ -364,7 +367,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             }
 
             // if positive volume gain, the q=0 intersection for the plastic potential surface is shifted to the right, at a larger p.
-            T q_yield = mu_1 * (p_trial+p_shift) + dp_cohesion;
+            T q_yield = mu_1 * (p_trial+p_shift) + q_cohesion;
 
             // right of tip AND outside yield surface
             if ((p_trial+p_shift) > p_tip && q_trial > (q_yield + stress_tolerance)) {

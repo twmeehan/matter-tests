@@ -154,8 +154,8 @@ int main(){
     sim.nu = 0.3;   // Poisson's ratio (-)
 
     sim.plastic_model = DP; // Drucker-Prager yield
-    sim.dp_slope = 0.5;     // Internal friction
-    sim.dp_cohesion = 0;    // Cohesion
+    sim.M = 0.5;     // Internal friction
+    sim.q_cohesion = 0;    // Cohesion
 
     sim.simulate();
     return 0;
@@ -218,15 +218,15 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 Here is a list of the various plastic models and their parameters:
 
 | Model                                | Name                  | Parameters                | Default value   |
-|  ----                                | ----     |    ----        |          ---    |
+|  ----                                | ----     |    ----      |          ---    |
 | Von Mises                            | `VM`   | `q_max`        | 100.0           |
-| Drucker-Prager                       | `DP`   | `dp_slope`     | 1.0             |
-|                                      |          | `dp_cohesion`  | 0.0             |
-| Drucker-Prager with strain-softening | `DPSoft` | `dp_slope`   | 1.0             |
-|                                      |            | `dp_cohesion`  | 0.0           |
+| Drucker-Prager                       | `DP`   | `M`            | 1.0             |
+|                                      |        | `q_cohesion`   | 0.0             |
+| Drucker-Prager with strain-softening | `DPSoft`   | `M`            | 1.0           |
+|                                      |            | `q_cohesion`   | 0.0           |
 |                                      |            | `xi`           | 0.0           |  
 |                                      |            | `use_pradhana` | true          |  
-| Modified Cam-Clay | `MCC`  | `beta`         | 0.0             |
+| Modified Cam-Clay | `MCC`    | `beta`         | 0.0             |
 |                   |          | `p0`           | 1000.0          |
 |                   |          | `xi`           | 0.0             |
 |                   |          | `M`            | 1.0             |      
@@ -236,8 +236,8 @@ Here is a list of the various plastic models and their parameters:
 | |                     | `xi`           | 0.0             |  
 | |                     | `perzyna_exp`  | 1.0             |      
 | |                     | `perzyna_visc` | 0.0             |  
-| Perzyna-Drucker-Prager | `DPVisc` | `dp_slope`  | 1.0  |
-| |                     | `dp_cohesion`  | 0.0             |
+| Perzyna-Drucker-Prager | `DPVisc` | `M`  | 1.0  |
+| |                     | `q_cohesion`  | 0.0             |
 | |                     | `use_pradhana` | true            |
 | |                     | `perzyna_exp`  | 1.0             |      
 | |                     | `perzyna_visc` | 0.0             |
@@ -247,7 +247,7 @@ Here is a list of the various plastic models and their parameters:
 | |                     | `M`            | 1.0             |  
 | |                     | `perzyna_exp`  | 1.0             |      
 | |                     | `perzyna_visc` | 0.0             |
-| $\mu(I)$-rheology     | `DPMui`  | `dp_cohesion` | 0.0 |
+| $\mu(I)$-rheology     | `DPMui`  | `q_cohesion` | 0.0 |
 | |                     | `use_pradhana` | true            |
 | |                     | `rho_s`        | 1.0             |      
 | |                     | `grain_diameter`| 0.001          |
