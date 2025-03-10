@@ -28,12 +28,12 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         if (plastic_model == VM){
 
-            T yield_stress = q_max;
+            T q_yield = q_max;
 
             // If hardening law:
-            // yield stress = f(q_max, hardening variable) ....
+            // q_yield = f(q_max, hardening variable) ....
 
-            T delta_gamma = hencky_deviatoric_norm - yield_stress / e_mu_prefac; // this is eps_pl_dev_instant
+            T delta_gamma = hencky_deviatoric_norm - q_yield / e_mu_prefac; // this is eps_pl_dev_instant
 
             if (delta_gamma > 0){ // project to yield surface
                 plastic_count++;
@@ -162,15 +162,16 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
 
         else if (plastic_model == VMVisc){
 
-            // trial q-stress
-            T stress = e_mu_prefac * hencky_deviatoric_norm;
+            // trial
+            T q_trial = e_mu_prefac * hencky_deviatoric_norm;
 
-            T yield_stress = q_min + (q_max - q_min) * exp(-xi * particles.eps_pl_dev[p]);
+            // yield
+            T q_yield = q_min + (q_max - q_min) * exp(-xi * particles.eps_pl_dev[p]);
 
             //////////////// Only for capped von Mises /////////////////
             T p_trial = -K * hencky_trace;
             if (p_trial < p_min * exp(-xi * particles.eps_pl_vol[p])){
-                T delta_gamma = stress / f_mu_prefac;
+                T delta_gamma = q_trial / f_mu_prefac;
                 T eps_pl_vol_inst = -p_trial/K;
                 particles.F[p] = svd.matrixU() * svd.matrixV().transpose();
                 particles.eps_pl_vol[p] += eps_pl_vol_inst;
@@ -179,12 +180,12 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             }
             ////////////////////////////////////////////////////////////
 
-            else if (stress > yield_stress) {
+            else if (q_trial > q_yield) {
                 plastic_count++;
                 T delta_gamma;
 
                 if (perzyna_exp == 1 && xi == 0){
-                    delta_gamma = (stress-yield_stress) / (f_mu_prefac + yield_stress*perzyna_visc/dt);
+                    delta_gamma = (q_trial-q_yield) / (f_mu_prefac + q_yield*perzyna_visc/dt);
                     if (delta_gamma < 0){
                         debug("VMVisc: FATAL negative delta_gamma = ", delta_gamma);
                         exit = 1;
@@ -192,7 +193,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 }
                 else{
 
-                    delta_gamma = 0.1 * (stress - yield_stress) / f_mu_prefac; // initial guess
+                    delta_gamma = 0.01 * (q_trial - q_yield) / f_mu_prefac; // initial guess
                     int max_iter = 60;
                     for (int iter = 0; iter < max_iter; iter++) {
                         if (iter == max_iter - 1){ // did not break loop
@@ -200,22 +201,19 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                             exit = 1;
                         }
 
-                        if (delta_gamma < 0) // not possible and can also lead to division by zero
-                            delta_gamma = 1e-10;
-
                         T tm = perzyna_visc * delta_gamma + dt;
                         T tmp = dt / tm;
                         T tmp1 = std::pow(tmp, perzyna_exp);
 
-                        T yield_stress_new = q_min + (q_max - q_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
+                        q_yield = q_min + (q_max - q_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
 
-                        T residual = (stress - f_mu_prefac * delta_gamma) * tmp1 - yield_stress_new;
-                        if (std::abs(residual) < 1e-1) {
+                        T residual = (q_trial - f_mu_prefac * delta_gamma) * tmp1 - q_yield;
+                        if (std::abs(residual) < 1e-2) {
                             break;
                         }
 
-                        T yield_stress_new_diff = -xi / d_prefac * (q_max - q_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
-                        T residual_diff         = -f_mu_prefac * tmp1 + (stress - f_mu_prefac * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm) - yield_stress_new_diff;
+                        T q_yield_diff = -xi / d_prefac * (q_max - q_min) * exp(-xi * (particles.eps_pl_dev[p] + (1.0/d_prefac) * delta_gamma));
+                        T residual_diff = -f_mu_prefac * tmp1 + (q_trial - f_mu_prefac * delta_gamma) * perzyna_exp * std::pow(tmp, perzyna_exp - 1) * (-perzyna_visc * dt) / (tm * tm) - q_yield_diff;
 
                         if (std::abs(residual_diff) < 1e-14){ // otherwise division by zero
                             debug("VMVisc: residual_diff too small in abs value = ", residual_diff);
@@ -223,6 +221,10 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                         }
 
                         delta_gamma -= residual / residual_diff;
+
+                        if (delta_gamma < 0) // not possible and can also lead to division by zero
+                            delta_gamma = 1e-10;
+
                     } // end N-R iterations
                 } // end if perzyna_exp > 1
 
@@ -231,6 +233,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
                 particles.eps_pl_dev[p] += (1.0/d_prefac) * delta_gamma;
                 particles.delta_gamma[p] = delta_gamma / dt;
             } // end plastic projection projection
+
         } // end VMVisc
 
         else if (plastic_model == DPVisc){
