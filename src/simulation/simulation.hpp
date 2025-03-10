@@ -37,11 +37,11 @@ public:
   bool save_sim = true;
   bool reduce_verbose = false;
   bool pbc = false;
-  bool pbc_special = false;
+  bool change_particle_positions = false;
   bool gravity_special = false;
   bool save_grid = false;
   bool use_mibf = false;
-  bool musl = false;
+  bool use_musl = false;
 
   T cfl = 0.5;
   T cfl_elastic = 0.5;
@@ -77,7 +77,7 @@ public:
   T nu = 0.3; // Poisson's ratio (3D)
 
   bool use_pradhana = true;
-  bool use_von_mises_q = false;
+  bool use_mises_q = false;
 
   // Von Mises:
   T q_max = 100;

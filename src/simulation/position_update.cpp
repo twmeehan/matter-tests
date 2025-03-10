@@ -11,7 +11,7 @@ void Simulation::positionUpdate(){
         //// Position is updated according to PIC velocities
         particles.x[p] = particles.x[p] + dt * particles.pic[p];
 
-        if (musl == false){
+        if (use_musl == false){
             //// Velicity is updated
             if (flip_ratio < -1){ // APIC
                 particles.v[p] = particles.pic[p];
@@ -22,6 +22,7 @@ void Simulation::positionUpdate(){
             }
         }
 
+        // If periodic boundary conditions (PBC)
         if (pbc){
             if (particles.x[p](0) > Lx){
                 particles.x[p](0) = particles.x[p](0) - Lx;
@@ -31,8 +32,10 @@ void Simulation::positionUpdate(){
             }
         }
 
+        // Change particle positions (and velocities)
+        // Can be used as a crude PBC if there are no boundary interactions
         // To be hard-coded depending on application
-        if (pbc_special){
+        if (change_particle_positions){
             if (particles.x[p](0) > 0.8){
                 particles.x[p](0)  = -0.1;
                 particles.x[p](1) +=  0.27;

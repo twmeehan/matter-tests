@@ -122,7 +122,7 @@ void Simulation::simulate(){
     one_over_dx = 1.0 / dx;
     one_over_dx_square = one_over_dx * one_over_dx;
 
-    if (use_von_mises_q){
+    if (use_mises_q){
         q_prefac = std::sqrt(3.0)/std::sqrt(2.0);
         d_prefac = std::sqrt(2.0)/std::sqrt(3.0);
     } 
@@ -264,7 +264,7 @@ void Simulation::advanceStep(){
     G2P();
     t_g2p.stop(); runtime_g2p += t_g2p.get_timing();
 
-    if (musl == true)
+    if (use_musl == true)
         MUSL();
 
     timer t_defgrad; t_defgrad.start();

@@ -21,13 +21,6 @@ With _Matter_, you can simulate granular flow on various simple and complex terr
   <img src="https://larsblatny.github.io/images/silo_fps30_10X_cropped_medium.gif" height="262" /> 
 </p>
 
-## License and attribution
-Matter is an open-source software licensed under _GNU General Public License v3.0_ (see LICENSE file).
-If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch).
-
-If you use Matter in your research, please cite the scientific works where this code has been used:   
-* Blatny, L., Gray, J.M.N.T. and Gaume, J. (2024) _A critical state μ(I)-rheology model for cohesive granular flows_, Journal of Fluid Mechanics, 997, p. A67. [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)
-
 
 ## Features
 
@@ -193,26 +186,26 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 
 | Parameter  | Default value  | Description  |
 | ----       |    ----        |          ---    |
-| `end_frame`  | 1   | Last frame to simulate   
-| `fps`        | 1.0   |  Frames per second
-| `n_threads`  | 1    |  Number of threads in parallel
-| `save_grid`  | false | Save grid data to file
-| `cfl`        | 0.5     | CFL constant, typically around 0.5
-| `cfl_elastic`| 0.5     | CFL-like constant for elastic wave speed, typically around 0.5
-| `flip_ratio` | -0.95  | (A)PIC-(A)FLIP ratio in the range [-1,1]. Positive numbers [0,1]: PIC/FLIP where 1 equals pure FLIP. Negative numbers [-1,0): APIC/AFLIP where -1 equals pure AFLIP.
-| `reduce_verbose` | false | Reduce writing to screen
-| `gravity`    | (0,0,(0)) | Gravitational acceleration vector. If `gravity_special = true` one may code the gravity evolution in `update_dt.cpp`.
-| `rho`                   |  1000           | Density (kg/m3)
-| `musl`                 | false          | Use MUSL instead of USL
-| `use_mibf` | false           | Use Material-Induced Boundary Friction (MIBF), only relevant for certain plasticity models
-| `use_von_mises_q`      | false          | If `true` define the "equivalent shear stress" q as the von Mises equivalent stress q = sqrt(3/2 s:s), otherwise q = sqrt(1/2 s:s). 
-| `pbc`        | false | Use periodic boundary conditions, see `pbc.cpp`. If `pbc_special = true` one may code the periodicity in `position_update.cpp`
-| `Lx`, `Ly` and `Lz`    | 1.0            | The material sample space used in `SampleParticles(...)`
+| `end_frame`  | 1          | Last frame to simulate   
+| `fps`        | 1.0        |  Frames per second
+| `n_threads`  | 1          |  Number of threads in parallel
+| `cfl`        | 0.5        | CFL constant, typically around 0.5
+| `cfl_elastic`| 0.5        | CFL-like constant for elastic wave speed, typically around 0.5
+| `flip_ratio` | -0.95      | (A)PIC-(A)FLIP ratio in the range [-1,1]. Positive numbers [0,1]: PIC/FLIP where 1 equals pure FLIP. Negative numbers [-1,0): APIC/AFLIP where -1 equals pure AFLIP.
+| `gravity`    | (0,0,(0))  | Gravitational acceleration vector. If `gravity_special = true` one may code the gravity evolution in `update_dt.cpp`.
+| `rho`        |  1000      | Density (kg/m3)
+| `save_grid`       | false | Save grid data to file
+| `reduce_verbose`  | false | Reduce writing to screen
+| `use_musl`        | false | Use MUSL instead of USL
+| `use_mibf`        | false | Use Material-Induced Boundary Friction (MIBF), only relevant for certain plasticity models
+| `use_mises_q`     | false | If `true` define the "equivalent shear stress" q as the von Mises equivalent stress q = sqrt(3/2 s:s), otherwise q = sqrt(1/2 s:s). 
+| `pbc`             | false | Use periodic boundary conditions
+| `Lx`, `Ly`, `Lz`  | 1.0    | The material sample space used in `SampleParticles(...)`
 | `grid_reference_point` | - | Optionally provide a point to be considered in the initial adaptive grid creation, otherwise it only considers the particle domain
-| `elastic_model`        | Hencky | Elastic model. Note that Hencky's model must be used when combined with a plastic model. 
+| `elastic_model`        | Hencky         | Elastic model. Note that Hencky's model must be used when combined with a plastic model. 
 | `plastic_model`        | NoPlasticity   | Plastic model. Parameters are set according to the model used, see below.
-| `E`                    | 1e6   | The 3D Young's modulus (Pa)
-| `nu`                   | 0.3  | The 3D Poisson's ratio (-)
+| `E`                    | 1e6            | The 3D Young's modulus (Pa)
+| `nu`                   | 0.3            | The 3D Poisson's ratio (-)
 
 
 Here is a list of the various plastic models and their parameters:
@@ -283,6 +276,11 @@ In the MCC-based models, one must also choose a corresponding hardening law:
 
 * Eigen error? Remember to specify vectors with 3 elements for 3D problems and 2 elements for 2D problems. The dimension of the problem is chosen as a global variable in `tools.hpp`.
 
-## Help? Want to contribute?
 
-Please contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch)
+## License and attribution
+_Matter_ is an open-source software licensed under _GNU General Public License v3.0_ (see LICENSE file).
+If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch).
+
+If you use _Matter_ and/or its constitutive models in your research, please cite   
+* Blatny, L., Gray, J.M.N.T. and Gaume, J. (2024) _A critical state μ(I)-rheology model for cohesive granular flows_, Journal of Fluid Mechanics, 997, p. A67. [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)
+

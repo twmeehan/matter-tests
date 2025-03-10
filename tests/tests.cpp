@@ -136,7 +136,7 @@ TEST(BoundaryTest, MIBF) {
     sim_one.plastic_model = DPVisc; 
 
     sim_one.use_pradhana = false; 
-    sim_one.use_von_mises_q = false;
+    sim_one.use_mises_q = false;
     sim_one.use_mibf = true;
 
     sim_one.M = friction;
@@ -188,7 +188,7 @@ TEST(BoundaryTest, MIBF) {
     sim_two.plastic_model = DPVisc; 
 
     sim_two.use_pradhana = false; 
-    sim_two.use_von_mises_q = false;
+    sim_two.use_mises_q = false;
     sim_two.use_mibf = true;
 
     sim_two.M = friction;
@@ -377,7 +377,7 @@ TEST(CollapseTest, DruckerPragerOne) {
     sim.elastic_model = Hencky;
     sim.plastic_model = DPSoft;
 
-    sim.use_von_mises_q = false;
+    sim.use_mises_q = false;
     sim.use_pradhana = true;
 
     sim.xi = 0;
@@ -442,7 +442,7 @@ TEST(CollapseTest, DruckerPragerTwo) {
     sim.elastic_model = Hencky;
     sim.plastic_model = DPVisc;
 
-    sim.use_von_mises_q = false;
+    sim.use_mises_q = false;
     sim.use_pradhana = true;
 
     sim.perzyna_visc = 0;
