@@ -137,7 +137,7 @@ TEST(BoundaryTest, MIBF) {
 
     sim_one.use_pradhana = false; 
     sim_one.use_mises_q = false;
-    sim_one.use_mibf = true;
+    sim_one.use_mibf = false;          // NB
 
     sim_one.M = friction;
     sim_one.q_cohesion = 0;
@@ -189,7 +189,7 @@ TEST(BoundaryTest, MIBF) {
 
     sim_two.use_pradhana = false; 
     sim_two.use_mises_q = false;
-    sim_two.use_mibf = true;
+    sim_two.use_mibf = true;          // NB       
 
     sim_two.M = friction;
     sim_two.q_cohesion = 0;
@@ -204,6 +204,60 @@ TEST(BoundaryTest, MIBF) {
     T diff = std::abs(max_x_1 - max_x_2);
     debug(diff);
     ASSERT_NEAR(diff, 0.0, 1e-13);
+
+
+    Simulation sim_three;
+    sim_three.initialize(false);
+
+    sim_three.save_grid = true;
+    sim_three.end_frame = 1;
+    sim_three.fps = 2;
+    sim_three.n_threads = 8;   
+    sim_three.cfl = 0.5;     
+    sim_three.flip_ratio = -0.95; 
+
+    sim_three.gravity = TV::Zero();
+    sim_three.gravity[0] = +9.81 * std::sin(theta);
+    sim_three.gravity[1] = -9.81 * std::cos(theta);
+
+    sim_three.elastic_model = Hencky;
+    sim_three.E = 1e5;     
+    sim_three.nu = 0.3;   
+    sim_three.rho = 1000; 
+
+    sim_three.Lx = 0.1;
+    sim_three.Ly = 0.05;
+    #ifdef THREEDIM
+        sim_three.Lz = 0.05;
+    #endif
+    sampleParticles(sim_three, 0.001);
+    for(int p = 0; p < sim_three.Np; p++){
+        sim_three.particles.x[p](0) -= 0.5*sim_three.Lx;
+        sim_three.particles.x[p](1) += 0.5*sim_three.dx;
+    }
+    sim_three.grid_reference_point = TV::Zero();
+
+    sim_three.plates.push_back(ground);
+
+    sim_three.plastic_model = DPVisc; 
+
+    sim_three.use_pradhana = false; 
+    sim_three.use_mises_q = true;        // NB
+    sim_three.use_mibf = false;          // NB
+
+    sim_three.M = std::sqrt(3.0)*friction; // NB
+    sim_three.q_cohesion = 0;
+    sim_three.perzyna_exp = 1;
+    sim_three.perzyna_visc = 0;
+
+    sim_three.simulate();
+
+    auto max_x_it_3 = std::max_element( sim_three.particles.x.begin(), sim_three.particles.x.end(), [](const TV &x1, const TV &x2){return x1(0) < x2(0);} );
+    T max_x_3 = (*max_x_it_3)(0);
+
+    T difff = std::abs(max_x_1 - max_x_3);
+    debug(difff);
+    ASSERT_NEAR(difff, 0.0, 1e-13);
 
 }
 
