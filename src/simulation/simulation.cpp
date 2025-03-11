@@ -26,12 +26,12 @@ void Simulation::initialize(bool save, std::string dir, std::string name){
     std::cout << "-----------------------------------------------------------------------------------" << std::endl;
     std::cout << "    88b           d88                                                              " << std::endl;
     std::cout << "    888b         d888                  aa          aa                              " << std::endl;
-    std::cout << "    88`8b       d8'88                  88          88                              " << std::endl;
-    std::cout << "    88 `8b     d8' 88  ,adPPYYba,  aaaa88aaaa  aaaa88aaaa   ,adPPYba,  8b,dPPYba,  " << std::endl;
-    std::cout << "    88  `8b   d8'  88  aa     `Y8  aaaa88aaaa  8888888888  a8P     88  88P     Y8  " << std::endl;
-    std::cout << "    88   `8b d8'   88  ,adPPPPP88      88          88      adPPPPP88   88          " << std::endl;
-    std::cout << "    88    `888'    88  88,    ,88      aa          aa      a8b         88          " << std::endl;
-    std::cout << "    88     `8'     88   `adPPYba,                           `adPPYba   88          " << std::endl;
+    std::cout << "    88 8b       d8 88                  88          88                              " << std::endl;
+    std::cout << "    88  8b     d8  88   adPPYYba   aaaa88aaaa  aaaa88aaaa    adPPYba   8b dPPYba   " << std::endl;
+    std::cout << "    88   8b   d8   88  aa      Y8  aaaa88aaaa  8888888888  a8P     88  88P     Y8  " << std::endl;
+    std::cout << "    88    8b d8    88   adPPPPP88      88          88      adPPPPP88   88          " << std::endl;
+    std::cout << "    88     888     88  88      88      aa          aa      a8b         88          " << std::endl;
+    std::cout << "    88      8      88    adPPYba                            adPPYba    88          " << std::endl;
     std::cout << "-----------------------------------------------------------------------------------" << std::endl;
 
     save_sim = save;

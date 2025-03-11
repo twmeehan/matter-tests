@@ -42,16 +42,14 @@ if (USE_VDB)
 	find_package(Boost REQUIRED)
 	include_directories(${Boost_INCLUDE_DIRS} SYSTEM)
 
-    message("-- MESSAGE: Will not include Half libraries")
-
-    target_link_libraries (tests GTest::gtest_main
-                        OpenMP::OpenMP_CXX
-                        Eigen3::Eigen
-                        ${OPENVDB_LIBRARIES}
-                        ${OpenEXR_LIBRARIES}
-                        ${TBB_LIBRARIES}
-                        ${Boost_LIBRARIES}
-                    )
+  target_link_libraries (tests GTest::gtest_main
+                      OpenMP::OpenMP_CXX
+                      Eigen3::Eigen
+                      ${OPENVDB_LIBRARIES}
+                      ${OpenEXR_LIBRARIES}
+                      ${TBB_LIBRARIES}
+                      ${Boost_LIBRARIES}
+                  )
 
 else (USE_VDB)
 

@@ -31,8 +31,6 @@ if (USE_VDB)
 	find_package(Boost REQUIRED)
 	include_directories(${Boost_INCLUDE_DIRS} SYSTEM)
 
-	message("-- MESSAGE: Will not include Half libraries")
-
 	target_link_libraries (mpm
 						OpenMP::OpenMP_CXX
 						Eigen3::Eigen

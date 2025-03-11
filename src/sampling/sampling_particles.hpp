@@ -26,7 +26,7 @@
         debug("    Number of square samples: ", square_samples.size());
 
         sim.dx = std::cbrt(ppc / T(square_samples.size()) * Lx*Ly*Lz);
-        sim.particle_volume = sim.dx * sim.dx * sim.dx / ppc;
+        sim.particle_volume = sim.dx * sim.dx * sim.dx / ppc; // = Lx*Ly*Lz / T(square_samples.size())
         sim.particle_mass = sim.rho * sim.particle_volume;
 
         debug("    dx set to ", sim.dx);
@@ -68,12 +68,6 @@
             }
         }
 
-        // unsigned int Npx = Lx / (Lx*Ly*Lz) * std::pow( std::pow(Lx*Ly*Lz, 2) * sim.Np, 1.0/3.0);
-        // T dx_p = (Lx / Npx);
-        // sim.dx = 2 * dx_p;
-        // sim.particle_volume = std::pow(dx_p, 3);
-        // sim.particle_mass = sim.rho * sim.particle_volume;
-
     } // end sampleParticles
 
 #else // TWODIM
@@ -94,7 +88,7 @@
         debug("    Number of square samples: ", square_samples.size());
 
         sim.dx = std::sqrt(ppc / T(square_samples.size()) * Lx*Ly);
-        sim.particle_volume = sim.dx * sim.dx / ppc;
+        sim.particle_volume = sim.dx * sim.dx / ppc; // = Lx*Ly / T(square_samples.size())
         sim.particle_mass = sim.rho * sim.particle_volume;
 
         debug("    dx set to ", sim.dx);
