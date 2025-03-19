@@ -70,7 +70,10 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
             }
 
             vi = v_rel;
-            vi_orig = vi; // update velocity copy before next iteration
+
+            // update velocity copy before next iteration
+            vi_orig = vi; // Comment this line to enforce ordering of objects (i.e., use only last object in list)
+
         } // end if colliding
 
     } // end iterator over general objects
@@ -249,7 +252,10 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
             vi(0) = vx_rel + obj.vx_object;
             vi(1) = vy_rel + obj.vy_object;
             vi(2) = vz_rel + obj.vz_object;
-            vi_orig = vi; // update velocity copy before next iteration
+
+            // update velocity copy before next iteration
+            vi_orig = vi; // Comment this line to enforce ordering of objects (i.e., use only last object in list)
+
         } // end if colliding
 
     } // end iterator over 3D plate objects
@@ -375,7 +381,10 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
 
             vi(0) = vx_rel + obj.vx_object;
             vi(1) = vy_rel + obj.vy_object;
-            vi_orig = vi; // update velocity copy before next iteration
+
+            // update velocity copy before next iteration 
+            vi_orig = vi; // Comment this line to enforce ordering of objects (i.e., use only last object in list)
+
         } // end if colliding
 
     } // end iterator over 2D plate objects
