@@ -71,9 +71,9 @@ public:
   T dx;
 
   // Elastoplasticity
-  ElasticModel elastic_model = Hencky;
-  PlasticModel plastic_model = NoPlasticity;
-  HardeningLaw hardening_law = ExpoImpl;
+  ElasticModel elastic_model = ElasticModel::Hencky;
+  PlasticModel plastic_model = PlasticModel::NoPlasticity;
+  HardeningLaw hardening_law = HardeningLaw::ExpoImpl;
   bool use_pradhana = true;
   bool use_mises_q = false;
   T E = 1e6; // Young's modulus (3D)

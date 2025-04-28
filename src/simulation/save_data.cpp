@@ -16,9 +16,9 @@ void Simulation::saveParticleData(std::string extra){
         TM Fe = particles.F[p];
 
         TM tau;
-        if (elastic_model == NeoHookean)
+        if (elastic_model == ElasticModel::NeoHookean)
             tau = NeoHookeanPiola(Fe) * Fe.transpose();
-        else if (elastic_model == Hencky)
+        else if (elastic_model == ElasticModel::Hencky)
             tau = HenckyPiola(Fe) * Fe.transpose();
 
         T Je = Fe.determinant();
@@ -108,7 +108,7 @@ void Simulation::saveParticleData(std::string extra){
         tinyply::Type::INVALID,
         0);
 
-    if (plastic_model != NoPlasticity){
+    if (plastic_model != PlasticModel::NoPlasticity){
 
         file.add_properties_to_element(
             "vertex",
@@ -137,7 +137,7 @@ void Simulation::saveParticleData(std::string extra){
             tinyply::Type::INVALID,
             0);
 
-        if ( (plastic_model == DPVisc && use_mibf) || (plastic_model == MCCVisc && use_mibf) || plastic_model == DPMui || plastic_model == MCCMui){
+        if ( (plastic_model == PlasticModel::DPVisc && use_mibf) || (plastic_model == PlasticModel::MCCVisc && use_mibf) || plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui){
             file.add_properties_to_element(
                 "vertex",
                 { "muI" },
@@ -148,7 +148,7 @@ void Simulation::saveParticleData(std::string extra){
                 0);
         } // end if MIBF models
 
-        if (plastic_model == DPMui || plastic_model == MCCMui){
+        if (plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui){
 
             file.add_properties_to_element(
                 "vertex",
@@ -272,9 +272,9 @@ void Simulation::computeAvgData(TM& volavg_cauchy, TM& volavg_kirchh, T& Javg){
         TM Fe = particles.F[p];
 
         TM tau;
-        if (elastic_model == NeoHookean)
+        if (elastic_model == ElasticModel::NeoHookean)
             tau = NeoHookeanPiola(Fe) * Fe.transpose();
-        else if (elastic_model == Hencky)
+        else if (elastic_model == ElasticModel::Hencky)
             tau = HenckyPiola(Fe) * Fe.transpose();
 
         T Je = Fe.determinant();

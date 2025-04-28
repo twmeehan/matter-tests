@@ -137,10 +137,10 @@ int main(){
     sim.Lz = 1; // ONLY IF 3D, OTHERWISE REMOVE LINE
     SampleParticles(sim, /*sampling radius*/ 0.01);
 
-    sim.plates.push_back(std::make_unique<ObjectPlate>(/*position*/ 0, 
-                                                       /*type*/ bottom, 
-                                                       /*BC*/ SLIPFREE, 
-                                                       /*friction*/ 0.5
+    sim.plates.push_back(std::make_unique<ObjectPlate>(/*position*/ 0,    
+                                                       /*type*/ PlateType::bottom,    
+                                                       /*BC*/ BC::NoSlip,    
+                                                       /*friction*/ 0.5     
                                                       );  
 
     sim.rho = 1000;         // Density (kg/m3)

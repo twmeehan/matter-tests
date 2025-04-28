@@ -77,7 +77,7 @@ void Simulation::simulate(){
         return;
     }
 
-    if (elastic_model != Hencky && plastic_model != NoPlasticity){
+    if (elastic_model != ElasticModel::Hencky && plastic_model != PlasticModel::NoPlasticity){
         debug("This plastic model is only compatible with Hencky's elasticity model");
         debug("Please use: elastic_model = Hencky");
         return;
@@ -136,7 +136,7 @@ void Simulation::simulate(){
     fac_Q = I_ref / (grain_diameter*std::sqrt(rho_s));
 
     if (use_mibf){
-        if (plastic_model == DPMui || plastic_model == MCCMui){
+        if (plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui){
             std::fill(particles.muI.begin(), particles.muI.end(), mu_1);
         } 
         else {// e.g., DPVisc

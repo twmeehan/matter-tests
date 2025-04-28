@@ -24,8 +24,8 @@ TEST(BoundaryTest, AnalyticSlipFree) {
     sim.cfl = 0.5;
     sim.flip_ratio = -0.95;
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6;
     sim.nu = 0.3;
     sim.rho = 1000;
@@ -66,8 +66,8 @@ TEST(BoundaryTest, AnalyticSlipStick) {
     sim.cfl = 0.5;
     sim.flip_ratio = -0.95;
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6;
     sim.nu = 0.3;
     sim.rho = 1000;
@@ -110,8 +110,8 @@ TEST(CoulombFrictionTest, PlateSlipFree) {
     sim.gravity[0] = +9.81 * std::sin(theta);
     sim.gravity[1] = -9.81 * std::cos(theta);
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6; 
     sim.nu = 0.3; 
     sim.rho = 1000; 
@@ -160,8 +160,8 @@ TEST(CoulombFrictionTest, PlateSlipStick) {
     sim.gravity[0] = +9.81 * std::sin(theta);
     sim.gravity[1] = -9.81 * std::cos(theta);
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6; 
     sim.nu = 0.3; 
     sim.rho = 1000; 
@@ -212,8 +212,8 @@ TEST(CoulombFrictionTest, GeneralSlipFree) {
     sim.gravity[0] = +9.81 * std::sin(theta);
     sim.gravity[1] = -9.81 * std::cos(theta);
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6; 
     sim.nu = 0.3; 
     sim.rho = 1000; 
@@ -262,8 +262,8 @@ TEST(CoulombFrictionTest, GeneralSlipStick) {
     sim.gravity[0] = +9.81 * std::sin(theta);
     sim.gravity[1] = -9.81 * std::cos(theta);
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6; 
     sim.nu = 0.3; 
     sim.rho = 1000; 
@@ -317,7 +317,7 @@ TEST(BoundaryTest, MIBF) {
     sim_one.gravity[0] = +9.81 * std::sin(theta);
     sim_one.gravity[1] = -9.81 * std::cos(theta);
 
-    sim_one.elastic_model = Hencky;
+    sim_one.elastic_model = ElasticModel::Hencky;
     sim_one.E = 1e5;     
     sim_one.nu = 0.3;   
     sim_one.rho = 1000; 
@@ -336,7 +336,7 @@ TEST(BoundaryTest, MIBF) {
 
     sim_one.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::SlipFree, friction)); 
 
-    sim_one.plastic_model = DPVisc; 
+    sim_one.plastic_model = PlasticModel::DPVisc; 
 
     sim_one.use_pradhana = false; 
     sim_one.use_mises_q = false;
@@ -369,7 +369,7 @@ TEST(BoundaryTest, MIBF) {
     sim_two.gravity[0] = +9.81 * std::sin(theta);
     sim_two.gravity[1] = -9.81 * std::cos(theta);
 
-    sim_two.elastic_model = Hencky;
+    sim_two.elastic_model = ElasticModel::Hencky;
     sim_two.E = 1e5;     
     sim_two.nu = 0.3;   
     sim_two.rho = 1000; 
@@ -388,7 +388,7 @@ TEST(BoundaryTest, MIBF) {
 
     sim_two.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::SlipFree, friction)); 
 
-    sim_two.plastic_model = DPVisc; 
+    sim_two.plastic_model = PlasticModel::DPVisc; 
 
     sim_two.use_pradhana = false; 
     sim_two.use_mises_q = false;
@@ -423,7 +423,7 @@ TEST(BoundaryTest, MIBF) {
     sim_three.gravity[0] = +9.81 * std::sin(theta);
     sim_three.gravity[1] = -9.81 * std::cos(theta);
 
-    sim_three.elastic_model = Hencky;
+    sim_three.elastic_model = ElasticModel::Hencky;
     sim_three.E = 1e5;     
     sim_three.nu = 0.3;   
     sim_three.rho = 1000; 
@@ -442,7 +442,7 @@ TEST(BoundaryTest, MIBF) {
 
     sim_three.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::SlipFree, friction)); 
 
-    sim_three.plastic_model = DPVisc; 
+    sim_three.plastic_model = PlasticModel::DPVisc; 
 
     sim_three.use_pradhana = false; 
     sim_three.use_mises_q = true;        // NB
@@ -503,8 +503,8 @@ TEST(ElasticityTest, BulkModulus) {
         sim.plates.push_back(std::make_unique<ObjectPlate>(sim.Ly+0.5*sim.dx,  PlateType::top,    BC::NoSlip, 0, -1e15, 1e15,   0, -vel,    vmin_factor, load_factor)); 
     #endif
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
 
     sim.simulate();
 
@@ -568,8 +568,8 @@ TEST(EnergyTest, Rotation) {
         total_energy_init += 0.5*(vx*vx + vy*vy); // per unit mass
     }
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
 
     sim.simulate();
 
@@ -631,8 +631,8 @@ TEST(CollapseTest, DruckerPragerOne) {
     }
     sim.grid_reference_point = TV::Zero();
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = DPSoft;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::DPSoft;
 
     sim.use_mises_q = false;
     sim.use_pradhana = true;
@@ -696,8 +696,8 @@ TEST(CollapseTest, DruckerPragerTwo) {
     }
     sim.grid_reference_point = TV::Zero();
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = DPVisc;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::DPVisc;
 
     sim.use_mises_q = false;
     sim.use_pradhana = true;

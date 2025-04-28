@@ -10,9 +10,9 @@ public:
 
     ~ObjectCurve(){}
 
-    ObjectCurve(BoundaryCondition bc_in = NOSLIP, T friction_in = 0.0, std::string name_in = "") : ObjectGeneral(bc_in, friction_in, name_in) {}
+    ObjectCurve(BC bc_in = BC::NoSlip, T friction_in = 0.0, std::string name_in = "") : ObjectGeneral(bc_in, friction_in, name_in) {}
 
-    bool inside(const TV& X_in) override {
+    bool inside(const TV& X_in) const override {
 
         T x = X_in(0);
         T y = X_in(1);
@@ -24,7 +24,7 @@ public:
 
     }
 
-    TV normal(const TV& X_in) override {
+    TV normal(const TV& X_in) const override {
 
         T x = X_in(0);
         TV n;

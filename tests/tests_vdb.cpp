@@ -53,8 +53,8 @@ TEST(BoundaryTest, VDB) {
     sim.cfl = 0.5;
     sim.flip_ratio = -0.95;
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6;
     sim.nu = 0.3;
     sim.rho = 1000;
@@ -71,7 +71,7 @@ TEST(BoundaryTest, VDB) {
     sim.particles.x[0](1) = 1;
 
     std::string file_path = std::string(INCLUDE_DIR) + "/curve.vdb";
-    sim.objects.push_back(std::make_unique<ObjectVdb>(file_path, SLIPFREE, 0.0)); 
+    sim.objects.push_back(std::make_unique<ObjectVdb>(file_path, BC::SlipFree, 0.0)); 
 
     sim.simulate();
 

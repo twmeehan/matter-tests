@@ -22,10 +22,10 @@ void Simulation::explicitEulerUpdate(){
             TM Fe = particles.F[p];
 
             TM dPsidF;
-            if (elastic_model == NeoHookean){
+            if (elastic_model == ElasticModel::NeoHookean){
                 dPsidF = NeoHookeanPiola(Fe);
             }
-            else if (elastic_model == Hencky){ // St Venant Kirchhoff with Hencky strain
+            else if (elastic_model == ElasticModel::Hencky){ // St Venant Kirchhoff with Hencky strain
                 dPsidF = HenckyPiola(Fe);
             }
             else{

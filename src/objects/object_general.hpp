@@ -8,17 +8,17 @@
 class ObjectGeneral{
 public:
 
-    BoundaryCondition bc;
+    BC bc;
     T friction;
     std::string name;
 
-    ObjectGeneral(BoundaryCondition bc, T friction, std::string name) : bc(bc), friction(friction), name(name) {}
+    ObjectGeneral(BC bc, T friction, std::string name) : bc(bc), friction(friction), name(name) {}
 
     virtual ~ObjectGeneral(){}
 
-    virtual bool inside(const TV& X_in) = 0;
+    virtual bool inside(const TV& X_in) const = 0;
 
-    virtual TV normal(const TV& X_in) = 0;
+    virtual TV normal(const TV& X_in) const = 0;
 
 };
 

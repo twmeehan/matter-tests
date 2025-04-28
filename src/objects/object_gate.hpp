@@ -11,9 +11,9 @@ public:
 
     ~ObjectGate(){}
 
-    ObjectGate(BoundaryCondition bc_in, T friction_in, std::string name_in = "", T height_in = 0.016) : ObjectGeneral(bc_in, friction_in, name_in), height(height_in) {}
+    ObjectGate(BC bc_in, T friction_in, std::string name_in = "", T height_in = 0.016) : ObjectGeneral(bc_in, friction_in, name_in), height(height_in) {}
 
-    bool inside(const TV& X_in) override {
+    bool inside(const TV& X_in) const override {
 
         T x = X_in(0);
         T y = X_in(1);
@@ -27,7 +27,7 @@ public:
 
     }
 
-    TV normal(const TV& X_in) override {
+    TV normal(const TV& X_in) const override {
 
         T x = X_in(0);
         TV n;
