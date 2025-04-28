@@ -15,7 +15,7 @@ void Simulation::saveParticleData(std::string extra){
 
         TM Fe = particles.F[p];
 
-        TM tau; // particles.tau[p];
+        TM tau;
         if (elastic_model == NeoHookean)
             tau = NeoHookeanPiola(Fe) * Fe.transpose();
         else if (elastic_model == Hencky)
@@ -271,7 +271,7 @@ void Simulation::computeAvgData(TM& volavg_cauchy, TM& volavg_kirchh, T& Javg){
 
         TM Fe = particles.F[p];
 
-        TM tau; // particles.tau[p];
+        TM tau;
         if (elastic_model == NeoHookean)
             tau = NeoHookeanPiola(Fe) * Fe.transpose();
         else if (elastic_model == Hencky)
@@ -287,7 +287,6 @@ void Simulation::computeAvgData(TM& volavg_cauchy, TM& volavg_kirchh, T& Javg){
 
     volavg_cauchy /= Jsum;
     volavg_kirchh /= Jsum;
-
     Javg = Jsum / Np;
 
 }
@@ -302,17 +301,41 @@ void Simulation::saveAvgData(){
     computeAvgData(volavg_cauchy, volavg_kirchh, Javg);
 
     std::ofstream outFile1(directory + sim_name + "/avg_cauchy_frame_" + std::to_string(frame) + ".csv");
-    outFile1 << volavg_cauchy(0,0)    << ","
-             << volavg_cauchy(0,1)    << ","
-             << volavg_cauchy(1,0)    << ","
-             << volavg_cauchy(1,1)    << "\n";
+    #ifdef THREEDIM
+        outFile1 << volavg_cauchy(0,0)    << ","
+                 << volavg_cauchy(0,1)    << ","
+                 << volavg_cauchy(0,2)    << ","
+                 << volavg_cauchy(1,0)    << ","
+                 << volavg_cauchy(1,1)    << ","
+                 << volavg_cauchy(1,2)    << ","
+                 << volavg_cauchy(2,0)    << ","
+                 << volavg_cauchy(2,1)    << ","
+                 << volavg_cauchy(2,2)    << "\n";
+    #else
+        outFile1 << volavg_cauchy(0,0)    << ","
+                 << volavg_cauchy(0,1)    << ","
+                 << volavg_cauchy(1,0)    << ","
+                 << volavg_cauchy(1,1)    << "\n";
+    #endif
     outFile1.close();
 
     std::ofstream outFile2(directory + sim_name + "/avg_kirchh_frame_" + std::to_string(frame) + ".csv");
-    outFile2 << volavg_kirchh(0,0)    << ","
-             << volavg_kirchh(0,1)    << ","
-             << volavg_kirchh(1,0)    << ","
-             << volavg_kirchh(1,1)    << "\n";
+    #ifdef THREEDIM
+        outFile2 << volavg_kirchh(0,0)    << ","
+                 << volavg_kirchh(0,1)    << ","
+                 << volavg_kirchh(0,2)    << ","
+                 << volavg_kirchh(1,0)    << ","
+                 << volavg_kirchh(1,1)    << ","
+                 << volavg_kirchh(1,2)    << ","
+                 << volavg_kirchh(2,0)    << ","
+                 << volavg_kirchh(2,1)    << ","
+                 << volavg_kirchh(2,2)    << "\n";
+    #else
+        outFile2 << volavg_kirchh(0,0)    << ","
+                 << volavg_kirchh(0,1)    << ","
+                 << volavg_kirchh(1,0)    << ","
+                 << volavg_kirchh(1,1)    << "\n";
+    #endif
     outFile2.close();
 
     std::ofstream outFile3(directory + sim_name + "/avg_J_frame_" + std::to_string(frame) + ".csv");
