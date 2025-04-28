@@ -128,30 +128,32 @@ int main(){
 
     sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ "collapse");
 
-    sim.end_frame = 20;     // last frame to simulate
-    sim.fps = 10;           // frames per second
-    sim.n_threads = 8;      // number of threads in parallel
+    sim.end_frame = 20;  // last frame to simulate
+    sim.fps = 10;        // frames per second
+    sim.n_threads = 8;   // number of threads in parallel
 
     sim.Lx = 1;
     sim.Ly = 1;
-    sim.Lz = 1; // ONLY IF 3D, OTHERWISE REMOVE LINE
-    SampleParticles(sim, /*sampling radius*/ 0.01);
+    // sim.Lz = 1; // only 3D, otherwise remove
 
-    sim.plates.push_back(std::make_unique<ObjectPlate>(/*position*/ 0,    
-                                                       /*type*/ PlateType::bottom,    
-                                                       /*BC*/ BC::NoSlip,    
-                                                       /*friction*/ 0.5     
-                                                      );  
+    sampleParticles(sim, /*sampling radius*/ 0.01);
 
-    sim.rho = 1000;         // Density (kg/m3)
-    sim.gravity[1] = -9.81; // Gravity
+    sim.plates.push_back(std::make_unique<ObjectPlate>(
+        /*position*/ 0, 
+        /*type*/ PlateType::bottom, 
+        /*BC*/ BC::NoSlip,        
+        /*friction*/ 0.5
+    ));          
+
+    sim.rho = 1000;         // density (kg/m3)
+    sim.gravity[1] = -9.81; // gravity
 
     sim.E = 1e6;    // Young's modulus (Pa)
     sim.nu = 0.3;   // Poisson's ratio (-)
 
-    sim.plastic_model = DP; // Drucker-Prager yield
-    sim.M = 0.5;     // Internal friction
-    sim.q_cohesion = 0;    // Cohesion
+    sim.plastic_model = PlasticModel::DP; // Drucker-Prager yield
+    sim.M = 0.5;         // internal friction
+    sim.q_cohesion = 0;  // cohesion
 
     sim.simulate();
     return 0;
