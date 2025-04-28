@@ -283,7 +283,9 @@ In the MCC-based models, one must also choose a corresponding hardening law:
 
 ## License and attribution
 _Matter_ is an open-source software licensed under _GNU General Public License v3.0_ (see LICENSE file).
-If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch).
+If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch).    
 
-If you use the $\mu(I)$-rheology models, please cite this article: [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)
+Please attribute this software by citing this article: [doi:10.5194/egusphere-2025-1157](https://doi.org/10.5194/egusphere-2025-1157)    
+
+If you use the $\mu(I)$-rheology models, please cite this article: [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)    
 
