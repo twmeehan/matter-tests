@@ -95,7 +95,7 @@ public:
               load_factor(load_factor),
               name(name) {}
 
-    bool inside(const TV& X_in){
+    bool inside(const TV& X_in) const {
         if (plate_type == left){
             if (X_in(1) < pos_upper && X_in(1) > pos_lower && (X_in(0) - pos_object) <= 0){
                 return true;
@@ -135,21 +135,12 @@ public:
 
   void move(T dt, T frame_dt, T time){
 
-      T load_time = load_factor * frame_dt;
-      if (time < load_time) {
-          vx_object = vx_object_original / vmin_factor;
-          vy_object = vy_object_original / vmin_factor;
-          #ifdef THREEDIM
-          vz_object = vz_object_original / vmin_factor;
-          #endif
-      }
-      else{
-          vx_object = vx_object_original;
-          vy_object = vy_object_original;
-          #ifdef THREEDIM
-          vz_object = vz_object_original;
-          #endif
-      }
+      T factor = (time < load_factor * frame_dt) ? (1.0 / vmin_factor) : 1.0;
+      vx_object = vx_object_original * factor;
+      vy_object = vy_object_original * factor;
+    #ifdef THREEDIM
+      vz_object = vz_object_original * factor;
+    #endif
 
       if (plate_type == left || plate_type == right){
           pos_object += dt * vx_object;
