@@ -90,31 +90,26 @@ bool MCCRMAImplicitSinhOnevar(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T
         y = Msq * (p - p0) * (p + beta * p0) + damping_factor * q * q;
 
         // Check for convergence, iteration > 3 check is done to ensure some displacement is measured.
-        if (iter > 3 && std::abs(y) < 1e-3 * scale_factor) {
+        if (iter > 5 && std::abs(y) < 1e-4) {
             break;
         }
 
         if (iter == max_iter - 1) {  // did not break loop
             if (p0 > p0_min) {
                 debug("RMA: FATAL did not exit loop at iteration = ", iter, ", iteration = ", iter);
-                debug(iter, ":  r1   = ", y);
-                debug(iter, ":  y    = ", y);
-                debug(iter, ":  p0   = ", p0);
-                debug(iter, ":  p0_t   = ", p0_t);
-                debug(iter, ":  pt   = ", p_t);
-                debug(iter, ":  qt   = ", q_t);
-                debug(iter, ":  epv_t   = ", epv_t);
-                debug(iter, ":  epv   = ", epv);
-                debug(iter, ":  p    = ", p);
-                debug(iter, ":  q    = ", q);
-                debug(iter, ":  K    = ", K);
-                debug(iter, ":  mu    = ", mu);
-
+                debug("y    = ", y);
+                debug("p0   = ", p0);
+                debug("K    = ", K);
+                debug("G    = ", mu);
+                debug("pt   = ", p_t);
+                debug("qt   = ", q_t);
+                debug("epvt = ", epv_t);
+                debug("epv  = ", epv);
+                debug("p    = ", p);
+                debug("q    = ", q);
+                debug("p0_t = ", p0_t);
+                debug("scale factor = ", scale_factor); 
                 exit = 1;
-            } else {  // p0 too small
-                p = 1e-15;
-                q = 1e-15;
-                break;
             }
         }
 
@@ -156,7 +151,6 @@ bool MCCRMAImplicitSinhOnevar(T& p, T& q, int& exit, T M, T p00, T beta, T mu, T
             debug(iter, ":  q    = ", q);
             debug(iter, ":  K    = ", K);
             debug(iter, ":  mu    = ", mu);
-
             exit = 1;
             break;
         }
