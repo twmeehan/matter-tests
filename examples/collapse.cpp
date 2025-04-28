@@ -29,7 +29,7 @@ int main(){
     sim.flip_ratio = -0.95; // (A)PIC-(A)FLIP ratio in [-1,1].
 
     // INITILIZE ELASTICITY
-    sim.elastic_model = Hencky;
+    sim.elastic_model = ElasticModel::Hencky;
     sim.E = 1e6;     // Young's modulus (Pa)
     sim.nu = 0.3;   // Poisson's ratio (-)
     sim.rho = 1000; // Density (kg/m3)
@@ -61,18 +61,18 @@ int main(){
     // sim.particles.v = ...
 
     ////// OBJECTS AND TERRAINS
-    ObjectPlate ground = ObjectPlate(0, bottom, NOSLIP);  sim.plates.push_back(ground);
+    sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::NoSlip)); 
 
     /////// Here are some examples how to use the objects derived from ObjectGeneral:
     // T friction = 0.2; 
-    // ObjectBump bump = ObjectBump(SLIPFREE, friction);  sim.objects.push_back(&bump);
-    // ObjectGate gate = ObjectGate(SLIPFREE, friction);  sim.objects.push_back(&gate);
+    // sim.objects.push_back(std::make_unique<ObjectBump>(BC::SlipFree, friction));
+    // sim.objects.push_back(std::make_unique<ObjectGate>(BC::SlipFree, friction));
 
-    /////// Here is an example how to use ObjectVdb (uncomment include files and openvdb::initialize() function above):
-    // ObjectVdb terrain  = ObjectVdb("../levelsets/vdb_file_name.vdb", NOSLIP, friction); sim.objects.push_back(&terrain);
+    /////// Here is an example how to use ObjectVdb (uncomment includes and openvdb::initialize() above):
+    // sim.objects.push_back(std::make_unique<ObjectVdb>("../levelsets/vdb_file_name.vdb", BC::NoSlip, friction));
 
     ////// PLASTICITY
-    sim.plastic_model = DPVisc; // Perzyna model with Drucker_Prager yield surface
+    sim.plastic_model = PlasticModel::DPVisc; // Perzyna model with Drucker_Prager yield surface
 
     sim.use_pradhana = true; // Supress unwanted volume expansion in Drucker-Prager models
     sim.use_mises_q = false; // [default: false] if true, q is defined as q = sqrt(3/2 * s:s), otherwise q = sqrt(1/2 * s:s)
