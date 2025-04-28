@@ -14,7 +14,6 @@ TEST(FileIOTest, LoadFile) {
     ASSERT_TRUE(file.is_open());
 }
 
-
 TEST(BoundaryTest, CalcNormal) {
 
     openvdb::initialize(); 
@@ -36,9 +35,7 @@ TEST(BoundaryTest, CalcNormal) {
     EXPECT_TRUE(obj1.inside(pos) == obj2.inside(pos));
 
     ASSERT_NEAR(diff, 0.0, 1e-4);
-
 }
-
 
 TEST(BoundaryTest, VDB) {
 
@@ -74,8 +71,7 @@ TEST(BoundaryTest, VDB) {
     sim.particles.x[0](1) = 1;
 
     std::string file_path = std::string(INCLUDE_DIR) + "/curve.vdb";
-    ObjectVdb curve  = ObjectVdb(file_path, SLIPFREE, 0.0); sim.objects.push_back(&curve);
-
+    sim.objects.push_back(std::make_unique<ObjectVdb>(file_path, SLIPFREE, 0.0)); 
 
     sim.simulate();
 

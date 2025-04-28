@@ -137,8 +137,11 @@ int main(){
     sim.Lz = 1; // ONLY IF 3D, OTHERWISE REMOVE LINE
     SampleParticles(sim, /*sampling radius*/ 0.01);
 
-    ObjectPlate ground = ObjectPlate(/*position*/ 0, /*type*/ bottom, /*boundary cond.*/ SLIPFREE, /*friction*/ 0.5);  
-    sim.plates.push_back(ground);
+    sim.plates.push_back(std::make_unique<ObjectPlate>(/*position*/ 0, 
+                                                       /*type*/ bottom, 
+                                                       /*BC*/ SLIPFREE, 
+                                                       /*friction*/ 0.5
+                                                      );  
 
     sim.rho = 1000;         // Density (kg/m3)
     sim.gravity[1] = -9.81; // Gravity

@@ -70,7 +70,6 @@ void Simulation::createDirectory(){
 
 }
 
-// NB: Simulation::initialize(...) must be called before Simulation::simulate()
 void Simulation::simulate(){
 
     if (!is_initialized){
@@ -151,9 +150,6 @@ void Simulation::simulate(){
     debug("Maximum dt:          ", dt_max);
     debug("Particle volume:     ", particle_volume);
     debug("Particle mass:       ", particle_mass);
-
-    // nonlocal_l_sq = nonlocal_l * nonlocal_l;
-    // nonlocal_support = std::ceil(nonlocal_l / dx);
 
     time = 0;
     frame = 0;
@@ -245,7 +241,6 @@ void Simulation::advanceStep(){
     P2G();
     t_p2g.stop(); runtime_p2g += t_p2g.get_timing();
 
-
     // checkMassConservation();
     // checkMomentumConservation();
 
@@ -271,8 +266,6 @@ void Simulation::advanceStep(){
     deformationUpdate();
     t_defgrad.stop(); runtime_defgrad += t_defgrad.get_timing();
 
-    // plasticity_projection(); // if nonlocal approach (deprecated)
-
     positionUpdate();
 
     moveObjects();
@@ -282,14 +275,14 @@ void Simulation::advanceStep(){
 
 
 void Simulation::moveObjects(){
-    for (ObjectPlate &obj : plates) {
-        obj.move(dt, frame_dt, time);
+    for (auto& obj : plates) {
+        obj->move(dt, frame_dt, time);
     }
 }
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////// EXTRA HELPER FUNCTIONS //////////////////////////////////////////////////
+////////////////////////////////////// EXTRA HELPER FUNCTIONS ///////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 T Simulation::calculateBulkModulus(){

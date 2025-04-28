@@ -61,12 +61,12 @@ int main(){
     // sim.particles.v = ...
 
     ////// OBJECTS AND TERRAINS
-    ObjectPlate ground = ObjectPlate(0, bottom, NOSLIP);  sim.plates.push_back(ground);
+    sim.plates.push_back(std::make_unique<ObjectPlate>(0, bottom, NOSLIP)); 
 
     /////// Here are some examples how to use the objects derived from ObjectGeneral:
     // T friction = 0.2; 
-    // ObjectBump bump = ObjectBump(SLIPFREE, friction);  sim.objects.push_back(&bump);
-    // ObjectGate gate = ObjectGate(SLIPFREE, friction);  sim.objects.push_back(&gate);
+    // sim.objects.push_back(std::make_unique<ObjectBump>(SLIPFREE, friction));
+    // sim.objects.push_back(std::make_unique<ObjectGate>(SLIPFREE, friction));
 
     /////// Here is an example how to use ObjectVdb (uncomment include files and openvdb::initialize() function above):
     // ObjectVdb terrain  = ObjectVdb("../levelsets/vdb_file_name.vdb", NOSLIP, friction); sim.objects.push_back(&terrain);
