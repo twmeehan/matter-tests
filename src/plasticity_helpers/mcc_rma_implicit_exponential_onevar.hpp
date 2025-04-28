@@ -45,9 +45,15 @@ bool MCCRMAImplicitExponentialOnevar(T& p, T& q, int& exit, T M, T p00, T beta, 
         return false;
     }
 
-    // store initial values and rescale 
-    T scale_factor = 1./p0_t;
-    T p0 = 1.;  p00 *= scale_factor;  p *= scale_factor;  q *= scale_factor;  mu *= scale_factor;  K *= scale_factor;
+    // ALT 1: Rescale 
+    T scale_factor = 1./p0_t; 
+    T p0 = 1.; 
+
+    // ALT 2: Do not rescale 
+    // T scale_factor = 1; 
+    // T p0 = p0_t;
+
+    p00 *= scale_factor;  p *= scale_factor;  q *= scale_factor;  mu *= scale_factor;  K *= scale_factor;
 
     T p_t = p;  T q_t = q;  T epv_t = epv;
 
@@ -87,32 +93,31 @@ bool MCCRMAImplicitExponentialOnevar(T& p, T& q, int& exit, T M, T p00, T beta, 
         y = Msq * (p - p0) * (p + beta * p0) + damping_factor * q * q;
 
         // Check for convergence, iteration > 3 check is done to ensure some displacement is measured.
-        if (iter > 3 && abs(y) < 1.e-3 * scale_factor){
+        if (iter > 4 && abs(y) < 1.e-4){
             break;
         }
 
         if (iter == max_iter - 1) {  // did not break loop
             if (p0 > 1.e-3 * scale_factor) {
                 debug("RMA: FATAL did not exit loop at iteration = ", iter, ", iteration = ", iter);
-                debug(iter, ":  r1   = ", y);
-                debug(iter, ":  y    = ", y);
-                debug(iter, ":  p0   = ", p0);
-                debug(iter, ":  p0_t = ", p0_t);
-                debug(iter, ":  K    = ", K);
-                debug(iter, ":  G    = ", mu);
-                debug(iter, ": check value = ", 1.e-3 * scale_factor);
-                debug(iter, ":  pt   = ", p_t / scale_factor);
-                debug(iter, ":  qt   = ", q_t / scale_factor);
-                debug(iter, ":  scale factor   = ", scale_factor);
-                debug(iter, ":  epvt   = ", epv_t);
-                debug(iter, ":  epv   = ", epv);
-                debug(iter, ":  p    = ", p / scale_factor);
-                debug(iter, ":  q    = ", q / scale_factor);
-                
-                exit = 1;
+                debug("Consider changing the threshold for breaking the N-R loop");
+                debug("y    = ", y);
+                debug("p0   = ", p0);
+                debug("K    = ", K);
+                debug("G    = ", mu);
+                debug("pt   = ", p_t);
+                debug("qt   = ", q_t);
+                debug("epvt = ", epv_t);
+                debug("epv  = ", epv);
+                debug("p    = ", p);
+                debug("q    = ", q);
+                debug("p0_t = ", p0_t);
+                debug("scale factor = ", scale_factor);  
+                // exit = 1;
             } else {  // p0 too small
                 p = 1e-15;
                 q = 1e-15;
+                // debug("RMA: WARNING using stress-free state");
                 break;
             }
         }
@@ -146,7 +151,6 @@ bool MCCRMAImplicitExponentialOnevar(T& p, T& q, int& exit, T M, T p00, T beta, 
             debug(iter, ":  q    = ", q);
             debug(iter, ":  K    = ", K);
             debug(iter, ":  mu    = ", mu);
-
             exit = 1;
             break;
         }
