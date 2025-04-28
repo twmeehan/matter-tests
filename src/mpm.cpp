@@ -61,7 +61,7 @@ int main(){
     // sim.particles.v = ...
 
     ////// OBJECTS AND TERRAINS
-    sim.plates.push_back(std::make_unique<ObjectPlate>(0, bottom, NOSLIP)); 
+    sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::NoSlip)); 
 
     /////// Here are some examples how to use the objects derived from ObjectGeneral:
     // T friction = 0.2; 
