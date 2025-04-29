@@ -11,9 +11,9 @@ public:
 
     ~ObjectGround(){}
 
-    ObjectGround(BoundaryCondition bc_in = NOSLIP, T friction_in = 0.0, std::string name_in = "", T y_ground_in = 0) : ObjectGeneral(bc_in, friction_in, name_in), y_ground(y_ground_in) {}
+    ObjectGround(BC bc_in = BC::NoSlip, T friction_in = 0.0, std::string name_in = "", T y_ground_in = 0) : ObjectGeneral(bc_in, friction_in, name_in), y_ground(y_ground_in) {}
 
-    bool inside(const TV& X_in) override {
+    bool inside(const TV& X_in) const override {
 
         T y = X_in(1);
 
@@ -24,7 +24,7 @@ public:
 
     }
 
-    TV normal(const TV& X_in) override {
+    TV normal(const TV& X_in) const override {
 
         TV n;
         

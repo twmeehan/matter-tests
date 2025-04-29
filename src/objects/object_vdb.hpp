@@ -26,7 +26,7 @@ public:
 
     ~ObjectVdb(){}
 
-    ObjectVdb(std::string filename, BoundaryCondition bc_in = NOSLIP, T friction_in = 0.0, std::string name_in = "") : ObjectGeneral(bc_in, friction_in, name_in) {
+    ObjectVdb(std::string filename, BC bc_in = BC::NoSlip, T friction_in = 0.0, std::string name_in = "") : ObjectGeneral(bc_in, friction_in, name_in) {
 
         openvdb::io::File file(filename);
         file.open();
@@ -42,7 +42,7 @@ public:
         grad_phi = mg.process();
     }
 
-    bool inside(const TV& X_in) override {
+    bool inside(const TV& X_in) const override {
         int dim = X_in.size();
         Eigen::Matrix<T, 3, 1> X;
         X.setZero();
@@ -56,7 +56,7 @@ public:
         return ((T)phi <= 0);
     }
 
-    TV normal(const TV& X_in) override {
+    TV normal(const TV& X_in) const override {
         int dim = X_in.size();
         Eigen::Matrix<T, 3, 1> X;
         X.setZero();
@@ -76,7 +76,7 @@ public:
             return TV::Zero();
     }
 
-    void bounds(TV& min_bbox, TV& max_bbox){
+    void bounds(TV& min_bbox, TV& max_bbox) const {
         int dim = min_bbox.size();
         min_bbox.setZero();
         max_bbox.setZero();

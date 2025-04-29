@@ -14,7 +14,6 @@ void Simulation::updateDt(){
     if (max_speed >= wave_speed){
         debug("               Detected particle speed ", max_speed, " larger than elastic wave speed ", wave_speed);
         // exit = 1;
-        return;
     }
 
 #ifdef WARNINGS
@@ -42,6 +41,8 @@ void Simulation::updateDt(){
 #endif
 
 
+    // Here one may hard-code a special gravity evolution with time
+    // Default: linear gravity increase until "gravity_time"
     if (gravity_special){
 
         if (time < gravity_time){

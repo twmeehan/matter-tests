@@ -8,22 +8,21 @@
 class Particles{
 public:
   Particles(unsigned int Np = 1){
-      x.resize(Np);    std::fill( x.begin(),    x.end(),    TV::Zero() );
-      v.resize(Np);    std::fill( v.begin(),    v.end(),    TV::Zero() );
-      pic.resize(Np);  std::fill( pic.begin(),  pic.end(),  TV::Zero() );
+      x.resize(Np); std::fill( x.begin(), x.end(), TV::Zero() );
+      v.resize(Np); std::fill( v.begin(), v.end(), TV::Zero() );
+      pic.resize(Np); std::fill( pic.begin(), pic.end(), TV::Zero() );
       flip.resize(Np); std::fill( flip.begin(), flip.end(), TV::Zero() );
 
-      eps_pl_dev.resize(Np);         std::fill( eps_pl_dev.begin(),         eps_pl_dev.end(),         0.0 );
-      eps_pl_vol.resize(Np);         std::fill( eps_pl_vol.begin(),         eps_pl_vol.end(),         0.0 );
-      eps_pl_vol_pradhana.resize(Np);std::fill( eps_pl_vol_pradhana.begin(),eps_pl_vol_pradhana.end(),0.0 );
-
-      delta_gamma.resize(Np);        std::fill( delta_gamma.begin(),       delta_gamma.end(),       0.0 );
+      eps_pl_dev.resize(Np); std::fill( eps_pl_dev.begin(), eps_pl_dev.end(), 0.0 );
+      eps_pl_vol.resize(Np); std::fill( eps_pl_vol.begin(), eps_pl_vol.end(), 0.0 );
+      eps_pl_vol_pradhana.resize(Np);std::fill( eps_pl_vol_pradhana.begin(),eps_pl_vol_pradhana.end(), 0.0 );
+      delta_gamma.resize(Np); std::fill( delta_gamma.begin(), delta_gamma.end(), 0.0 );
       viscosity.resize(Np); std::fill( viscosity.begin(), viscosity.end(), 0.0 );
-      muI.resize(Np);       std::fill( muI.begin(),       muI.end(),       0.0 );
+      muI.resize(Np); std::fill( muI.begin(), muI.end(), 0.0 );
 
-      tau.resize(Np);  std::fill( tau.begin(),  tau.end(),  TM::Zero()     );
-      F.resize(Np);    std::fill( F.begin(),    F.end(),    TM::Identity() );
-      Bmat.resize(Np); std::fill( Bmat.begin(), Bmat.end(), TM::Zero()     );
+      F.resize(Np); std::fill( F.begin(), F.end(), TM::Identity() );
+      tau.resize(Np); std::fill( tau.begin(), tau.end(), TM::Zero() );
+      Bmat.resize(Np); std::fill( Bmat.begin(), Bmat.end(), TM::Zero() );
   }
 
   std::vector<TV> x;

@@ -7,11 +7,11 @@ void Simulation::resizeGrid(){
     grid.flip.resize(grid_nodes); std::fill( grid.flip.begin(), grid.flip.end(), TV::Zero() );
     grid.mass.resize(grid_nodes); std::fill( grid.mass.begin(), grid.mass.end(), 0.0        );
     if (use_mibf)
-        grid.friction.resize(grid_nodes); std::fill( grid.friction.begin(), grid.friction.end(), 0.0    );
+        grid.friction.resize(grid_nodes); std::fill( grid.friction.begin(), grid.friction.end(), 0.0 );
 }
 
+// A fixed grid - must hard-coded for every simulation
 void Simulation::remeshFixed(unsigned int extra_nodes){
-    // A fixed grid - must hard-coded for every simulation
 
     grid.x = arange(-dx*(1+extra_nodes), Lx+(2+extra_nodes)*dx, dx);
     grid.y = arange(-dx,                 Ly+(2+extra_nodes)*dx, dx);
@@ -103,7 +103,6 @@ void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned in
 #endif        
     } // end if grid_reference_point
     
-
     // Save for remeshFixedCont
     max_x_init = max_x;
     min_x_init = min_x;
@@ -118,9 +117,9 @@ void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned in
 
     // safety_factor = 2 means we have a grid which has a grid point 2*dx from the boundary particle
     // Assuming a local approach, a grid point 2dx away from a particle will not influence this particle
-    unsigned int safety_factor_x = sfx; // std::max(sfx, nonlocal_support);
-    unsigned int safety_factor_y = sfy; // std::max(sfy, nonlocal_support);
-    unsigned int safety_factor_z = sfz; // std::max(sfz, nonlocal_support);
+    unsigned int safety_factor_x = sfx;
+    unsigned int safety_factor_y = sfy;
+    unsigned int safety_factor_z = sfz;
 
     low_x_init    = min_x - dx * safety_factor_x;
     high_x_init   = max_x + dx * safety_factor_x;
@@ -157,36 +156,27 @@ void Simulation::remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned in
 
     #ifdef WARNINGS
         #ifdef THREEDIM
-            debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
+        debug("               grid        = (", Nx, ", ", Ny, ", ", Nz, ")"  );
         #else
-            debug("               grid   = (", Nx, ", ", Ny, ")"  );
+        debug("               grid        = (", Nx, ", ", Ny, ")"  );
         #endif
-
-        debug("               min_x   = ", min_x);
-        debug("               max_x   = ", max_x);
-        debug("               min_y   = ", min_y);
-        debug("               max_y   = ", max_y);
+        debug("               min_x       = ", min_x);
+        debug("               max_x       = ", max_x);
+        debug("               min_y       = ", min_y);
+        debug("               max_y       = ", max_y);
         #ifdef THREEDIM
-        debug("               min_z   = ", min_z);
-        debug("               max_z   = ", max_z);
-        debug("               high_z_init  = ", high_z_init);
-        debug("               low_z_init   = ", low_z_init);
+        debug("               min_z       = ", min_z);
+        debug("               max_z       = ", max_z);
+        debug("               high_z_init = ", high_z_init);
+        debug("               low_z_init  = ", low_z_init);
         #endif
-        debug("               grid.xc = ", grid.xc);
-        debug("               grid.yc = ", grid.yc);
+        debug("               grid.xc     = ", grid.xc);
+        debug("               grid.yc     = ", grid.yc);
         debug("               len(grid.x) = ", grid.x.size());
         debug("               len(grid.y) = ", grid.y.size());
-        debug("               Nx      = ", Nx);
-        debug("               Ny      = ", Ny);
-        debug("               dx_meas = ", grid.x[1]-grid.x[0]);
-        // std::vector<double> tmp = linspace(0.0, 1.0, 5);
-        // for (double i: tmp)
-        //     std::cout << i << ' ';
-        // std::cout << std::endl;
-        // std::vector<double> tmp = arange(0.0, 1.0, 0.2);
-        // for (double i: tmp)
-        //     std::cout << i << ' ';
-        // std::cout << std::endl;
+        debug("               Nx          = ", Nx);
+        debug("               Ny          = ", Ny);
+        debug("               dx (obs)    = ", grid.x[1]-grid.x[0]);
     #endif
 
 }
@@ -312,18 +302,10 @@ void Simulation::remeshFixedCont(){
 
     #ifdef WARNINGS
         #ifdef THREEDIM
-            debug("               grid   = (", Nx, ", ", Ny, ", ", Ny, ")"  );
+        debug("               grid        = (", Nx, ", ", Ny, ", ", Nz, ")"  );
         #else
-            debug("               grid   = (", Nx, ", ", Ny, ")"  );
+        debug("               grid        = (", Nx, ", ", Ny, ")"  );
         #endif
-
-        #ifdef THREEDIM
-        debug("               min_z   = ", min_z);
-        debug("               max_z   = ", max_z);
-        debug("               high_z  = ", high_z);
-        debug("               low_z   = ", low_z);
-        #endif
-
     #endif
 
 }

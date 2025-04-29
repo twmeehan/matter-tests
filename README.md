@@ -58,9 +58,9 @@ With _Matter_, you can simulate granular flow on various simple and complex terr
 
 
 * Supports no-slip as well as frictional **boundary conditions** which can be supplied a **Coulomb friction parameter**
-    * No-slip (`NOSLIP`)
-    * Frictional slip free to separate (`SLIPFREE`)
-    * Frictional slip constrained to boundary (`SLIPSTICK`)   
+    * No-slip (`BC::NoSlip`)
+    * Frictional slip free to separate (`BC::SlipFree`)
+    * Frictional slip constrained to boundary (`BC::SlipStick`)   
 
 
 * **Material-induced boundary friction (MIBF)**: A potentially variable internal friction parameter of a particular plastic model is used as the Coulomb friction for terrain-material interaction
@@ -128,27 +128,32 @@ int main(){
 
     sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ "collapse");
 
-    sim.end_frame = 20;     // last frame to simulate
-    sim.fps = 10;           // frames per second
-    sim.n_threads = 8;      // number of threads in parallel
+    sim.end_frame = 20;  // last frame to simulate
+    sim.fps = 10;        // frames per second
+    sim.n_threads = 8;   // number of threads in parallel
 
     sim.Lx = 1;
     sim.Ly = 1;
-    sim.Lz = 1; // ONLY IF 3D, OTHERWISE REMOVE LINE
-    SampleParticles(sim, /*sampling radius*/ 0.01);
+    // sim.Lz = 1; // only 3D, otherwise remove
 
-    ObjectPlate ground = ObjectPlate(/*position*/ 0, /*type*/ bottom, /*boundary cond.*/ SLIPFREE, /*friction*/ 0.5);  
-    sim.plates.push_back(ground);
+    sampleParticles(sim, /*sampling radius*/ 0.01);
 
-    sim.rho = 1000;         // Density (kg/m3)
-    sim.gravity[1] = -9.81; // Gravity
+    sim.plates.push_back(std::make_unique<ObjectPlate>(
+        /*position*/ 0, 
+        /*type*/ PlateType::bottom, 
+        /*BC*/ BC::NoSlip,        
+        /*friction*/ 0.5
+    ));          
+
+    sim.rho = 1000;         // density (kg/m3)
+    sim.gravity[1] = -9.81; // gravity
 
     sim.E = 1e6;    // Young's modulus (Pa)
     sim.nu = 0.3;   // Poisson's ratio (-)
 
-    sim.plastic_model = DP; // Drucker-Prager yield
-    sim.M = 0.5;     // Internal friction
-    sim.q_cohesion = 0;    // Cohesion
+    sim.plastic_model = PlasticModel::DP; // Drucker-Prager yield
+    sim.M = 0.5;         // internal friction
+    sim.q_cohesion = 0;  // cohesion
 
     sim.simulate();
     return 0;
@@ -164,7 +169,7 @@ Rigid objects and terrains (boundaries) are either
 * or imported as `.vdb` level sets files using [OpenVDB](https://www.openvdb.org/)   
 
 ##### Analytical objects
-Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in [Viroulet et al. (2017)](https://doi.org/10.1017/jfm.2017.41). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for efficiency and convenience. In `ObjectPlate`, you can also assign a speed to the plate, as well as controls on the time-evolution of the speed. Any plate must either a `top`, `bottom`, `front`, `back`, `left` or `right`. 
+Analytical objects can be specified as a derived class from the general `ObjectGeneral` class. An example of this is `ObjectBump` which provides the terrain of a smooth bump used in the flow experiments in [Viroulet et al. (2017)](https://doi.org/10.1017/jfm.2017.41). For the very common case of an axis-aligned plate, an `ObjectPlate` class has been made separate from `ObjectGeneral` class for efficiency and convenience. In `ObjectPlate`, you can also assign a speed to the plate, as well as controls on the time-evolution of the speed. Any plate must either a `PlateType::top`, `PlateType::bottom`, `PlateType::front`, `PlateType::back`, `PlateType::left` or `PlateType::right`. 
 
 ##### OpenVDB objects
 A terrain/object from a `.vdb` is stored in an instance of the `ObjectVdb` class which is derived from `ObjectGeneral`.
@@ -203,8 +208,8 @@ This is a non-exhaustive list of parameters and options (of the `Simulation` cla
 | `pbc`             | false | Use periodic boundary conditions in $x$-direction bounded by `Lx`
 | `Lx`, `Ly`, `Lz`  | 1.0    | The material sample space used in `SampleParticles(...)`
 | `grid_reference_point` | - | Optionally provide a point to be considered in the initial adaptive grid creation, otherwise it only considers the particle domain
-| `elastic_model`        | Hencky         | Elastic model. Note that Hencky's model must be used when combined with a plastic model. 
-| `plastic_model`        | NoPlasticity   | Plastic model. Parameters are set according to the model used, see below.
+| `elastic_model`        | ElasticModel::Hencky       | Elastic model. Note that Hencky's model must be used when combined with a plastic model. 
+| `plastic_model`        | PlasticModel::NoPlasticity | Plastic model. Parameters are set according to the model used, see below.
 | `E`                    | 1e6            | The 3D Young's modulus (Pa)
 | `nu`                   | 0.3            | The 3D Poisson's ratio (-)
 
@@ -213,42 +218,42 @@ Here is a list of the various plastic models and their parameters:
 
 | Model                                | Name                  | Parameters                | Default value   |
 |  ----                                | ----     |    ----      |          ---    |
-| Von Mises                            | `VM`   | `q_max`        | 100.0           |
-| Drucker-Prager                       | `DP`   | `M`            | 1.0             |
+| Von Mises                            | `PlasticModel::VM`   | `q_max`        | 100.0           |
+| Drucker-Prager                       | `PlasticModel::DP`   | `M`            | 1.0             |
 |                                      |        | `q_cohesion`   | 0.0             |
-| Drucker-Prager with strain-softening | `DPSoft`   | `M`            | 1.0           |
+| Drucker-Prager strain-softening      | `PlasticModel::DPSoft`   | `M`            | 1.0           |
 |                                      |            | `q_cohesion`   | 0.0           |
 |                                      |            | `xi`           | 0.0           |  
 |                                      |            | `use_pradhana` | true          |  
-| Modified Cam-Clay | `MCC`    | `beta`         | 0.0             |
+| Modified Cam-Clay | `PlasticModel::MCC`    | `beta`         | 0.0             |
 |                   |          | `p0`           | 1000.0          |
 |                   |          | `xi`           | 0.0             |
 |                   |          | `M`            | 1.0             |      
-| Perzyna-Von Mises | `VMVisc` | `q_max` | 100.0         |
+| Perzyna-Von Mises | `PlasticModel::VMVisc` | `q_max` | 100.0         |
 | |                     | `q_min`        | 100.0           |
 | |                     | `p_min`        | -1.0e20         |
 | |                     | `xi`           | 0.0             |  
 | |                     | `perzyna_exp`  | 1.0             |      
 | |                     | `perzyna_visc` | 0.0             |  
-| Perzyna-Drucker-Prager | `DPVisc` | `M`  | 1.0  |
+| Perzyna-Drucker-Prager | `PlasticModel::DPVisc` | `M`  | 1.0  |
 | |                     | `q_cohesion`  | 0.0             |
 | |                     | `use_pradhana` | true            |
 | |                     | `perzyna_exp`  | 1.0             |      
 | |                     | `perzyna_visc` | 0.0             |
-| Perzyna-Modified Cam-Clay | `MCCVisc`  | `beta`  | 0.0 |
+| Perzyna-Modified Cam-Clay | `PlasticModel::MCCVisc`  | `beta`  | 0.0 |
 | |                     | `p0`           | 1000.0          |
 | |                     | `xi`           | 0.0             |
 | |                     | `M`            | 1.0             |  
 | |                     | `perzyna_exp`  | 1.0             |      
 | |                     | `perzyna_visc` | 0.0             |
-| $\mu(I)$-rheology     | `DPMui`  | `q_cohesion` | 0.0 |
+| $\mu(I)$-rheology     | `PlasticModel::DPMui`  | `q_cohesion` | 0.0 |
 | |                     | `use_pradhana` | true            |
 | |                     | `rho_s`        | 1.0             |      
 | |                     | `grain_diameter`| 0.001          |
 | |                     | `I_ref`        | 0.279           |      
 | |                     | `mu_1`         | 0.382           |      
 | |                     | `mu_2`         | 0.644           |      
-| Critical state $\mu(I)$-rheology | `MCCMui`  | `beta` | 0.0  |
+| Critical state $\mu(I)$-rheology | `PlasticModel::MCCMui`  | `beta` | 0.0  |
 | |                     | `p0`           | 1000.0          |
 | |                     | `xi`           | 0.0             |
 | |                     | `rho_s`        | 1000.0          |      
@@ -258,10 +263,10 @@ Here is a list of the various plastic models and their parameters:
 | |                     | `mu_2`         | 0.644           |
 
 In the MCC-based models, one must also choose a corresponding hardening law: 
-* exponential explicit law `ExpoExpl`    
-* hyperbolic sine explicit law `SinhExpl`     
-* exponential implicit law `ExpoImpl`     
-* hyperbolic sine implicit law `SinhImpl`     
+* exponential explicit law `HardeningLaw::ExpoExpl`    
+* hyperbolic sine explicit law `HardeningLaw::SinhExpl`     
+* exponential implicit law `HardeningLaw::ExpoImpl`     
+* hyperbolic sine implicit law `HardeningLaw::SinhImpl`     
 
 
 ## Limitations
@@ -280,7 +285,9 @@ In the MCC-based models, one must also choose a corresponding hardening law:
 
 ## License and attribution
 _Matter_ is an open-source software licensed under _GNU General Public License v3.0_ (see LICENSE file).
-If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch).
+If you are interested in using Matter in commercial products or services, please do not hesitate to contact [Lars Blatny](https://larsblatny.github.io/) (lars.blatny [at] slf.ch).    
 
-If you use the $\mu(I)$-rheology models, please cite this article: [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)
+Please attribute this software by citing this article: [doi:10.5194/egusphere-2025-1157](https://doi.org/10.5194/egusphere-2025-1157)    
+
+If you use the $\mu(I)$-rheology models, please cite this article: [doi:10.1017/jfm.2024.643](https://doi.org/10.1017/jfm.2024.643)    
 

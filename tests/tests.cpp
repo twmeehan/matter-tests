@@ -10,7 +10,7 @@
 #include "../src/objects/object_ground.hpp"
 
 
-TEST(BoundaryTest, AnalyticSLIPFREE) {
+TEST(BoundaryTest, AnalyticSlipFree) {
 
     Simulation sim;
     sim.initialize(false);
@@ -24,8 +24,8 @@ TEST(BoundaryTest, AnalyticSLIPFREE) {
     sim.cfl = 0.5;
     sim.flip_ratio = -0.95;
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6;
     sim.nu = 0.3;
     sim.rho = 1000;
@@ -41,7 +41,7 @@ TEST(BoundaryTest, AnalyticSLIPFREE) {
     sim.particles.x[0](0) = -1;
     sim.particles.x[0](1) = 1;
 
-    ObjectCurve curve = ObjectCurve(SLIPFREE, 0.0);  sim.objects.push_back(&curve);
+    sim.objects.push_back(std::make_unique<ObjectCurve>(BC::SlipFree, 0.0)); 
 
     sim.simulate();
 
@@ -52,7 +52,7 @@ TEST(BoundaryTest, AnalyticSLIPFREE) {
 }
 
 
-TEST(BoundaryTest, AnalyticSLIPSTICK) {
+TEST(BoundaryTest, AnalyticSlipStick) {
 
     Simulation sim;
     sim.initialize(false);
@@ -66,8 +66,8 @@ TEST(BoundaryTest, AnalyticSLIPSTICK) {
     sim.cfl = 0.5;
     sim.flip_ratio = -0.95;
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6;
     sim.nu = 0.3;
     sim.rho = 1000;
@@ -83,7 +83,7 @@ TEST(BoundaryTest, AnalyticSLIPSTICK) {
     sim.particles.x[0](0) = -1;
     sim.particles.x[0](1) = 0.9999;
 
-    ObjectCurve curve = ObjectCurve(SLIPSTICK, 0.0);  sim.objects.push_back(&curve);
+    sim.objects.push_back(std::make_unique<ObjectCurve>(BC::SlipStick, 0.0)); 
 
     sim.simulate();
 
@@ -93,7 +93,7 @@ TEST(BoundaryTest, AnalyticSLIPSTICK) {
     ASSERT_NEAR(diff, 0.0, 1e-3);
 }
 
-TEST(CoulombFrictionTest, PlateSLIPFREE) {
+TEST(CoulombFrictionTest, PlateSlipFree) {
 
     Simulation sim;
     sim.initialize(false);
@@ -110,8 +110,8 @@ TEST(CoulombFrictionTest, PlateSLIPFREE) {
     sim.gravity[0] = +9.81 * std::sin(theta);
     sim.gravity[1] = -9.81 * std::cos(theta);
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6; 
     sim.nu = 0.3; 
     sim.rho = 1000; 
@@ -128,8 +128,7 @@ TEST(CoulombFrictionTest, PlateSLIPFREE) {
 
     T friction = std::tan(15.0 * M_PI / 180.0);
 
-    ObjectPlate ground = ObjectPlate(0, bottom, SLIPFREE, friction); 
-    sim.plates.push_back(ground);
+    sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::SlipFree, friction)); 
 
     sim.simulate();
 
@@ -144,7 +143,7 @@ TEST(CoulombFrictionTest, PlateSLIPFREE) {
     ASSERT_NEAR(diff, 0.0, 1e-3);
 }
 
-TEST(CoulombFrictionTest, PlateSLIPSTICK) {
+TEST(CoulombFrictionTest, PlateSlipStick) {
 
     Simulation sim;
     sim.initialize(false);
@@ -161,8 +160,8 @@ TEST(CoulombFrictionTest, PlateSLIPSTICK) {
     sim.gravity[0] = +9.81 * std::sin(theta);
     sim.gravity[1] = -9.81 * std::cos(theta);
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6; 
     sim.nu = 0.3; 
     sim.rho = 1000; 
@@ -179,8 +178,7 @@ TEST(CoulombFrictionTest, PlateSLIPSTICK) {
 
     T friction = std::tan(15.0 * M_PI / 180.0);
 
-    ObjectPlate ground = ObjectPlate(0, bottom, SLIPSTICK, friction); 
-    sim.plates.push_back(ground);
+    sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::SlipStick, friction)); 
 
     sim.simulate();
 
@@ -197,7 +195,7 @@ TEST(CoulombFrictionTest, PlateSLIPSTICK) {
 
 
 
-TEST(CoulombFrictionTest, GeneralSLIPFREE) {
+TEST(CoulombFrictionTest, GeneralSlipFree) {
 
     Simulation sim;
     sim.initialize(false);
@@ -214,8 +212,8 @@ TEST(CoulombFrictionTest, GeneralSLIPFREE) {
     sim.gravity[0] = +9.81 * std::sin(theta);
     sim.gravity[1] = -9.81 * std::cos(theta);
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6; 
     sim.nu = 0.3; 
     sim.rho = 1000; 
@@ -232,8 +230,7 @@ TEST(CoulombFrictionTest, GeneralSLIPFREE) {
 
     T friction = std::tan(15.0 * M_PI / 180.0);
 
-    ObjectGround ground = ObjectGround(SLIPFREE, friction); 
-    sim.objects.push_back(&ground);
+    sim.objects.push_back(std::make_unique<ObjectGround>(BC::SlipFree, friction)); 
 
     sim.simulate();
 
@@ -248,7 +245,7 @@ TEST(CoulombFrictionTest, GeneralSLIPFREE) {
     ASSERT_NEAR(diff, 0.0, 1e-3);
 }
 
-TEST(CoulombFrictionTest, GeneralSLIPSTICK) {
+TEST(CoulombFrictionTest, GeneralSlipStick) {
 
     Simulation sim;
     sim.initialize(false);
@@ -265,8 +262,8 @@ TEST(CoulombFrictionTest, GeneralSLIPSTICK) {
     sim.gravity[0] = +9.81 * std::sin(theta);
     sim.gravity[1] = -9.81 * std::cos(theta);
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6; 
     sim.nu = 0.3; 
     sim.rho = 1000; 
@@ -283,8 +280,7 @@ TEST(CoulombFrictionTest, GeneralSLIPSTICK) {
 
     T friction = std::tan(15.0 * M_PI / 180.0);
 
-    ObjectGround ground = ObjectGround(SLIPSTICK, friction); 
-    sim.objects.push_back(&ground);
+    sim.objects.push_back(std::make_unique<ObjectGround>(BC::SlipStick, friction)); 
 
     sim.simulate();
 
@@ -306,9 +302,7 @@ TEST(BoundaryTest, MIBF) {
 
     T friction = std::tan(30.0 * M_PI / 180.0);
     T theta = 32 * M_PI / 180;
-    
-    ObjectPlate ground = ObjectPlate(0,  bottom, SLIPFREE, friction);  
-    
+        
     Simulation sim_one;
     sim_one.initialize(false);
 
@@ -323,7 +317,7 @@ TEST(BoundaryTest, MIBF) {
     sim_one.gravity[0] = +9.81 * std::sin(theta);
     sim_one.gravity[1] = -9.81 * std::cos(theta);
 
-    sim_one.elastic_model = Hencky;
+    sim_one.elastic_model = ElasticModel::Hencky;
     sim_one.E = 1e5;     
     sim_one.nu = 0.3;   
     sim_one.rho = 1000; 
@@ -340,9 +334,9 @@ TEST(BoundaryTest, MIBF) {
     }
     sim_one.grid_reference_point = TV::Zero();
 
-    sim_one.plates.push_back(ground);
+    sim_one.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::SlipFree, friction)); 
 
-    sim_one.plastic_model = DPVisc; 
+    sim_one.plastic_model = PlasticModel::DPVisc; 
 
     sim_one.use_pradhana = false; 
     sim_one.use_mises_q = false;
@@ -375,7 +369,7 @@ TEST(BoundaryTest, MIBF) {
     sim_two.gravity[0] = +9.81 * std::sin(theta);
     sim_two.gravity[1] = -9.81 * std::cos(theta);
 
-    sim_two.elastic_model = Hencky;
+    sim_two.elastic_model = ElasticModel::Hencky;
     sim_two.E = 1e5;     
     sim_two.nu = 0.3;   
     sim_two.rho = 1000; 
@@ -392,9 +386,9 @@ TEST(BoundaryTest, MIBF) {
     }
     sim_two.grid_reference_point = TV::Zero();
 
-    sim_two.plates.push_back(ground);
+    sim_two.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::SlipFree, friction)); 
 
-    sim_two.plastic_model = DPVisc; 
+    sim_two.plastic_model = PlasticModel::DPVisc; 
 
     sim_two.use_pradhana = false; 
     sim_two.use_mises_q = false;
@@ -429,7 +423,7 @@ TEST(BoundaryTest, MIBF) {
     sim_three.gravity[0] = +9.81 * std::sin(theta);
     sim_three.gravity[1] = -9.81 * std::cos(theta);
 
-    sim_three.elastic_model = Hencky;
+    sim_three.elastic_model = ElasticModel::Hencky;
     sim_three.E = 1e5;     
     sim_three.nu = 0.3;   
     sim_three.rho = 1000; 
@@ -446,9 +440,9 @@ TEST(BoundaryTest, MIBF) {
     }
     sim_three.grid_reference_point = TV::Zero();
 
-    sim_three.plates.push_back(ground);
+    sim_three.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::SlipFree, friction)); 
 
-    sim_three.plastic_model = DPVisc; 
+    sim_three.plastic_model = PlasticModel::DPVisc; 
 
     sim_three.use_pradhana = false; 
     sim_three.use_mises_q = true;        // NB
@@ -502,15 +496,15 @@ TEST(ElasticityTest, BulkModulus) {
     T load_factor = 1;
 
     #ifdef THREEDIM
-        ObjectPlate ground = ObjectPlate(0-0.5*sim.dx,       bottom, NOSLIP, 0, -1e15, 1e15,   0,  vel, 0, vmin_factor, load_factor);  sim.plates.push_back(ground);
-        ObjectPlate compre = ObjectPlate(sim.Ly+0.5*sim.dx,  top,    NOSLIP, 0, -1e15, 1e15,   0, -vel, 0, vmin_factor, load_factor);  sim.plates.push_back(compre);
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0-0.5*sim.dx,       PlateType::bottom, BC::NoSlip, 0, -1e15, 1e15,   0,  vel, 0, vmin_factor, load_factor));
+        sim.plates.push_back(std::make_unique<ObjectPlate>(sim.Ly+0.5*sim.dx,  PlateType::top,    BC::NoSlip, 0, -1e15, 1e15,   0, -vel, 0, vmin_factor, load_factor));
     #else
-        ObjectPlate ground = ObjectPlate(0-0.5*sim.dx,       bottom, NOSLIP, 0, -1e15, 1e15,   0,  vel,    vmin_factor, load_factor);  sim.plates.push_back(ground);
-        ObjectPlate compre = ObjectPlate(sim.Ly+0.5*sim.dx,  top,    NOSLIP, 0, -1e15, 1e15,   0, -vel,    vmin_factor, load_factor);  sim.plates.push_back(compre);
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0-0.5*sim.dx,       PlateType::bottom, BC::NoSlip, 0, -1e15, 1e15,   0,  vel,    vmin_factor, load_factor)); 
+        sim.plates.push_back(std::make_unique<ObjectPlate>(sim.Ly+0.5*sim.dx,  PlateType::top,    BC::NoSlip, 0, -1e15, 1e15,   0, -vel,    vmin_factor, load_factor)); 
     #endif
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
 
     sim.simulate();
 
@@ -574,8 +568,8 @@ TEST(EnergyTest, Rotation) {
         total_energy_init += 0.5*(vx*vx + vy*vy); // per unit mass
     }
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
 
     sim.simulate();
 
@@ -637,8 +631,8 @@ TEST(CollapseTest, DruckerPragerOne) {
     }
     sim.grid_reference_point = TV::Zero();
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = DPSoft;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::DPSoft;
 
     sim.use_mises_q = false;
     sim.use_pradhana = true;
@@ -649,13 +643,13 @@ TEST(CollapseTest, DruckerPragerOne) {
     sim.M = std::tan(30.0 * M_PI / 180.0);
 
     #ifdef THREEDIM
-    ObjectPlate sideback   = ObjectPlate(0,       back,   SLIPFREE);  sim.plates.push_back(sideback);
-    ObjectPlate sidefront  = ObjectPlate(sim.Lz,  front,  SLIPFREE);  sim.plates.push_back(sidefront);
-    ObjectPlate sideleft   = ObjectPlate(0,       left,   SLIPFREE);  sim.plates.push_back(sideleft);
-    ObjectPlate ground     = ObjectPlate(0,       bottom, NOSLIP);    sim.plates.push_back(ground);
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0,       PlateType::back,   BC::SlipFree));
+        sim.plates.push_back(std::make_unique<ObjectPlate>(sim.Lz,  PlateType::front,  BC::SlipFree));
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0,       PlateType::left,   BC::SlipFree));
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0,       PlateType::bottom, BC::NoSlip));
     #else
-    ObjectPlate sideleft   = ObjectPlate(0,  left,   SLIPFREE);  sim.plates.push_back(sideleft);
-    ObjectPlate ground     = ObjectPlate(0,  bottom, NOSLIP);    sim.plates.push_back(ground);
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0,  PlateType::left,   BC::SlipFree));
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0,  PlateType::bottom, BC::NoSlip));
     #endif
 
     sim.simulate();
@@ -702,8 +696,8 @@ TEST(CollapseTest, DruckerPragerTwo) {
     }
     sim.grid_reference_point = TV::Zero();
 
-    sim.elastic_model = Hencky;
-    sim.plastic_model = DPVisc;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::DPVisc;
 
     sim.use_mises_q = false;
     sim.use_pradhana = true;
@@ -715,13 +709,13 @@ TEST(CollapseTest, DruckerPragerTwo) {
     sim.M = std::tan(30.0 * M_PI / 180.0);
 
     #ifdef THREEDIM
-    ObjectPlate sideback   = ObjectPlate(0,       back,   SLIPFREE);  sim.plates.push_back(sideback);
-    ObjectPlate sidefront  = ObjectPlate(sim.Lz,  front,  SLIPFREE);  sim.plates.push_back(sidefront);
-    ObjectPlate sideleft   = ObjectPlate(0,       left,   SLIPFREE);  sim.plates.push_back(sideleft);
-    ObjectPlate ground     = ObjectPlate(0,       bottom, NOSLIP);    sim.plates.push_back(ground);
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0,       PlateType::back,   BC::SlipFree));
+        sim.plates.push_back(std::make_unique<ObjectPlate>(sim.Lz,  PlateType::front,  BC::SlipFree));
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0,       PlateType::left,   BC::SlipFree));
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0,       PlateType::bottom, BC::NoSlip));
     #else
-    ObjectPlate sideleft   = ObjectPlate(0,  left,   SLIPFREE);  sim.plates.push_back(sideleft);
-    ObjectPlate ground     = ObjectPlate(0,  bottom, NOSLIP);    sim.plates.push_back(ground);
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0,  PlateType::left,   BC::SlipFree));
+        sim.plates.push_back(std::make_unique<ObjectPlate>(0,  PlateType::bottom, BC::NoSlip));
     #endif
 
     sim.simulate();

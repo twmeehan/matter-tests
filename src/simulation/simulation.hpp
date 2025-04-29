@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <vector>
 #include <chrono>
+#include <memory>
 
 #include "../tools.hpp"
 #include "../data_structures.hpp"
@@ -19,7 +20,6 @@
 #include "../objects/object_general.hpp"
 #include "../objects/object_plate.hpp"
 
-
 class Simulation{
 public:
   Simulation();
@@ -27,9 +27,14 @@ public:
 
   int exit = 0;
 
+#ifdef THREEDIM
+  const unsigned int dim = 3;
+#else
+  const unsigned int dim = 2;
+#endif
+
   unsigned int n_threads = 1;
   unsigned int end_frame = 1;
-  T fps = 1;
 
   bool is_initialized = false;
   bool save_sim = true;
@@ -41,47 +46,45 @@ public:
   bool use_mibf = false;
   bool use_musl = false;
 
+  TV grid_reference_point = 2e10 * TV::Ones();
+  TV gravity = TV::Zero();
+
+  T fps = 1;
   T cfl = 0.5;
   T cfl_elastic = 0.5;
   T flip_ratio = -0.95;
-
   T rho = 1000;
-
-  TV gravity = TV::Zero();
   T gravity_time = 0;
   // bool no_liftoff = true;
-
   T Lx = 1;
   T Ly = 1;
 #ifdef THREEDIM
   T Lz = 1;
 #endif
 
-  TV grid_reference_point = 2e10 * TV::Ones();
-
   // Particle data
   Particles particles;
   unsigned int Np;
+  unsigned int num_add_pbc_particles;
   T particle_mass;
   T particle_volume; // initial particle volume
   T dx;
 
   // Elastoplasticity
-  ElasticModel elastic_model = Hencky;
-  PlasticModel plastic_model = NoPlasticity;
-  HardeningLaw hardening_law = ExpoImpl;
-
-  T E = 1e6; // Young's modulus (3D)
-  T nu = 0.3; // Poisson's ratio (3D)
-
+  ElasticModel elastic_model = ElasticModel::Hencky;
+  PlasticModel plastic_model = PlasticModel::NoPlasticity;
+  HardeningLaw hardening_law = HardeningLaw::ExpoImpl;
   bool use_pradhana = true;
   bool use_mises_q = false;
+  T E = 1e6; // Young's modulus (3D)
+  T nu = 0.3; // Poisson's ratio (3D)
+  T stress_tolerance = 1e-5;
+  T xi = 0;
 
   // Von Mises:
   T q_max = 100;
   T q_min = 100;
   T p_min = -1e20;
-  T xi = 0;
 
   // Drucker Prager
   T M = 1;
@@ -102,11 +105,9 @@ public:
   T mu_1 = std::tan(20.9*M_PI/180.0);
   T mu_2 = std::tan(32.8*M_PI/180.0);;
 
-  T stress_tolerance = 1e-5;
-
   // Objects
-  std::vector<ObjectPlate> plates;
-  std::vector<ObjectGeneral*> objects;
+  std::vector<std::unique_ptr<ObjectPlate>> plates;
+  std::vector<std::unique_ptr<ObjectGeneral>> objects;
 
   // Functions
   void initialize(bool save = true, std::string dir = "output/", std::string name = "dummy");
@@ -117,59 +118,39 @@ public:
   void computeAvgData(TM& volavg_cauchy, TM& volavg_kirchh, T& Javg);
   void saveParticleData(std::string extra = "");
   void saveGridData(std::string extra = "");
-
   void createDirectory();
-
   void advanceStep();
   void updateDt();
-
   void resizeGrid();
   void remeshFixed(unsigned int extra_nodes);
   void remeshFixedInit(unsigned int sfx, unsigned int sfy, unsigned int sfz);
   void remeshFixedCont();
-
   void P2G();
   void explicitEulerUpdate();
   void G2P();
   void deformationUpdate();
-
   void MUSL();
-
   void positionUpdate();
   void PBCAddParticles1D();
   void PBCAddParticles(unsigned int safety_factor);
   void PBCDelParticles();
-  unsigned int num_add_pbc_particles;
-
-  TM NeoHookeanPiola(TM & Fe);
-  TM HenckyPiola(TM & Fe);
   void plasticity(unsigned int p, unsigned int & plastic_count, TM & Fe_trial);
-
   void moveObjects();
-
   void boundaryCollision(int index, TV Xi, TV& vi);
   void overwriteGridVelocity(TV Xi, TV& vi);
-
-  T calculateBulkModulus();
   void checkMomentumConservation();
   void checkMassConservation();
-
   void addExternalParticleGravity();
   std::pair<TMX, TMX> createExternalGridGravity();
-
-
-  #ifdef THREEDIM
-    const unsigned int dim = 3;
-  #else
-    const unsigned int dim = 2;
-  #endif
+  T calculateBulkModulus();
+  TM NeoHookeanPiola(TM & Fe);
+  TM HenckyPiola(TM & Fe);
 
 private:
 
   unsigned int current_time_step = 0;
   unsigned int frame = 0;
   T time = 0;
-
   T runtime_p2g = 0;
   T runtime_g2p = 0;
   T runtime_euler = 0;
@@ -179,18 +160,16 @@ private:
   std::string sim_name;
   std::string directory;
 
+  TV gravity_final;
+
   T final_time;
   T frame_dt;
   T dt;
   T dt_max;
   T wave_speed;
-
-  TV gravity_final;
-
   T mu; // shear modulus
   T lambda; // first Lame parameter
   T K; // bulk modulus
-
   T fac_Q; // for mu(I) rheology
 
   // Prefactors for plasticity models
@@ -214,13 +193,13 @@ private:
   unsigned int grid_nodes;
 
 #ifdef THREEDIM
-    inline unsigned int ind(unsigned int i, unsigned int j, unsigned int k){
-      return (i*Ny + j) * Nz + k; // 3D
-    }
+  inline unsigned int ind(unsigned int i, unsigned int j, unsigned int k){
+    return (i*Ny + j) * Nz + k; // 3D
+  }
 #else
-    inline unsigned int ind(unsigned int i, unsigned int j){
-        return (i*Ny + j); // 3D
-    }
+  inline unsigned int ind(unsigned int i, unsigned int j){
+      return (i*Ny + j); // 3D
+  }
 #endif
 
   T min_x_init;
@@ -242,11 +221,7 @@ private:
   T low_z_init;
   T high_z_init;
 #endif
-
-
-}; // END Simulation class
-
-
+}; // end Simulation class
 
 inline TM Simulation::NeoHookeanPiola(TM & Fe){
     return mu * (Fe - Fe.transpose().inverse()) + lambda * std::log(Fe.determinant()) * Fe.transpose().inverse();
@@ -260,7 +235,5 @@ inline TM Simulation::HenckyPiola(TM & Fe){
     TM dPsidF = svd.matrixU() * ( 2*mu*invSigma*logSigma + lambda*logSigma.trace()*invSigma ) * svd.matrixV().transpose();
     return dPsidF;
 } // end HenckyPiola
-
-
 
 #endif  // SIMULATION_HPP

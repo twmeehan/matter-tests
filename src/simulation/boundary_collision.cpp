@@ -10,16 +10,16 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
     // New positions
     Xi += dt * vi; // recall Xi was passed by value
 
-    for(auto obj : objects) {
+    for(auto& obj : objects) {
         bool colliding = obj->inside(Xi);
         if (colliding) {
             TV v_rel = vi_orig;
 
-            if (obj->bc == NOSLIP) {
+            if (obj->bc == BC::NoSlip) {
                 v_rel.setZero();
-            } // end NOSLIP
+            } // end BC::NoSlip
 
-            else if (obj->bc == SLIPFREE) {
+            else if (obj->bc == BC::SlipFree) {
                 TV n = obj->normal(Xi);
                 T dot = v_rel.dot(n);
                 if (dot < 0){ // if moving towards object
@@ -39,9 +39,9 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     } // end non-zero friction
                 } // end moving towards object
 
-            } // end SLIPFREE
+            } // end BC::SlipFree
 
-            else if (obj->bc == SLIPSTICK) {
+            else if (obj->bc == BC::SlipStick) {
                 TV n = obj->normal(Xi);
                 T dot = v_rel.dot(n);
 
@@ -61,7 +61,7 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     } // end non-zero friction
                 } // end moving towards object
 
-            } // end SLIPSTICK
+            } // end BC::SlipStick
 
             else {
                 debug("INVALID BOUNDARY CONDITION!!!");
@@ -81,26 +81,26 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
 
 #ifdef THREEDIM
 
-    for (ObjectPlate &obj : plates) {
-        bool colliding = obj.inside(Xi);
+    for (auto& obj : plates) {
+        bool colliding = obj->inside(Xi);
         if (colliding) {
-            T vx_rel = vi_orig(0) - obj.vx_object;
-            T vy_rel = vi_orig(1) - obj.vy_object;
-            T vz_rel = vi_orig(2) - obj.vz_object;
+            T vx_rel = vi_orig(0) - obj->vx_object;
+            T vy_rel = vi_orig(1) - obj->vy_object;
+            T vz_rel = vi_orig(2) - obj->vz_object;
 
-            if (obj.bc == NOSLIP) {
+            if (obj->bc == BC::NoSlip) {
                 vx_rel = 0;
                 vy_rel = 0;
                 vz_rel = 0;
-            } // end NOSLIP
+            } // end BC::NoSlip
 
-            else if (obj.bc == SLIPSTICK) {
+            else if (obj->bc == BC::SlipStick) {
 
-                T friction = obj.friction;
+                T friction = obj->friction;
                     if (use_mibf)
                         friction = grid.friction[index];
 
-                if (obj.plate_type == top || obj.plate_type == bottom){
+                if (obj->plate_type == PlateType::top || obj->plate_type == PlateType::bottom){
                     // tangential velocity is the (x,z) components
 
                     T vel_t      = std::sqrt(vx_rel*vx_rel + vz_rel*vz_rel);
@@ -121,8 +121,8 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     // normal component (y) must be set to zero
                     vy_rel = 0;
 
-                } // end top and bottom plate
-                else if (obj.plate_type == left || obj.plate_type == right){
+                } // end PlateType::top and PlateType::bottom plate
+                else if (obj->plate_type == PlateType::left || obj->plate_type == PlateType::right){
                     // tangential velocity is the (y,z) components
 
                     T vel_t      = std::sqrt(vy_rel*vy_rel + vz_rel*vz_rel);
@@ -143,8 +143,8 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     // normal component (x) must be set to zero
                     vx_rel = 0;
 
-                } // end left or right plate
-                else if (obj.plate_type == front || obj.plate_type == back){
+                } // end PlateType::left or PlateType::right plate
+                else if (obj->plate_type == PlateType::front || obj->plate_type == PlateType::back){
                     // tangential velocity is the (x,y) components
 
                     T vel_t      = std::sqrt(vx_rel*vx_rel + vy_rel*vy_rel);
@@ -165,18 +165,18 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     // normal component (z) must be set to zero
                     vz_rel = 0;
 
-                } // end front or back plate
-            } // end SLIPSTICK
+                } // end PlateType::front or PlateType::back plate
+            } // end BC::SlipStick
 
 
 
-            else if (obj.bc == SLIPFREE) {
+            else if (obj->bc == BC::SlipFree) {
 
-                T friction = obj.friction;
+                T friction = obj->friction;
                     if (use_mibf)
                         friction = grid.friction[index];
 
-                if ((obj.plate_type == top && vy_rel > 0) || (obj.plate_type == bottom && vy_rel < 0)){
+                if ((obj->plate_type == PlateType::top && vy_rel > 0) || (obj->plate_type == PlateType::bottom && vy_rel < 0)){
                     // tangential velocity is the (x,z) components
                     T vel_t      = std::sqrt(vx_rel*vx_rel + vz_rel*vz_rel);
                     T fric_vel_n = friction * std::abs(vy_rel);
@@ -196,8 +196,8 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     // normal component (y) must be set to zero
                     vy_rel = 0;
 
-                } // end top and bottom plate
-                else if ((obj.plate_type == left && vx_rel < 0) || (obj.plate_type == right && vx_rel > 0)){
+                } // end PlateType::top and PlateType::bottom plate
+                else if ((obj->plate_type == PlateType::left && vx_rel < 0) || (obj->plate_type == PlateType::right && vx_rel > 0)){
                     // tangential velocity is the (y,z) components
                     T vel_t      = std::sqrt(vy_rel*vy_rel + vz_rel*vz_rel);
                     T fric_vel_n = friction * std::abs(vx_rel);
@@ -217,8 +217,8 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     // normal component (x) must be set to zero
                     vx_rel = 0;
 
-                } // end left or right plate
-                else if ((obj.plate_type == front && vz_rel > 0) || (obj.plate_type == back && vz_rel < 0 )){
+                } // end PlateType::left or PlateType::right plate
+                else if ((obj->plate_type == PlateType::front && vz_rel > 0) || (obj->plate_type == PlateType::back && vz_rel < 0 )){
                     // tangential velocity is the (x,y) components
                     T vel_t      = std::sqrt(vx_rel*vx_rel + vy_rel*vy_rel);
                     T fric_vel_n = friction * std::abs(vz_rel);
@@ -238,8 +238,8 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     // normal component (z) must be set to zero
                     vz_rel = 0;
 
-                } // end front or back plate
-            } // end SLIPFREE
+                } // end PlateType::front or PlateType::back plate
+            } // end BC::SlipFree
 
 
 
@@ -249,9 +249,9 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                 return;
             }
 
-            vi(0) = vx_rel + obj.vx_object;
-            vi(1) = vy_rel + obj.vy_object;
-            vi(2) = vz_rel + obj.vz_object;
+            vi(0) = vx_rel + obj->vx_object;
+            vi(1) = vy_rel + obj->vy_object;
+            vi(2) = vz_rel + obj->vz_object;
 
             // update velocity copy before next iteration
             vi_orig = vi; // Comment this line to enforce ordering of objects (i.e., use only last object in list)
@@ -264,24 +264,24 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
 #else // TWODIM
 
 
-    for (ObjectPlate &obj : plates) {
-        bool colliding = obj.inside(Xi);
+    for (auto& obj : plates) {
+        bool colliding = obj->inside(Xi);
         if (colliding) {
-            T vx_rel = vi_orig(0) - obj.vx_object;
-            T vy_rel = vi_orig(1) - obj.vy_object;
+            T vx_rel = vi_orig(0) - obj->vx_object;
+            T vy_rel = vi_orig(1) - obj->vy_object;
 
-            if (obj.bc == NOSLIP) {
+            if (obj->bc == BC::NoSlip) {
                 vx_rel = 0;
                 vy_rel = 0;
-            } // end NOSLIP
+            } // end BC::NoSlip
 
-            else if (obj.bc == SLIPSTICK) {
+            else if (obj->bc == BC::SlipStick) {
 
-                T friction = obj.friction;
+                T friction = obj->friction;
                     if (use_mibf)
                         friction = grid.friction[index];
 
-                if (obj.plate_type == top || obj.plate_type == bottom){
+                if (obj->plate_type == PlateType::top || obj->plate_type == PlateType::bottom){
                     // tangential velocity is the (x) component and must be changed
                     if (friction == 0){
                         // Do nothing
@@ -299,8 +299,8 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     // normal component (y) must be set to zero
                     vy_rel = 0;
 
-                } // end top and bottom plate
-                else if (obj.plate_type == left || obj.plate_type == right){
+                } // end PlateType::top and PlateType::bottom plate
+                else if (obj->plate_type == PlateType::left || obj->plate_type == PlateType::right){
                     // tangential velocity is the (y) component and must be changed
 
                     if (friction == 0){
@@ -319,19 +319,19 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     // normal component (x) must be set to zero
                     vx_rel = 0;
 
-                } // end left or right plate
+                } // end PlateType::left or PlateType::right plate
 
-            } // end SLIPSTICK
+            } // end BC::SlipStick
 
 
 
-            else if (obj.bc == SLIPFREE) {
+            else if (obj->bc == BC::SlipFree) {
 
-                T friction = obj.friction;
+                T friction = obj->friction;
                     if (use_mibf)
                         friction = grid.friction[index];
 
-                if ((obj.plate_type == top && vy_rel > 0) || (obj.plate_type == bottom && vy_rel < 0)){
+                if ((obj->plate_type == PlateType::top && vy_rel > 0) || (obj->plate_type == PlateType::bottom && vy_rel < 0)){
                     // tangential velocity is the (x) component and must be changed
                     if (friction == 0){
                         // Do nothing
@@ -349,8 +349,8 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     // normal component (y) must be set to zero
                     vy_rel = 0;
 
-                } // end top and bottom plate
-                else if ((obj.plate_type == left && vx_rel < 0) || (obj.plate_type == right && vx_rel > 0)){
+                } // end PlateType::top and PlateType::bottom plate
+                else if ((obj->plate_type == PlateType::left && vx_rel < 0) || (obj->plate_type == PlateType::right && vx_rel > 0)){
                     // tangential velocity is the (y) component and must be changed
                     if (friction == 0){
                         // Do nothing
@@ -368,8 +368,8 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                     // normal component (x) must be set to zero
                     vx_rel = 0;
 
-                } // end left or right plate
-            } // end SLIPFREE
+                } // end PlateType::left or PlateType::right plate
+            } // end BC::SlipFree
 
 
 
@@ -379,8 +379,8 @@ void Simulation::boundaryCollision(int index, TV Xi, TV& vi){
                 return;
             }
 
-            vi(0) = vx_rel + obj.vx_object;
-            vi(1) = vy_rel + obj.vy_object;
+            vi(0) = vx_rel + obj->vx_object;
+            vi(1) = vy_rel + obj->vy_object;
 
             // update velocity copy before next iteration 
             vi_orig = vi; // Comment this line to enforce ordering of objects (i.e., use only last object in list)

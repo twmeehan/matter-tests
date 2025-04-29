@@ -1,8 +1,8 @@
 // Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
 
-#include "simulation.hpp"
 #include "tools.hpp"
-#include "sampling_particles.hpp"
+#include "simulation/simulation.hpp"
+#include "sampling/sampling_particles.hpp"
 
 int main(){
 
@@ -43,8 +43,8 @@ int main(){
     }
 
     // Elasticity
-    sim.elastic_model = Hencky;
-    sim.plastic_model = NoPlasticity;
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.plastic_model = PlasticModel::NoPlasticity;
     sim.E = 1e6;     // Young's modulus (Pa)
     sim.nu = 0.3;   // Poisson's ratio (-)
     sim.rho = 1550; // Density (kg/m3)
