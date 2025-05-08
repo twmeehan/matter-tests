@@ -109,8 +109,12 @@ Download [VSCode](https://code.visualstudio.com/) and [Docker](https://www.docke
 5. Compile (NB: the number of threads for the _simulation_ is specified in `mpm.cpp`)      
    `make -j <number of cores for compilation>` 
 
-6. Run the executable:      
+6. Run the sim you set up in `mpm.cpp`:      
    `./src/mpm`
+
+7. [Optional] Tests:       
+   Run all tests with `make test` or `ctest`. Run single test with `ctest -R <name of test>`
+ 
 
 ### Example of setup file
 
@@ -248,7 +252,7 @@ Here is a list of the various plastic models and their parameters:
 | |                     | `perzyna_visc` | 0.0             |
 | $\mu(I)$-rheology     | `PlasticModel::DPMui`  | `q_cohesion` | 0.0 |
 | |                     | `use_pradhana` | true            |
-| |                     | `rho_s`        | 1.0             |      
+| |                     | `rho_s`        | 2500             |      
 | |                     | `grain_diameter`| 0.001          |
 | |                     | `I_ref`        | 0.279           |      
 | |                     | `mu_1`         | 0.382           |      
@@ -256,7 +260,7 @@ Here is a list of the various plastic models and their parameters:
 | Critical state $\mu(I)$-rheology | `PlasticModel::MCCMui`  | `beta` | 0.0  |
 | |                     | `p0`           | 1000.0          |
 | |                     | `xi`           | 0.0             |
-| |                     | `rho_s`        | 1000.0          |      
+| |                     | `rho_s`        | 2500          |      
 | |                     | `grain_diameter`| 0.001          |
 | |                     | `I_ref`        | 0.279           |      
 | |                     | `mu_1`         | 0.382           |      

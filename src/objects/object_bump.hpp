@@ -29,7 +29,7 @@ public:
     TV normal(const TV& X_in) const override {
 
         T x = X_in(0);
-        TV n;
+        TV n = TV::Zero();
 
         T arg = 25*(x-0.43);
         T b_der = -25 * 0.0475 * std::tanh(arg) / std::cosh(arg);
