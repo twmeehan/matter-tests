@@ -109,8 +109,12 @@ Download [VSCode](https://code.visualstudio.com/) and [Docker](https://www.docke
 5. Compile (NB: the number of threads for the _simulation_ is specified in `mpm.cpp`)      
    `make -j <number of cores for compilation>` 
 
-6. Run the executable:      
+6. Run the sim you set up in `mpm.cpp`:      
    `./src/mpm`
+
+7. [Optional] Tests:       
+   Run all tests with `make test` or `ctest`. Run single test with `ctest -R <name of test>`
+ 
 
 ### Example of setup file
 

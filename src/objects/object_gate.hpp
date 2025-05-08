@@ -30,7 +30,7 @@ public:
     TV normal(const TV& X_in) const override {
 
         T x = X_in(0);
-        TV n;
+        TV n = TV::Zero();
 
         T b_der = 2.0 * 100 * x;
         n(0) = -b_der;
