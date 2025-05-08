@@ -21,7 +21,6 @@ public:
       muI.resize(Np); std::fill( muI.begin(), muI.end(), 0.0 );
 
       F.resize(Np); std::fill( F.begin(), F.end(), TM::Identity() );
-      tau.resize(Np); std::fill( tau.begin(), tau.end(), TM::Zero() );
       Bmat.resize(Np); std::fill( Bmat.begin(), Bmat.end(), TM::Zero() );
   }
 
@@ -33,12 +32,10 @@ public:
   std::vector<T> eps_pl_dev;
   std::vector<T> eps_pl_vol;
   std::vector<T> eps_pl_vol_pradhana;
-
   std::vector<T> delta_gamma;
   std::vector<T> viscosity;
   std::vector<T> muI;
 
-  std::vector<TM> tau;
   std::vector<TM> F;
   std::vector<TM> Bmat;
 

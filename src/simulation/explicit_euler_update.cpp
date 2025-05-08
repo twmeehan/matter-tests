@@ -33,7 +33,6 @@ void Simulation::explicitEulerUpdate(){
             }
 
             TM tau = dPsidF * Fe.transpose();
-            particles.tau[p] = tau;
 
             TV xp = particles.x[p];
             unsigned int i_base = std::max(0, int(std::floor((xp(0)-grid.xc)*one_over_dx)) - 1); // i_base = std::min(i_base, Nx-4); // the subtraction of one is valid for both quadratic and cubic splines

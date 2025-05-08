@@ -248,7 +248,7 @@ Here is a list of the various plastic models and their parameters:
 | |                     | `perzyna_visc` | 0.0             |
 | $\mu(I)$-rheology     | `PlasticModel::DPMui`  | `q_cohesion` | 0.0 |
 | |                     | `use_pradhana` | true            |
-| |                     | `rho_s`        | 1.0             |      
+| |                     | `rho_s`        | 2500             |      
 | |                     | `grain_diameter`| 0.001          |
 | |                     | `I_ref`        | 0.279           |      
 | |                     | `mu_1`         | 0.382           |      
@@ -256,7 +256,7 @@ Here is a list of the various plastic models and their parameters:
 | Critical state $\mu(I)$-rheology | `PlasticModel::MCCMui`  | `beta` | 0.0  |
 | |                     | `p0`           | 1000.0          |
 | |                     | `xi`           | 0.0             |
-| |                     | `rho_s`        | 1000.0          |      
+| |                     | `rho_s`        | 2500          |      
 | |                     | `grain_diameter`| 0.001          |
 | |                     | `I_ref`        | 0.279           |      
 | |                     | `mu_1`         | 0.382           |      
