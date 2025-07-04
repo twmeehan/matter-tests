@@ -6,7 +6,11 @@ enable_testing()
 
 add_subdirectory(src)
 add_subdirectory(tests)
+<<<<<<< HEAD
 
+=======
+add_compile_definitions(THREEDIM)
+>>>>>>> ed4816d (added my own tests)
 option (USE_VDB "Use OpenVDB part of the code" OFF)
 
 #### Download header files from external Github repos ####
@@ -28,4 +32,8 @@ file(ARCHIVE_EXTRACT INPUT
     ${CMAKE_SOURCE_DIR}/deps/tph_poisson.tar.gz
     DESTINATION ${CMAKE_SOURCE_DIR}/deps/)
 # Delete the zipped folder
+<<<<<<< HEAD
 file(REMOVE ${CMAKE_SOURCE_DIR}/deps/tph_poisson.tar.gz)
+=======
+file(REMOVE ${CMAKE_SOURCE_DIR}/deps/tph_poisson.tar.gz)
+>>>>>>> ed4816d (added my own tests)

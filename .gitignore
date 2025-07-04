@@ -3,3 +3,10 @@ build/
 postprocess/backup/
 *.vscode/
 deps/
+<<<<<<< HEAD
+=======
+output/
+env/
+*.egg-info/
+__pycache__/
+>>>>>>> ed4816d (added my own tests)
