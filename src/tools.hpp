@@ -17,11 +17,7 @@
 
 /////////////// USER PARAMETERS (GLOBAL) //////////
 typedef double T; // float or double
-<<<<<<< HEAD
-// #define THREEDIM // Uncomment for 2D
-=======
 #define THREEDIM // Uncomment for 2D
->>>>>>> ed4816d (added my own tests)
 #define SPLINEDEG 2 // Quadratic B-spline
 // #define WARNINGS // Write more debug info to screen
 ///////////////////////////////////////////////////

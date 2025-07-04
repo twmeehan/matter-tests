@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = -DINCLUDE_DIR=\"/common/home/twm70/Repos/matter/levelsets\" -DSRC_DIR=\"/common/home/twm70/Repos/matter/src\"
 
-CXX_INCLUDES = -I/common/home/twm70/openvdb-install/include -isystem /usr/include/eigen3
+CXX_INCLUDES = -isystem /usr/include/eigen3
 
 CXX_FLAGS = -O3 -DNDEBUG -fopenmp
 

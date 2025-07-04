@@ -521,30 +521,6 @@ tests.cpp.s:
 	cd /common/home/twm70/Repos/matter && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/tests.cpp.s
 .PHONY : tests.cpp.s
 
-tests_vdb.o: tests_vdb.cpp.o
-.PHONY : tests_vdb.o
-
-# target to build an object file
-tests_vdb.cpp.o:
-	cd /common/home/twm70/Repos/matter && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/tests_vdb.cpp.o
-.PHONY : tests_vdb.cpp.o
-
-tests_vdb.i: tests_vdb.cpp.i
-.PHONY : tests_vdb.i
-
-# target to preprocess a source file
-tests_vdb.cpp.i:
-	cd /common/home/twm70/Repos/matter && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/tests_vdb.cpp.i
-.PHONY : tests_vdb.cpp.i
-
-tests_vdb.s: tests_vdb.cpp.s
-.PHONY : tests_vdb.s
-
-# target to generate assembly for a file
-tests_vdb.cpp.s:
-	cd /common/home/twm70/Repos/matter && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/tests.dir/build.make tests/CMakeFiles/tests.dir/tests_vdb.cpp.s
-.PHONY : tests_vdb.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -601,9 +577,6 @@ help:
 	@echo "... tests.o"
 	@echo "... tests.i"
 	@echo "... tests.s"
-	@echo "... tests_vdb.o"
-	@echo "... tests_vdb.i"
-	@echo "... tests_vdb.s"
 .PHONY : help
 
 

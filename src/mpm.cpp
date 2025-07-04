@@ -10,87 +10,11 @@
 #include "objects/object_box.hpp"
 #include "objects/object_plate.hpp"
 
-// Comment if not compiling with OpenVDB:
-// #include "objects/object_vdb.hpp"
-// #include "sampling/sampling_particles_vdb.hpp"
+////////////////////////////////////////////////////////
+// Setup environment for simulation
+////////////////////////////////////////////////////////
 
-
-int sand_sim(int particle_count) {
-
-    using namespace std::chrono;
-
-    auto start = high_resolution_clock::now();
-    
-
-    Simulation sim;
-    std::string name = "sand_" + std::to_string(particle_count);
-
-    sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ name);
-
-    sim.save_grid = true;
-    sim.end_frame = 60;     // last frame to simulate
-    sim.fps = 30;           // frames per second
-    sim.n_threads = 8;      // number of threads in parallel
-    sim.cfl = 0.5;          // CFL constant, typically around 0.5
-    sim.flip_ratio = -0.95; // (A)PIC-(A)FLIP ratio in [-1,1].
-
-    // INITILIZE ELASTICITY
-    sim.elastic_model = ElasticModel::Hencky;
-    sim.E = 1e6;     // Young's modulus (Pa)
-    sim.nu = 0.3;   // Poisson's ratio (-)
-    sim.rho = 1000; // Density (kg/m3)
-
-    ////// GRAVITY ANGLE [default: gravity is 0]
-    T theta_deg = 0; // angle in degrees of gravity vector
-    T theta = theta_deg * M_PI / 180;
-    sim.gravity = TV::Zero(); //
-    sim.gravity[0] = +9.81 * std::sin(theta);
-    sim.gravity[1] = -9.81 * std::cos(theta);
-
-    ////// INITIAL PARTICLE POSITIONS
-    sim.Lx = 1;
-    sim.Ly = 1;
-    T k_rad; //0.031 ---- 0.039 ---- 0.05 -- 0.068 -- 0.059
-    switch (particle_count) {
-        case 20000:
-            k_rad = 0.031;
-            break;
-        case 10000:
-            k_rad = 0.039;
-            break;
-        case 5000:
-            k_rad = 0.050;
-            break;
-        case 2000:
-            k_rad = 0.068;
-            break;
-        case 3000:
-            k_rad = 0.059;
-            break;
-        default:
-            k_rad = 0.05;
-            break;
-    }
-
-    #ifdef THREEDIM
-        sim.Lz = 1;
-    #endif
-
-    sampleParticles(sim, k_rad);
-
-    ////// OPTIONAL: CHANGE INITIAL PARTICLE POSITIONS
-    for(int p = 0; p < sim.Np; p++){
-        sim.particles.x[p](0) -= 0.5;
-        sim.particles.x[p](1) += 3.0;
-        sim.particles.x[p](2) -= 0.5;
-
-    }
-    sim.grid_reference_point = TV::Zero();
-
-    ////// OPTIONAL: INITIAL PARTICLE VELOCITIES
-    // sim.particles.v = ...
-
-    ////// OBJECTS AND TERRAINS
+void setup_environment_with_bounding_box(Simulation& sim) {
     sim.plates.push_back(std::make_unique<ObjectPlate>(-1.0, PlateType::left,   BC::NoSlip));
     sim.plates.push_back(std::make_unique<ObjectPlate>(1.0, PlateType::right,  BC::NoSlip));
     sim.plates.push_back(std::make_unique<ObjectPlate>(0.0, PlateType::bottom, BC::NoSlip));
@@ -106,379 +30,221 @@ int sand_sim(int particle_count) {
 
     auto obox = std::make_unique<ObjectBoxRotated>(BC::NoSlip, 0.0, center, half_extents, R);
     sim.objects.push_back(std::move(obox));
+}
 
-    /////// Here are some examples how to use the objects derived from ObjectGeneral:
+void setup_environment_without_bounding_box(Simulation& sim) {
+    sim.plates.push_back(std::make_unique<ObjectPlate>(0.0, PlateType::bottom, BC::NoSlip));
 
-    /////// Here is an example how to use ObjectVdb (uncomment includes and openvdb::initialize() above):
-    // sim.objects.push_back(std::make_unique<ObjectVdb>("../levelsets/vdb_file_name.vdb", BC::NoSlip, friction));
+    TV center(0, 1, 0);
+    TV half_extents(0.4, 0.4, 0.4);
+    TM R = TM::Identity();
+    T mytheta = M_PI / 4;
+    R(0, 0) = std::cos(mytheta); R(0, 1) = -std::sin(mytheta);
+    R(1, 0) = std::sin(mytheta); R(1, 1) =  std::cos(mytheta);
 
-    ////// PLASTICITY
+    auto obox = std::make_unique<ObjectBoxRotated>(BC::NoSlip, 0.0, center, half_extents, R);
+    sim.objects.push_back(std::move(obox));
+}
+
+void setup_environment_only_bounding_box(Simulation& sim) {
+    sim.plates.push_back(std::make_unique<ObjectPlate>(-1.0, PlateType::left,   BC::NoSlip));
+    sim.plates.push_back(std::make_unique<ObjectPlate>(1.0, PlateType::right,  BC::NoSlip));
+    sim.plates.push_back(std::make_unique<ObjectPlate>(0.0, PlateType::bottom, BC::NoSlip));
+    sim.plates.push_back(std::make_unique<ObjectPlate>(-1.0, PlateType::back,   BC::NoSlip));
+    sim.plates.push_back(std::make_unique<ObjectPlate>(1.0, PlateType::front,  BC::NoSlip));
+}
+
+////////////////////////////////////////////////////////
+// Setup shared simulation factors
+////////////////////////////////////////////////////////
+
+void setup_simulation_with_particles(int particle_count, Simulation& sim) {
+    T theta_deg = 0;
+    T theta = theta_deg * M_PI / 180;
+    sim.gravity = TV::Zero();
+    sim.gravity[0] = +9.81 * std::sin(theta);
+    sim.gravity[1] = -9.81 * std::cos(theta);
+
+    sim.Lx = 1;
+    sim.Ly = 1;
+    T k_rad;
+    switch (particle_count) {
+        case 20000: k_rad = 0.031; break;
+        case 10000: k_rad = 0.039; break;
+        case 5000:  k_rad = 0.050; break;
+        case 2000:  k_rad = 0.068; break;
+        case 3000:  k_rad = 0.059; break;
+        default:    k_rad = 0.05;  break;
+    }
+
+    #ifdef THREEDIM
+        sim.Lz = 1;
+    #endif
+
+    sampleParticles(sim, k_rad);
+    sim.grid_reference_point = TV::Zero();
+}
+
+////////////////////////////////////////////////////////
+// Simulations
+////////////////////////////////////////////////////////
+
+int sand_collision(int particle_count) {
+    using namespace std::chrono;
+    auto start = high_resolution_clock::now();
+
+    Simulation sim;
+    std::string name = "sand_collision_" + std::to_string(particle_count);
+    sim.initialize(true, "output/", name);
+
+    sim.save_grid = true;
+    sim.end_frame = 60;
+    sim.fps = 30;
+    sim.n_threads = 8;
+    sim.cfl = 0.5;
+    sim.flip_ratio = -0.95;
+
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.E = 1e6;
+    sim.nu = 0.3;
+    sim.rho = 1000;
+
+    setup_simulation_with_particles(particle_count, sim);
+
+    for (int p = 0; p < sim.Np; p++) {
+        sim.particles.x[p][0]  -= 0.5;
+        sim.particles.x[p][1]  += 3.0;
+        sim.particles.x[p][2]  -= 0.5;
+    }
+
+    setup_environment_with_bounding_box(sim);
+
     sim.plastic_model = PlasticModel::DPVisc;
-
-    sim.use_pradhana = true; // Supress unwanted volume expansion in Drucker-Prager models
-    sim.use_mises_q = false; // [default: false] if true, q is defined as q = sqrt(3/2 * s:s), otherwise q = sqrt(1/2 * s:s)
-
-    sim.M = std::tan(30*M_PI/180.0); // Internal friction
-    sim.q_cohesion = 0; // Yield surface's intercection of q-axis (in Pa), 0 is the cohesionless case
-    sim.perzyna_exp = 1; // Exponent in Perzyna models
-    sim.perzyna_visc = 0; // Viscous time parameter is Perzyna models
+    sim.use_pradhana = true;
+    sim.use_mises_q = false;
+    sim.M = std::tan(30*M_PI/180.0);
+    sim.q_cohesion = 0;
+    sim.perzyna_exp = 1;
+    sim.perzyna_visc = 0;
 
     sim.simulate();
 
-    auto end = high_resolution_clock::now(); // End timing
-    auto duration = duration_cast<milliseconds>(end - start);
-    return static_cast<int>(duration.count());
+    auto end = high_resolution_clock::now();
+    return static_cast<int>(duration_cast<milliseconds>(end - start).count());
 }
 
 int bouncy_cube(int particle_count) {
-
     using namespace std::chrono;
-
     auto start = high_resolution_clock::now();
-    
 
     Simulation sim;
-    std::string name = "test_" + std::to_string(particle_count);
-
-    sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ name);
+    std::string name = "bouncy_cube_" + std::to_string(particle_count);
+    sim.initialize(true, "output/", name);
 
     sim.save_grid = true;
-    sim.end_frame = 60;     // last frame to simulate
-    sim.fps = 30;           // frames per second
-    sim.n_threads = 8;      // number of threads in parallel
-    sim.cfl = 0.5;          // CFL constant, typically around 0.5
-    sim.flip_ratio = 0.95; // (A)PIC-(A)FLIP ratio in [-1,1].
+    sim.end_frame = 60;
+    sim.fps = 30;
+    sim.n_threads = 8;
+    sim.cfl = 0.5;
+    sim.flip_ratio = 0.95;
 
-    // INITILIZE ELASTICITY
     sim.elastic_model = ElasticModel::Hencky;
-    sim.E = 1e5;     // Young's modulus (Pa)
-    sim.nu = 0.45;   // Poisson's ratio (-)
-    sim.rho = 1000; // Density (kg/m3)
+    sim.E = 1e5;
+    sim.nu = 0.45;
+    sim.rho = 1000;
 
-    ////// GRAVITY ANGLE [default: gravity is 0]
-    T theta_deg = 0; // angle in degrees of gravity vector
-    T theta = theta_deg * M_PI / 180;
-    sim.gravity = TV::Zero(); //
-    sim.gravity[0] = +9.81 * std::sin(theta);
-    sim.gravity[1] = -9.81 * std::cos(theta);
+    setup_simulation_with_particles(particle_count, sim);
 
-    ////// INITIAL PARTICLE POSITIONS
-    sim.Lx = 1;
-    sim.Ly = 1;
-    T k_rad; //0.031 ---- 0.039 ---- 0.05 -- 0.068 -- 0.059
-    switch (particle_count) {
-        case 20000:
-            k_rad = 0.031;
-            break;
-        case 10000:
-            k_rad = 0.039;
-            break;
-        case 5000:
-            k_rad = 0.050;
-            break;
-        case 2000:
-            k_rad = 0.068;
-            break;
-        case 3000:
-            k_rad = 0.059;
-            break;
-        default:
-            k_rad = 0.05;
-            break;
+    for (int p = 0; p < sim.Np; p++) {
+        sim.particles.x[p][0]  -= 0.5;
+        sim.particles.x[p][1]  += 3.0;
+        sim.particles.x[p][2]  -= 0.5;
     }
 
-    #ifdef THREEDIM
-        sim.Lz = 1;
-    #endif
+    setup_environment_with_bounding_box(sim);
 
-    sampleParticles(sim, k_rad);
-
-    ////// OPTIONAL: CHANGE INITIAL PARTICLE POSITIONS
-    for(int p = 0; p < sim.Np; p++){
-        sim.particles.x[p](0) -= 0.5;
-        sim.particles.x[p](1) += 3.0;
-        sim.particles.x[p](2) -= 0.5;
-
-    }
-    sim.grid_reference_point = TV::Zero();
-
-    ////// OPTIONAL: INITIAL PARTICLE VELOCITIES
-    // sim.particles.v = ...
-
-    ////// OBJECTS AND TERRAINS
-    sim.plates.push_back(std::make_unique<ObjectPlate>(-1.0, PlateType::left,   BC::NoSlip));
-    sim.plates.push_back(std::make_unique<ObjectPlate>(1.0, PlateType::right,  BC::NoSlip));
-    sim.plates.push_back(std::make_unique<ObjectPlate>(0.0, PlateType::bottom, BC::NoSlip));
-    sim.plates.push_back(std::make_unique<ObjectPlate>(-1.0, PlateType::back,   BC::NoSlip));
-    sim.plates.push_back(std::make_unique<ObjectPlate>(1.0, PlateType::front,  BC::NoSlip));
-
-    TV center(0, 1, 0);
-    TV half_extents(0.4, 0.4, 0.4);
-    TM R = TM::Identity();
-    T mytheta = M_PI / 4;
-    R(0, 0) = std::cos(mytheta); R(0, 1) = -std::sin(mytheta);
-    R(1, 0) = std::sin(mytheta); R(1, 1) =  std::cos(mytheta);
-
-    auto obox = std::make_unique<ObjectBoxRotated>(BC::NoSlip, 0.0, center, half_extents, R);
-    sim.objects.push_back(std::move(obox));
-
-    /////// Here are some examples how to use the objects derived from ObjectGeneral:
-
-    /////// Here is an example how to use ObjectVdb (uncomment includes and openvdb::initialize() above):
-    // sim.objects.push_back(std::make_unique<ObjectVdb>("../levelsets/vdb_file_name.vdb", BC::NoSlip, friction));
-
-    ////// PLASTICITY
-    sim.elastic_model     = ElasticModel::Hencky;   // Elasticity for large deformation
-    sim.plastic_model     = PlasticModel::NoPlasticity;       // Perzyna viscoplastic model
-    sim.hardening_law   = HardeningLaw::NoHard;       // No hardening
-    sim.use_pradhana      = false;                      // Not needed for liquids
-    sim.use_mises_q       = false;// [default: false] if true, q is defined as q = sqrt(3/2 * s:s), otherwise q = sqrt(1/2 * s:s)
-
-    sim.M = 0; // Internal friction
-    sim.q_cohesion = 0; // Yield surface's intercection of q-axis (in Pa), 0 is the cohesionless case
-    sim.perzyna_exp = 1; // Exponent in Perzyna models
-    sim.perzyna_visc = 3000; // Viscous time parameter is Perzyna models
+    sim.plastic_model = PlasticModel::NoPlasticity;
+    sim.hardening_law = HardeningLaw::NoHard;
+    sim.use_pradhana = false;
+    sim.use_mises_q = false;
+    sim.M = 0;
+    sim.q_cohesion = 0;
+    sim.perzyna_exp = 1;
+    sim.perzyna_visc = 3000;
 
     sim.simulate();
 
-    auto end = high_resolution_clock::now(); // End timing
-    auto duration = duration_cast<milliseconds>(end - start);
-    return static_cast<int>(duration.count());
-}
-
-int test(int particle_count) {
-
-    using namespace std::chrono;
-
-    auto start = high_resolution_clock::now();
-    
-
-    Simulation sim;
-    std::string name = "test_" + std::to_string(particle_count);
-
-    sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ name);
-
-    sim.save_grid = true;
-    sim.end_frame = 60;     // last frame to simulate
-    sim.fps = 30;           // frames per second
-    sim.n_threads = 8;      // number of threads in parallel
-    sim.cfl = 0.5;          // CFL constant, typically around 0.5
-    sim.flip_ratio = 0.95; // (A)PIC-(A)FLIP ratio in [-1,1].
-
-    // INITILIZE ELASTICITY
-    sim.elastic_model = ElasticModel::Hencky;
-    sim.E = 1e6;     // Young's modulus (Pa)
-    sim.nu = 0.3;   // Poisson's ratio (-)
-    sim.rho = 1000; // Density (kg/m3)
-
-    ////// GRAVITY ANGLE [default: gravity is 0]
-    T theta_deg = 0; // angle in degrees of gravity vector
-    T theta = theta_deg * M_PI / 180;
-    sim.gravity = TV::Zero(); //
-    sim.gravity[0] = +9.81 * std::sin(theta);
-    sim.gravity[1] = -9.81 * std::cos(theta);
-
-    ////// INITIAL PARTICLE POSITIONS
-    sim.Lx = 1;
-    sim.Ly = 1;
-    T k_rad; //0.031 ---- 0.039 ---- 0.05 -- 0.068 -- 0.059
-    switch (particle_count) {
-        case 20000:
-            k_rad = 0.031;
-            break;
-        case 10000:
-            k_rad = 0.039;
-            break;
-        case 5000:
-            k_rad = 0.050;
-            break;
-        case 2000:
-            k_rad = 0.068;
-            break;
-        case 3000:
-            k_rad = 0.059;
-            break;
-        default:
-            k_rad = 0.05;
-            break;
-    }
-
-    #ifdef THREEDIM
-        sim.Lz = 1;
-    #endif
-
-    sampleParticles(sim, k_rad);
-
-    ////// OPTIONAL: CHANGE INITIAL PARTICLE POSITIONS
-    for(int p = 0; p < sim.Np; p++){
-        sim.particles.x[p](0) -= 0.5;
-        sim.particles.x[p](1) += 3.0;
-        sim.particles.x[p](2) -= 0.5;
-
-    }
-    sim.grid_reference_point = TV::Zero();
-
-    ////// OPTIONAL: INITIAL PARTICLE VELOCITIES
-    // sim.particles.v = ...
-
-    ////// OBJECTS AND TERRAINS
-    sim.plates.push_back(std::make_unique<ObjectPlate>(-1.0, PlateType::left,   BC::NoSlip));
-    sim.plates.push_back(std::make_unique<ObjectPlate>(1.0, PlateType::right,  BC::NoSlip));
-    sim.plates.push_back(std::make_unique<ObjectPlate>(0.0, PlateType::bottom, BC::NoSlip));
-    sim.plates.push_back(std::make_unique<ObjectPlate>(-1.0, PlateType::back,   BC::NoSlip));
-    sim.plates.push_back(std::make_unique<ObjectPlate>(1.0, PlateType::front,  BC::NoSlip));
-
-    TV center(0, 1, 0);
-    TV half_extents(0.4, 0.4, 0.4);
-    TM R = TM::Identity();
-    T mytheta = M_PI / 4;
-    R(0, 0) = std::cos(mytheta); R(0, 1) = -std::sin(mytheta);
-    R(1, 0) = std::sin(mytheta); R(1, 1) =  std::cos(mytheta);
-
-    auto obox = std::make_unique<ObjectBoxRotated>(BC::NoSlip, 0.0, center, half_extents, R);
-    sim.objects.push_back(std::move(obox));
-
-    /////// Here are some examples how to use the objects derived from ObjectGeneral:
-
-    /////// Here is an example how to use ObjectVdb (uncomment includes and openvdb::initialize() above):
-    // sim.objects.push_back(std::make_unique<ObjectVdb>("../levelsets/vdb_file_name.vdb", BC::NoSlip, friction));
-
-    ////// PLASTICITY
-   // sim.elastic_model = ElasticModel::Hencky;
-
-    sim.plastic_model = PlasticModel::DPVisc;
-
-    sim.use_pradhana = true; // Supress unwanted volume expansion in Drucker-Prager models
-    sim.use_mises_q = false; // [default: false] if true, q is defined as q = sqrt(3/2 * s:s), otherwise q = sqrt(1/2 * s:s)
-
-    sim.M = std::tan(1200*M_PI/180.0); // Internal friction
-    sim.q_cohesion = 0; // Yield surface's intercection of q-axis (in Pa), 0 is the cohesionless case
-    sim.perzyna_exp = 1; // Exponent in Perzyna models
-    sim.perzyna_visc = 0; // Viscous time parameter is Perzyna models
-
-    sim.simulate();
-
-    auto end = high_resolution_clock::now(); // End timing
-    auto duration = duration_cast<milliseconds>(end - start);
-    return static_cast<int>(duration.count());
+    auto end = high_resolution_clock::now();
+    return static_cast<int>(duration_cast<milliseconds>(end - start).count());
 }
 
 int no_plasticity(int particle_count) {
-
     using namespace std::chrono;
-
     auto start = high_resolution_clock::now();
-    
 
     Simulation sim;
     std::string name = "no_plasticity_" + std::to_string(particle_count);
-
-    sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ name);
+    sim.initialize(true, "output/", name);
 
     sim.save_grid = true;
-    sim.end_frame = 60;     // last frame to simulate
-    sim.fps = 30;           // frames per second
-    sim.n_threads = 8;      // number of threads in parallel
-    sim.cfl = 0.5;          // CFL constant, typically around 0.5
-    sim.flip_ratio = -0.95; // (A)PIC-(A)FLIP ratio in [-1,1].
+    sim.end_frame = 60;
+    sim.fps = 30;
+    sim.n_threads = 8;
+    sim.cfl = 0.5;
+    sim.flip_ratio = -0.95;
 
-    // INITILIZE ELASTICITY
     sim.elastic_model = ElasticModel::Hencky;
-    sim.E = 1e6;     // Young's modulus (Pa)
-    sim.nu = 0.3;   // Poisson's ratio (-)
-    sim.rho = 1000; // Density (kg/m3)
+    sim.E = 1e6;
+    sim.nu = 0.3;
+    sim.rho = 1000;
 
-    ////// GRAVITY ANGLE [default: gravity is 0]
-    T theta_deg = 0; // angle in degrees of gravity vector
-    T theta = theta_deg * M_PI / 180;
-    sim.gravity = TV::Zero(); //
-    sim.gravity[0] = +9.81 * std::sin(theta);
-    sim.gravity[1] = -9.81 * std::cos(theta);
+    setup_simulation_with_particles(particle_count, sim);
 
-    ////// INITIAL PARTICLE POSITIONS
-    sim.Lx = 1;
-    sim.Ly = 1;
-    T k_rad; //0.031 ---- 0.039 ---- 0.05 -- 0.068 -- 0.059
-    switch (particle_count) {
-        case 20000:
-            k_rad = 0.031;
-            break;
-        case 10000:
-            k_rad = 0.039;
-            break;
-        case 5000:
-            k_rad = 0.050;
-            break;
-        case 2000:
-            k_rad = 0.068;
-            break;
-        case 3000:
-            k_rad = 0.059;
-            break;
-        default:
-            k_rad = 0.05;
-            break;
+    for (int p = 0; p < sim.Np; p++) {
+        sim.particles.x[p][0]  -= 0.5;
+        sim.particles.x[p][1]  += 3.0;
+        sim.particles.x[p][2]  -= 0.5;
     }
 
-    #ifdef THREEDIM
-        sim.Lz = 1;
-    #endif
+    setup_environment_without_bounding_box(sim);
 
-    sampleParticles(sim, k_rad);
-
-    ////// OPTIONAL: CHANGE INITIAL PARTICLE POSITIONS
-    for(int p = 0; p < sim.Np; p++){
-        sim.particles.x[p](0) -= 0.5;
-        sim.particles.x[p](1) += 2.0;
-        sim.particles.x[p](2) -= 0.5;
-
-    }
-    sim.grid_reference_point = TV::Zero();
-
-    ////// OPTIONAL: INITIAL PARTICLE VELOCITIES
-    // sim.particles.v = ...
-
-    ////// OBJECTS AND TERRAINS
-    sim.plates.push_back(std::make_unique<ObjectPlate>(0.0, PlateType::bottom, BC::NoSlip));
-
-    TV center(0, 1, 0);
-    TV half_extents(0.4, 0.4, 0.4);
-    TM R = TM::Identity();
-    T mytheta = M_PI / 4;
-    R(0, 0) = std::cos(mytheta); R(0, 1) = -std::sin(mytheta);
-    R(1, 0) = std::sin(mytheta); R(1, 1) =  std::cos(mytheta);
-
-    auto obox = std::make_unique<ObjectBoxRotated>(BC::NoSlip, 0.0, center, half_extents, R);
-    sim.objects.push_back(std::move(obox));
-
-    /////// Here are some examples how to use the objects derived from ObjectGeneral:
-
-    /////// Here is an example how to use ObjectVdb (uncomment includes and openvdb::initialize() above):
-    // sim.objects.push_back(std::make_unique<ObjectVdb>("../levelsets/vdb_file_name.vdb", BC::NoSlip, friction));
-
-    ////// PLASTICITY
     sim.plastic_model = PlasticModel::NoPlasticity;
-
-    sim.use_pradhana = true; // Supress unwanted volume expansion in Drucker-Prager models
-    sim.use_mises_q = false; // [default: false] if true, q is defined as q = sqrt(3/2 * s:s), otherwise q = sqrt(1/2 * s:s)
-
-    sim.M = std::tan(30*M_PI/180.0); // Internal friction
-    sim.q_cohesion = 0; // Yield surface's intercection of q-axis (in Pa), 0 is the cohesionless case
-    sim.perzyna_exp = 1; // Exponent in Perzyna models
-    sim.perzyna_visc = 0; // Viscous time parameter is Perzyna models
+    sim.use_pradhana = true;
+    sim.use_mises_q = false;
+    sim.M = std::tan(30*M_PI/180.0);
+    sim.q_cohesion = 0;
+    sim.perzyna_exp = 1;
+    sim.perzyna_visc = 0;
 
     sim.simulate();
 
-    auto end = high_resolution_clock::now(); // End timing
-    auto duration = duration_cast<milliseconds>(end - start);
-    return static_cast<int>(duration.count());
+    auto end = high_resolution_clock::now();
+    return static_cast<int>(duration_cast<milliseconds>(end - start).count());
+}
+
+////////////////////////////////////////////////////////
+// Helper functions
+////////////////////////////////////////////////////////
+
+void record_to_csv(const std::string& test_name, int particle_count, int duration_ms) {
+    std::ofstream out("results.csv", std::ios::app);
+    if (!out) {
+        std::cerr << "Failed to open results.csv\n";
+        return;
+    }
+    out << test_name << "," << particle_count << "," << duration_ms << "\n";
 }
 
 int main() {
-    // openvdb::initialize(); // if needed
+    int duration;
+    duration = sand_collision(20000);
+    record_to_csv("sand_collision", 20000, duration);
 
-    int time_ms = test(5000);
-    std::cout << "Sim took " << time_ms << " ms." << std::endl;
+    duration = bouncy_cube(5000);
+    record_to_csv("bouncy_cube", 5000, duration);
+
+    duration = no_plasticity(3000);
+    record_to_csv("no_plasticity", 3000, duration);
 
     return 0;
 }

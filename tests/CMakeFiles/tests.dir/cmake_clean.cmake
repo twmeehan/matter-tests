@@ -27,8 +27,6 @@ file(REMOVE_RECURSE
   "CMakeFiles/tests.dir/__/src/simulation/update_dt.cpp.o.d"
   "CMakeFiles/tests.dir/tests.cpp.o"
   "CMakeFiles/tests.dir/tests.cpp.o.d"
-  "CMakeFiles/tests.dir/tests_vdb.cpp.o"
-  "CMakeFiles/tests.dir/tests_vdb.cpp.o.d"
   "tests"
   "tests.pdb"
   "tests[1]_tests.cmake"
