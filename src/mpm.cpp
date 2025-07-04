@@ -7,10 +7,7 @@
 #include "objects/object_bump.hpp"
 #include "objects/object_gate.hpp"
 #include "objects/object_ramp.hpp"
-<<<<<<< HEAD
-=======
 #include "objects/object_box.hpp"
->>>>>>> ed4816d (added my own tests)
 #include "objects/object_plate.hpp"
 
 // Comment if not compiling with OpenVDB:
@@ -18,18 +15,6 @@
 // #include "sampling/sampling_particles_vdb.hpp"
 
 
-<<<<<<< HEAD
-int main(){
-    // openvdb::initialize(); // Comment if not using openvdb
-
-    Simulation sim;
-
-    sim.initialize(/*save to file*/ true, /*path*/ "output/", /*name*/ "collapse");
-
-    sim.save_grid = true;
-    sim.end_frame = 20;     // last frame to simulate
-    sim.fps = 10;           // frames per second
-=======
 int sand_sim(int particle_count) {
 
     using namespace std::chrono;
@@ -45,7 +30,6 @@ int sand_sim(int particle_count) {
     sim.save_grid = true;
     sim.end_frame = 60;     // last frame to simulate
     sim.fps = 30;           // frames per second
->>>>>>> ed4816d (added my own tests)
     sim.n_threads = 8;      // number of threads in parallel
     sim.cfl = 0.5;          // CFL constant, typically around 0.5
     sim.flip_ratio = -0.95; // (A)PIC-(A)FLIP ratio in [-1,1].
@@ -66,12 +50,6 @@ int sand_sim(int particle_count) {
     ////// INITIAL PARTICLE POSITIONS
     sim.Lx = 1;
     sim.Ly = 1;
-<<<<<<< HEAD
-    T k_rad = 0.01;
-    #ifdef THREEDIM
-        sim.Lz = 5;
-    #endif
-=======
     T k_rad; //0.031 ---- 0.039 ---- 0.05 -- 0.068 -- 0.059
     switch (particle_count) {
         case 20000:
@@ -98,20 +76,14 @@ int sand_sim(int particle_count) {
         sim.Lz = 1;
     #endif
 
->>>>>>> ed4816d (added my own tests)
     sampleParticles(sim, k_rad);
 
     ////// OPTIONAL: CHANGE INITIAL PARTICLE POSITIONS
     for(int p = 0; p < sim.Np; p++){
-<<<<<<< HEAD
-        sim.particles.x[p](0) -= 0.5*sim.Lx;
-        sim.particles.x[p](1) += 0.5*sim.dx;
-=======
         sim.particles.x[p](0) -= 0.5;
         sim.particles.x[p](1) += 3.0;
         sim.particles.x[p](2) -= 0.5;
 
->>>>>>> ed4816d (added my own tests)
     }
     sim.grid_reference_point = TV::Zero();
 
@@ -119,14 +91,6 @@ int sand_sim(int particle_count) {
     // sim.particles.v = ...
 
     ////// OBJECTS AND TERRAINS
-<<<<<<< HEAD
-    sim.plates.push_back(std::make_unique<ObjectPlate>(0, PlateType::bottom, BC::NoSlip)); 
-
-    /////// Here are some examples how to use the objects derived from ObjectGeneral:
-    // T friction = 0.2; 
-    // sim.objects.push_back(std::make_unique<ObjectBump>(BC::SlipFree, friction));
-    // sim.objects.push_back(std::make_unique<ObjectGate>(BC::SlipFree, friction));
-=======
     sim.plates.push_back(std::make_unique<ObjectPlate>(-1.0, PlateType::left,   BC::NoSlip));
     sim.plates.push_back(std::make_unique<ObjectPlate>(1.0, PlateType::right,  BC::NoSlip));
     sim.plates.push_back(std::make_unique<ObjectPlate>(0.0, PlateType::bottom, BC::NoSlip));
@@ -144,17 +108,12 @@ int sand_sim(int particle_count) {
     sim.objects.push_back(std::move(obox));
 
     /////// Here are some examples how to use the objects derived from ObjectGeneral:
->>>>>>> ed4816d (added my own tests)
 
     /////// Here is an example how to use ObjectVdb (uncomment includes and openvdb::initialize() above):
     // sim.objects.push_back(std::make_unique<ObjectVdb>("../levelsets/vdb_file_name.vdb", BC::NoSlip, friction));
 
     ////// PLASTICITY
-<<<<<<< HEAD
-    sim.plastic_model = PlasticModel::DPVisc; // Perzyna model with Drucker_Prager yield surface
-=======
     sim.plastic_model = PlasticModel::DPVisc;
->>>>>>> ed4816d (added my own tests)
 
     sim.use_pradhana = true; // Supress unwanted volume expansion in Drucker-Prager models
     sim.use_mises_q = false; // [default: false] if true, q is defined as q = sqrt(3/2 * s:s), otherwise q = sqrt(1/2 * s:s)
@@ -166,9 +125,6 @@ int sand_sim(int particle_count) {
 
     sim.simulate();
 
-<<<<<<< HEAD
-	return 0;
-=======
     auto end = high_resolution_clock::now(); // End timing
     auto duration = duration_cast<milliseconds>(end - start);
     return static_cast<int>(duration.count());
@@ -525,5 +481,4 @@ int main() {
     std::cout << "Sim took " << time_ms << " ms." << std::endl;
 
     return 0;
->>>>>>> ed4816d (added my own tests)
 }
