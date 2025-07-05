@@ -222,6 +222,50 @@ int no_plasticity(int particle_count) {
     return static_cast<int>(duration_cast<milliseconds>(end - start).count());
 }
 
+int test(int particle_count) {
+    using namespace std::chrono;
+    auto start = high_resolution_clock::now();
+
+    Simulation sim;
+    std::string name = "test_" + std::to_string(particle_count);
+    sim.initialize(true, "output/", name);
+
+    sim.save_grid = true;
+    sim.end_frame = 60;
+    sim.fps = 30;
+    sim.n_threads = 8;
+    sim.cfl = 0.5;
+    sim.flip_ratio = 0.95;
+
+    sim.elastic_model = ElasticModel::Hencky;
+    sim.E = 1e7;
+    sim.nu = 0.45;
+    sim.rho = 1000;
+
+    setup_simulation_with_particles(particle_count, sim);
+
+    for (int p = 0; p < sim.Np; p++) {
+        sim.particles.x[p][0]  -= 0.5;
+        sim.particles.x[p][1]  += 2.0;
+        sim.particles.x[p][2]  -= 0.5;
+    }
+
+    setup_environment_with_bounding_box(sim);
+
+    sim.plastic_model = PlasticModel::MCC;
+    sim.use_pradhana = true;
+    sim.use_mises_q = false;
+    sim.M = 1.2;
+    sim.q_cohesion = 5000;
+    sim.perzyna_exp = 1;
+    sim.perzyna_visc = 0;
+
+    sim.simulate();
+
+    auto end = high_resolution_clock::now();
+    return static_cast<int>(duration_cast<milliseconds>(end - start).count());
+}
+
 ////////////////////////////////////////////////////////
 // Helper functions
 ////////////////////////////////////////////////////////
@@ -237,14 +281,8 @@ void record_to_csv(const std::string& test_name, int particle_count, int duratio
 
 int main() {
     int duration;
-    duration = sand_collision(20000);
-    record_to_csv("sand_collision", 20000, duration);
-
-    duration = bouncy_cube(5000);
-    record_to_csv("bouncy_cube", 5000, duration);
-
-    duration = no_plasticity(3000);
-    record_to_csv("no_plasticity", 3000, duration);
+    duration = test(5000);
+    record_to_csv("test", 5000, duration);
 
     return 0;
 }
