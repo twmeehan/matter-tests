@@ -165,7 +165,8 @@ private:
   T final_time;
   T frame_dt;
   T dt;
-  T dt_max;
+  T dt_max= 5e-3;
+  T dt_min = 1e-6;
   T wave_speed;
   T mu; // shear modulus
   T lambda; // first Lame parameter

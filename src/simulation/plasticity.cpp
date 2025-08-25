@@ -1,6 +1,7 @@
 // Copyright (C) 2024 Lars Blatny. Released under GPL-3.0 license.
 
 #include "simulation.hpp"
+#include <algorithm>
 #include "../plasticity_helpers/mcc_rma_explicit.hpp"
 #include "../plasticity_helpers/mcc_rma_explicit_onevar.hpp"
 #include "../plasticity_helpers/mcc_rma_implicit_exponential.hpp"
@@ -13,7 +14,7 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
         // Do nothing
     }
 
-    else if (plastic_model == PlasticModel::VM || plastic_model == PlasticModel::DP || plastic_model == PlasticModel::DPSoft || plastic_model == PlasticModel::MCC || plastic_model == PlasticModel::VMVisc || plastic_model == PlasticModel::DPVisc || plastic_model == PlasticModel::MCCVisc || plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui){
+    else if (plastic_model == PlasticModel::VM || plastic_model == PlasticModel::DP || plastic_model == PlasticModel::DPSoft || plastic_model == PlasticModel::MCC || plastic_model == PlasticModel::VMVisc || plastic_model == PlasticModel::DPVisc || plastic_model == PlasticModel::MCCVisc || plastic_model == PlasticModel::DPMui || plastic_model == PlasticModel::MCCMui || plastic_model == PlasticModel::Snow){
 
         Eigen::JacobiSVD<TM> svd(Fe_trial, Eigen::ComputeFullU | Eigen::ComputeFullV);
         // TV hencky = svd.singularValues().array().log();
@@ -619,6 +620,42 @@ void Simulation::plasticity(unsigned int p, unsigned int & plastic_count, TM & F
             } // if perform_rma
         } // end MCC / MCCVisc
 
+        else if (plastic_model == PlasticModel::Snow) {
+            T stretching_yield = 7.5e-3;
+            T compression_yield = 2.5e-2;
+            T hardening_factor = 10;
+            T hardening_max = 5;
+
+            TV  S  = svd.singularValues();
+            TM  U  = svd.matrixU();
+            TM  V  = svd.matrixV();
+
+            for(int i=0;i<S.size();i++) if(S(i)>stretching_yield) S(i) = stretching_yield;
+            for(int i=0;i<S.size();i++) if(S(i)<compression_yield) S(i) = compression_yield;
+
+            TM Fe = U * S.asDiagonal() * V.transpose();
+
+            TV Sinv = S.unaryExpr([&](T s){ return (std::abs(s) > T(1e-9)) ? T(1)/s : T(0); });
+            TM Fe_new_inv = V * Sinv.asDiagonal() * U.transpose();
+            TM Fp = Fe_new_inv * Fe_trial;
+
+            const T one_minus_Jp = T(1) - Fp.determinant();
+            T power = std::min<T>(hardening_factor * one_minus_Jp, T(hardening_max));
+            T lambda0 = (E*nu)/((1+nu)*(1-2*nu));
+            T mu0 = E/(2*(1+nu));
+            lambda=exp(power)*lambda0;
+            mu=exp(power)*mu0;
+            TV log_Se = S.array().log().matrix();
+            T trace_log_Se = log_Se.sum();
+            T sum_sqr=trace_log_Se*trace_log_Se;
+            T hencky_psi = mu * log_Se.squaredNorm() + (T)0.5 * lambda * sum_sqr;
+            TM F_Inv = S.unaryExpr([](T s) { return (std::abs(s) > T(1e-9)) ? T(1)/s : T(0); }).asDiagonal();
+            TV P_hat_diag = ( (T)2 * mu * log_Se ) + ( lambda * trace_log_Se ) * TV::Ones(log_Se.size());
+            P_hat_diag = P_hat_diag.cwiseProduct(Sinv);
+
+            particles.dPsidF[p] = U * P_hat_diag.asDiagonal() * V.transpose();
+            particles.Fe[p] = Fe;
+        }
     } // end plastic_model type
 
     else{

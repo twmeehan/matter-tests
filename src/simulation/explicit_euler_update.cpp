@@ -22,7 +22,9 @@ void Simulation::explicitEulerUpdate(){
             TM Fe = particles.F[p];
 
             TM dPsidF;
-            if (elastic_model == ElasticModel::NeoHookean){
+            if (plastic_model == PlasticModel::Snow) {
+                dPsidF = particles.dPsidF[p];
+            } else if (elastic_model == ElasticModel::NeoHookean){
                 dPsidF = NeoHookeanPiola(Fe);
             }
             else if (elastic_model == ElasticModel::Hencky){ // St Venant Kirchhoff with Hencky strain
@@ -31,8 +33,12 @@ void Simulation::explicitEulerUpdate(){
             else{
                 debug("You specified an unvalid ELASTIC model!");
             }
-
-            TM tau = dPsidF * Fe.transpose();
+            TM tau;
+            if (plastic_model == PlasticModel::Snow) {
+                tau = particles.dPsidF[p] * particles.Fe[p].transpose();
+            } else {
+                tau = dPsidF * Fe.transpose();
+            }
 
             TV xp = particles.x[p];
             unsigned int i_base = std::max(0, int(std::floor((xp(0)-grid.xc)*one_over_dx)) - 1); // i_base = std::min(i_base, Nx-4); // the subtraction of one is valid for both quadratic and cubic splines

@@ -32,7 +32,6 @@ void Simulation::updateDt(){
         debug("               dt_cfl = not computed, max_speed too low");
 #endif
     }
-
     dt = std::min(dt, frame_dt*(frame+1) - time);
     dt = std::min(dt, final_time         - time);
 

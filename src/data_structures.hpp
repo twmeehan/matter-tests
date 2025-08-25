@@ -19,6 +19,8 @@ public:
       delta_gamma.resize(Np); std::fill( delta_gamma.begin(), delta_gamma.end(), 0.0 );
       viscosity.resize(Np); std::fill( viscosity.begin(), viscosity.end(), 0.0 );
       muI.resize(Np); std::fill( muI.begin(), muI.end(), 0.0 );
+      dPsidF.resize(Np); std::fill( dPsidF.begin(), dPsidF.end(), TM::Zero());
+      Fe.resize(Np); std::fill( Fe.begin(), Fe.end(), TM::Identity());
 
       F.resize(Np); std::fill( F.begin(), F.end(), TM::Identity() );
       Bmat.resize(Np); std::fill( Bmat.begin(), Bmat.end(), TM::Zero() );
@@ -35,6 +37,9 @@ public:
   std::vector<T> delta_gamma;
   std::vector<T> viscosity;
   std::vector<T> muI;
+  std::vector<TM> dPsidF;
+  std::vector<TM> Fe;
+
 
   std::vector<TM> F;
   std::vector<TM> Bmat;
