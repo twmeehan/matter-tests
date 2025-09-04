@@ -311,7 +311,7 @@ void record_to_csv(const std::string& test_name, int particle_count, int duratio
         std::cerr << "Failed to open results.csv\n";
         return;
     }
-    out << test_name << "," << particle_count << "," << duration_ms << "," << end_frame << "\n" << std::flush;
+    out << duration_ms << "\n" << std::flush;
 
 }
 
@@ -320,37 +320,69 @@ int main() {
 
     duration = snow(1000, 20);
     record_to_csv("snow", 1000, duration, 20);
-    duration = snow(1000, 20);
-    record_to_csv("snow", 1000, duration, 20);
-    duration = snow(1000, 20);
-    record_to_csv("snow", 1000, duration, 20);
-    duration = snow(1000, 20);
-    record_to_csv("snow", 1000, duration, 20);
-    duration = snow(1000, 20);
-    record_to_csv("snow", 1000, duration, 20);
+
+    duration = snow(1500, 20);
+    record_to_csv("snow", 1500, duration, 20);
+
+    duration = snow(2000, 20);
+    record_to_csv("snow", 2000, duration, 20);
+
+    duration = snow(2500, 20);
+    record_to_csv("snow", 2500, duration, 20);
+
+    duration = snow(3000, 20);
+    record_to_csv("snow", 3000, duration, 20);
+
+    duration = snow(3500, 20);
+    record_to_csv("snow", 3500, duration, 20);
+
+    duration = snow(4000, 20);
+    record_to_csv("snow", 4000, duration, 20);
+
+    duration = snow(4500, 20);
+    record_to_csv("snow", 4500, duration, 20);
 
     duration = snow(5000, 20);
     record_to_csv("snow", 5000, duration, 20);
-    duration = snow(5000, 20);
-    record_to_csv("snow", 5000, duration, 20);
-    duration = snow(5000, 20);
-    record_to_csv("snow", 5000, duration, 20);
-    duration = snow(5000, 20);
-    record_to_csv("snow", 5000, duration, 20);
-    duration = snow(5000, 20);
-    record_to_csv("snow", 5000, duration, 20);
+
+    duration = snow(6000, 20);
+    record_to_csv("snow", 6000, duration, 20);
+
+    duration = snow(7000, 20);
+    record_to_csv("snow", 7000, duration, 20);
+
+    duration = snow(8000, 20);
+    record_to_csv("snow", 8000, duration, 20);
+
+    duration = snow(9000, 20);
+    record_to_csv("snow", 9000, duration, 20);
+
+    duration = snow(10000, 20);
+    record_to_csv("snow", 10000, duration, 20);
+
+    duration = snow(15000, 20);
+    record_to_csv("snow", 15000, duration, 20);
+
+    duration = snow(20000, 20);
+    record_to_csv("snow", 20000, duration, 20);
+
+    duration = snow(25000, 20);
+    record_to_csv("snow", 25000, duration, 20);
+
+    duration = snow(30000, 20);
+    record_to_csv("snow", 30000, duration, 20);
+
+    duration = snow(35000, 20);
+    record_to_csv("snow", 35000, duration, 20);
+
+    duration = snow(40000, 20);
+    record_to_csv("snow", 40000, duration, 20);
+
+    duration = snow(45000, 20);
+    record_to_csv("snow", 45000, duration, 20);
 
     duration = snow(50000, 20);
     record_to_csv("snow", 50000, duration, 20);
-    duration = snow(50000, 20);
-    record_to_csv("snow", 50000, duration, 20);
-    duration = snow(50000, 20);
-    record_to_csv("snow", 50000, duration, 20);
-    duration = snow(50000, 20);
-    record_to_csv("snow", 50000, duration, 20);
-    duration = snow(50000, 20);
-    record_to_csv("snow", 50000, duration, 20);
-
 
 
     return 0;
