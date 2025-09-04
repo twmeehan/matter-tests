@@ -321,41 +321,8 @@ int main() {
     duration = snow(1000, 20);
     record_to_csv("snow", 1000, duration, 20);
 
-    duration = snow(1500, 20);
-    record_to_csv("snow", 1500, duration, 20);
-
-    duration = snow(2000, 20);
-    record_to_csv("snow", 2000, duration, 20);
-
-    duration = snow(2500, 20);
-    record_to_csv("snow", 2500, duration, 20);
-
-    duration = snow(3000, 20);
-    record_to_csv("snow", 3000, duration, 20);
-
-    duration = snow(3500, 20);
-    record_to_csv("snow", 3500, duration, 20);
-
-    duration = snow(4000, 20);
-    record_to_csv("snow", 4000, duration, 20);
-
-    duration = snow(4500, 20);
-    record_to_csv("snow", 4500, duration, 20);
-
     duration = snow(5000, 20);
     record_to_csv("snow", 5000, duration, 20);
-
-    duration = snow(6000, 20);
-    record_to_csv("snow", 6000, duration, 20);
-
-    duration = snow(7000, 20);
-    record_to_csv("snow", 7000, duration, 20);
-
-    duration = snow(8000, 20);
-    record_to_csv("snow", 8000, duration, 20);
-
-    duration = snow(9000, 20);
-    record_to_csv("snow", 9000, duration, 20);
 
     duration = snow(10000, 20);
     record_to_csv("snow", 10000, duration, 20);
